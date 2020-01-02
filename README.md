@@ -1,2 +1,5 @@
-# GTFO
-GTFO = Going To Figure Out
+# neo3-gogogo
+
+golang SDK for Neo 3
+
+To Be Continued...
