@@ -139,7 +139,7 @@ func TestScriptBuilder_EmitPushBool(t *testing.T) {
 	sb := NewScriptBuilder()
 	sb.EmitPushBool(true)
 	b := sb.ToArray()
-	assert.Equal(t, "51", helper.BytesToHex(b))
+	assert.Equal(t, "11", helper.BytesToHex(b))
 }
 
 func TestScriptBuilder_EmitPushBytes(t *testing.T) {
@@ -148,7 +148,7 @@ func TestScriptBuilder_EmitPushBytes(t *testing.T) {
 	bytes := helper.ReverseBytes(n.Bytes())
 	sb.EmitPushBytes(bytes)
 	b := sb.ToArray()
-	assert.Equal(t, "05717897cf01", helper.BytesToHex(b))
+	assert.Equal(t, "0c05717897cf01", helper.BytesToHex(b)) // PUSHDATA1 + length + data
 }
 
 func TestScriptBuilder_EmitPushInt(t *testing.T) {
@@ -161,7 +161,7 @@ func TestScriptBuilder_EmitPushInt(t *testing.T) {
 	sb.EmitPushInt(10000)
 	sb.EmitPushInt(0x20000)
 	bytes := sb.ToArray()
-	assert.Equal(t, "4f0058016402e80302102703000002", helper.BytesToHex(bytes))
+	assert.Equal(t, "0f1018006401e8030110270200000200", helper.BytesToHex(bytes)) // 0f + 10 + 18 + 0064 + 01e803 + 011027 + 0200000200, pad right
 }
 
 func TestScriptBuilder_EmitPushParameter(t *testing.T) {
@@ -173,14 +173,14 @@ func TestScriptBuilder_EmitPushParameter(t *testing.T) {
 	sb := NewScriptBuilder()
 	sb.EmitPushParameter(cp)
 	b := sb.ToArray()
-	assert.Equal(t, "209b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc5", helper.BytesToHex(b))
+	assert.Equal(t, "0c209b7cffdaa674beae0f930ebe6085af9093e5fe56b34a5c220ccdcf6efc336fc5", helper.BytesToHex(b)) // 0c + length + data
 }
 
 func TestScriptBuilder_EmitPushString(t *testing.T) {
 	sb := NewScriptBuilder()
 	sb.EmitPushString("Hello World!")
 	b := sb.ToArray()
-	assert.Equal(t, "0c48656c6c6f20576f726c6421", helper.BytesToHex(b))
+	assert.Equal(t, "0c0c48656c6c6f20576f726c6421", helper.BytesToHex(b))
 }
 
 //func TestScriptBuilder_MakeInvocationScript(t *testing.T) {
@@ -219,5 +219,5 @@ func TestScriptBuilder_ToArray(t *testing.T) {
 	sb := NewScriptBuilder()
 	sb.EmitPushString("Hello World!")
 	b := sb.ToArray()
-	assert.Equal(t, "0c48656c6c6f20576f726c6421", helper.BytesToHex(b))
+	assert.Equal(t, "0c0c48656c6c6f20576f726c6421", helper.BytesToHex(b))
 }
