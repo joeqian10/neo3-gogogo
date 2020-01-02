@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/joeqian10/GTFO/crypto"
+	"github.com/joeqian10/neo3-gogogo/crypto"
 )
 
 // bytes to hex string

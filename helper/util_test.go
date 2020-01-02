@@ -1,7 +1,7 @@
 package helper
 
 import (
-	"github.com/joeqian10/neo-gogogo/crypto"
+	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

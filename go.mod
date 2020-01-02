@@ -1,4 +1,4 @@
-module github.com/joeqian10/neo-gogogo
+module github.com/joeqian10/neo3-gogogo
 
 go 1.12
 
