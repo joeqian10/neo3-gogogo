@@ -2,7 +2,7 @@ package io
 
 import (
 	"bytes"
-	"github.com/joeqian10/neo-gogogo/helper"
+	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -15,9 +15,9 @@ func TestNewBinaryWriterFromIO(t *testing.T) {
 
 func TestBinaryWriter_WriteBE(t *testing.T) {
 	var (
-		b = new(bytes.Buffer)
-		val     uint32 = 0xdeadbeef
-		bin     = []byte{0xde, 0xad, 0xbe, 0xef}
+		b          = new(bytes.Buffer)
+		val uint32 = 0xdeadbeef
+		bin        = []byte{0xde, 0xad, 0xbe, 0xef}
 	)
 	bw := NewBinaryWriterFromIO(b)
 	bw.WriteBE(val) // write to the buffer
@@ -27,9 +27,9 @@ func TestBinaryWriter_WriteBE(t *testing.T) {
 
 func TestBinaryWriter_WriteLE(t *testing.T) {
 	var (
-		b = new(bytes.Buffer)
-		val     uint32 = 0xdeadbeef
-		bin     = []byte{0xef, 0xbe, 0xad, 0xde}
+		b          = new(bytes.Buffer)
+		val uint32 = 0xdeadbeef
+		bin        = []byte{0xef, 0xbe, 0xad, 0xde}
 	)
 	bw := NewBinaryWriterFromIO(b)
 	bw.WriteLE(val)
@@ -39,9 +39,9 @@ func TestBinaryWriter_WriteLE(t *testing.T) {
 
 func TestBinaryWriter_WriteVarUInt(t *testing.T) {
 	var (
-		b = new(bytes.Buffer)
-		val     uint32 = 0xdeadbeef
-		bin     = []byte{0xfe, 0xef, 0xbe, 0xad, 0xde}
+		b          = new(bytes.Buffer)
+		val uint32 = 0xdeadbeef
+		bin        = []byte{0xfe, 0xef, 0xbe, 0xad, 0xde}
 	)
 	bw := NewBinaryWriterFromIO(b)
 	bw.WriteVarUInt(uint64(val))
@@ -51,9 +51,9 @@ func TestBinaryWriter_WriteVarUInt(t *testing.T) {
 
 func TestBinaryWriter_WriteVarBytes(t *testing.T) {
 	var (
-		b = new(bytes.Buffer)
-		val     uint32 = 0xdeadbeef
-		bin     = []byte{0x04, 0xef, 0xbe, 0xad, 0xde}
+		b          = new(bytes.Buffer)
+		val uint32 = 0xdeadbeef
+		bin        = []byte{0x04, 0xef, 0xbe, 0xad, 0xde}
 	)
 	bw := NewBinaryWriterFromIO(b)
 	bw.WriteVarBytes(helper.UInt32ToBytes(val))
@@ -63,9 +63,9 @@ func TestBinaryWriter_WriteVarBytes(t *testing.T) {
 
 func TestBinaryWriter_WriteVarString(t *testing.T) {
 	var (
-		b = new(bytes.Buffer)
-		val     string = "hello world"
-		bin     = append([]byte{0x0b}, []byte(val)...)
+		b          = new(bytes.Buffer)
+		val string = "hello world"
+		bin        = append([]byte{0x0b}, []byte(val)...)
 	)
 	bw := NewBinaryWriterFromIO(b)
 	bw.WriteVarString(val)
