@@ -3,8 +3,10 @@ package rpc
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/joeqian10/neo3-gogogo/helper"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -59,8 +61,12 @@ func (n *RpcClient) GetBestBlockHash() GetBestBlockHashResponse {
 }
 
 func (n *RpcClient) GetBlock(hashOrIndex string) GetBlockResponse {
-	response := GetBlockResponse{}
 	params := []interface{}{hashOrIndex, true}
+	index, err := strconv.Atoi(hashOrIndex)
+	if err == nil {
+		params = []interface{}{index, true}
+	}
+	response := GetBlockResponse{}
 	_ = n.makeRequest("getblock", params, &response)
 	return response
 }
@@ -80,8 +86,12 @@ func (n *RpcClient) GetBlockHash(index uint32) GetBlockHashResponse {
 }
 
 func (n *RpcClient) GetBlockHeader(hashOrIndex string) GetBlockHeaderResponse {
+	params := []interface{}{hashOrIndex, true}
+	index, err := strconv.Atoi(hashOrIndex)
+	if err == nil {
+		params = []interface{}{index, true}
+	}
 	response := GetBlockHeaderResponse{}
-	params := []interface{}{hashOrIndex, 1}
 	_ = n.makeRequest("getblockheader", params, &response)
 	return response
 }
@@ -172,7 +182,7 @@ func (n *RpcClient) SubmitBlock(blockHex string) SubmitBlockResponse {
 }
 
 // SmartContract
-func (n *RpcClient) InvokeFunction(scriptHash string, method string, args ...interface{}) InvokeResultResponse {
+func (n *RpcClient) InvokeFunction(scriptHash string, method string, args ...InvokeFunctionStackArg) InvokeResultResponse {
 	response := InvokeResultResponse{}
 	var params []interface{}
 	if args != nil {
@@ -184,9 +194,9 @@ func (n *RpcClient) InvokeFunction(scriptHash string, method string, args ...int
 	return response
 }
 
-func (n *RpcClient) InvokeScript(scriptInHex string) InvokeResultResponse {
+func (n *RpcClient) InvokeScript(scriptInHex string, scriptHashesForVerifying ...helper.UInt160) InvokeResultResponse {
 	response := InvokeResultResponse{}
-	params := []interface{}{scriptInHex, 1}
+	params := []interface{}{scriptInHex, scriptHashesForVerifying}
 	_ = n.makeRequest("invokescript", params, &response)
 	return response
 }

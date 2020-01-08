@@ -33,7 +33,7 @@ type ContractAbi struct {
 
 type ContractMethodDescriptor struct {
 	Name       string `json:"name"`
-	Parameters struct {
+	Parameters []struct {
 		Name string `json:"name"`
 		Type string `json:"type"`
 	} `json:"parameters"`

@@ -111,13 +111,17 @@ type GetVersionResponse struct {
 type SendRawTransactionResponse struct {
 	RpcResponse
 	ErrorResponse
-	Result bool `json:"result"`
+	Result struct {
+		Hash string `json:"hash"`
+	} `json:"result"`
 }
 
 type SubmitBlockResponse struct {
 	RpcResponse
 	ErrorResponse
-	Result bool `json:"result"`
+	Result struct {
+		Hash string `json:"hash"`
+	} `json:"result"`
 }
 
 // smart contract

@@ -24,7 +24,7 @@ type IRpcClient interface {
 	SendRawTransaction(txHex string) SendRawTransactionResponse
 	SubmitBlock(blockHex string) SubmitBlockResponse
 	// smart contract
-	InvokeFunction(scriptHash string, function string, args ...interface{}) InvokeResultResponse
+	InvokeFunction(scriptHash string, function string, args ...InvokeFunctionStackArg) InvokeResultResponse
 	InvokeScript(script string, scriptHashesForVerifying ...helper.UInt160) InvokeResultResponse
 	// utilities
 	ListPlugins() ListPluginsResponse
