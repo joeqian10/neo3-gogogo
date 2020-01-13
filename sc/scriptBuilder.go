@@ -2,11 +2,10 @@ package sc
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
-	"github.com/joeqian10/neo3-gogogo/crypto"
-	"github.com/joeqian10/neo3-gogogo/helper"
 	"math/big"
+
+	"github.com/joeqian10/neo3-gogogo/helper"
 )
 
 type ScriptBuilder struct {
@@ -231,10 +230,4 @@ func (sb *ScriptBuilder) EmitPushParameter(data ContractParameter) error {
 
 func (sb *ScriptBuilder) EmitSysCall(api uint) error {
 	return sb.Emit(SYSCALL, helper.UInt32ToBytes(uint32(api))...)
-}
-
-// converts a method name to 32 bytes hash
-func ToInteropMethodHash(name string) uint {
-	u := binary.LittleEndian.Uint32(crypto.Sha256([]byte(name)))
-	return uint(u)
 }

@@ -1,10 +1,11 @@
 package sc
 
 import (
-	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
+
+	"github.com/joeqian10/neo3-gogogo/helper"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestScriptBuilder_Emit(t *testing.T) {
