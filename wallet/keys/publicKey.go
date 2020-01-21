@@ -4,25 +4,30 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-
-	"io"
-	"math/big"
-	"sort"
-
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
+	"github.com/joeqian10/neo3-gogogo/helper/io"
 	"github.com/joeqian10/neo3-gogogo/sc"
+	"math/big"
+	"sort"
 )
 
 // PublicKeys is a list of public keys.
-type PublicKeys []*PublicKey
+type PublicKeySlice []*PublicKey
 
-func (keys PublicKeys) Len() int           { return len(keys) }
-func (keys PublicKeys) Swap(i, j int)      { keys[i], keys[j] = keys[j], keys[i] }
-func (keys PublicKeys) Less(i, j int) bool { return keys[i].Compare(keys[j]) == -1 }
+func (keys PublicKeySlice) Len() int           { return len(keys) }
+func (keys PublicKeySlice) Swap(i, j int)      { keys[i], keys[j] = keys[j], keys[i] }
+func (keys PublicKeySlice) Less(i, j int) bool { return keys[i].Compare(keys[j]) == -1 }
+
+func (keys PublicKeySlice) GetVarSize() int {
+	var size int = 0
+	for _, k := range keys {
+		size += k.Size()
+	}
+	return helper.GetVarSize(len(keys)) + size
+}
 
 // PublicKey represents a public key and provides a high level
 // API around the X/Y point.
@@ -31,11 +36,20 @@ type PublicKey struct {
 	Y *big.Int
 }
 
+func (p PublicKey) Size() int {
+	if p.X == nil && p.Y == nil {
+		return 1
+	}
+	return 33
+}
+
 // NewPublicKey return a public key created from the given []byte.
 func NewPublicKey(data []byte) (*PublicKey, error) {
 	pubKey := new(PublicKey)
-	if err := pubKey.Deserialize(bytes.NewReader(data)); err != nil {
-		return nil, err
+	br := io.NewBinaryReaderFromBuf(data)
+	pubKey.Deserialize(br);
+	if br.Err != nil {
+		return nil, br.Err
 	}
 	return pubKey, nil
 }
@@ -100,62 +114,48 @@ func decodeCompressedY(x *big.Int, ylsb uint) (*big.Int, error) {
 }
 
 // Deserialize a PublicKey from the given io.Reader.
-func (p *PublicKey) Deserialize(r io.Reader) error {
+func (p *PublicKey) Deserialize(br *io.BinaryReader) {
 	var prefix uint8
 	var x, y *big.Int
-	var err error
 
-	if err = binary.Read(r, binary.LittleEndian, &prefix); err != nil {
-		return err
-	}
+	br.ReadLE(&prefix)
 
 	// Infinity
 	switch prefix {
 	case 0x00:
 		// noop, initialized to nil
-		return nil
+		return
 	case 0x02, 0x03:
 		// Compressed public keys
 		xbytes := make([]byte, 32)
-		if _, err := io.ReadFull(r, xbytes); err != nil {
-			return err
-		}
+		br.ReadLE(&xbytes)
 		x = new(big.Int).SetBytes(xbytes)
 		ylsb := uint(prefix & 0x1)
-		y, err = decodeCompressedY(x, ylsb)
-		if err != nil {
-			return err
-		}
+		y, br.Err = decodeCompressedY(x, ylsb)
 	case 0x04:
 		xbytes := make([]byte, 32)
 		ybytes := make([]byte, 32)
-		if _, err = io.ReadFull(r, xbytes); err != nil {
-			return err
-		}
-		if _, err = io.ReadFull(r, ybytes); err != nil {
-			return err
-		}
+		br.ReadLE(&xbytes)
+		br.ReadLE(&ybytes)
 		x = new(big.Int).SetBytes(xbytes)
 		y = new(big.Int).SetBytes(ybytes)
 	default:
-		return fmt.Errorf("invalid prefix %d", prefix)
+		br.Err = fmt.Errorf("invalid prefix %d", prefix)
 	}
 	c := elliptic.P256()
 	cp := c.Params()
 	if !c.IsOnCurve(x, y) {
-		return fmt.Errorf("encoded point is not on the P256 curve")
+		br.Err = fmt.Errorf("encoded point is not on the P256 curve")
 	}
 	if x.Cmp(cp.P) >= 0 || y.Cmp(cp.P) >= 0 {
-		return fmt.Errorf("encoded point is not correct (X or Y is bigger than P")
+		br.Err = fmt.Errorf("encoded point is not correct (X or Y is bigger than P")
 	}
 	p.X, p.Y = x, y
-
-	return nil
 }
 
 // Serialize encodes a PublicKey to the given io.Writer.
-func (p *PublicKey) Serialize(w io.Writer) error {
-	return binary.Write(w, binary.LittleEndian, p.EncodeCompression())
+func (p *PublicKey) Serialize(bw *io.BinaryWriter) {
+	bw.WriteLE(p.EncodeCompression())
 }
 
 // Signature returns a NEO-specific hash of the key.
@@ -192,11 +192,11 @@ func (p *PublicKey) Compare(q *PublicKey) int {
 
 // create signature check script
 func CreateSignatureRedeemScript(p *PublicKey) []byte {
-	builder := sc.NewScriptBuilder()
-	_ = builder.EmitPushBytes(p.EncodeCompression())
-	_ = builder.Emit(sc.PUSHNULL)
-	_ = builder.EmitSysCall(sc.ECDsaVerify.ToInteropMethodHash())
-	return builder.ToArray()
+	sb := sc.NewScriptBuilder()
+	_ = sb.EmitPushBytes(p.EncodeCompression())
+	_ = sb.Emit(sc.PUSHNULL)
+	sb.EmitSysCall(sc.ECDsaVerify.ToInteropMethodHash())
+	return sb.ToArray()
 }
 
 // create multi-signature check script
@@ -205,28 +205,30 @@ func CreateMultiSigRedeemScript(m int, ps ...*PublicKey) ([]byte, error) {
 		return nil, fmt.Errorf("argument exception: %v,%v", m, len(ps))
 	}
 
-	builder := sc.NewScriptBuilder()
-	err := builder.EmitPushInt(m)
+	sb := sc.NewScriptBuilder()
+	err := sb.EmitPushInt(m)
 	if err != nil {
 		return nil, err
 	}
-	pubKeys := PublicKeys(ps)
+	pubKeys := PublicKeySlice(ps)
 	sort.Sort(pubKeys)
 	for _, p := range pubKeys {
-		err = builder.EmitPushBytes(p.EncodeCompression())
+		err = sb.EmitPushBytes(p.EncodeCompression())
 		if err != nil {
 			return nil, err
 		}
 	}
-	err = builder.EmitPushInt(pubKeys.Len())
+	err = sb.EmitPushInt(pubKeys.Len())
 	if err != nil {
 		return nil, err
 	}
-
-	err = builder.Emit(sc.PUSHNULL)
-	err = builder.EmitSysCall(sc.ECDsaCheckMultiSig.ToInteropMethodHash())
+	err = sb.Emit(sc.PUSHNULL)
 	if err != nil {
 		return nil, err
 	}
-	return builder.ToArray(), nil
+	err = sb.EmitSysCall(sc.ECDsaCheckMultiSig.ToInteropMethodHash())
+	if err != nil {
+		return nil, err
+	}
+	return sb.ToArray(), nil
 }

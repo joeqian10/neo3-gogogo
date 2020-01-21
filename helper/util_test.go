@@ -73,3 +73,20 @@ func TestUInt32ToBytes(t *testing.T) {
 	b := UInt32ToBytes(u)
 	assert.Equal(t, []byte{0xef, 0xbe, 0xad, 0xde}, b)
 }
+
+// todo
+func TestByteSlice_GetVarSize(t *testing.T) {
+
+}
+
+func TestByteSlice_IsMultiSigContract(t *testing.T) {
+
+}
+
+func TestByteSlice_IsSignatureContract(t *testing.T) {
+
+}
+
+func TestGetVarSize(t *testing.T) {
+
+}

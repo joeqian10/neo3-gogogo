@@ -21,31 +21,6 @@ func (sb *ScriptBuilder) ToArray() []byte {
 	return sb.buff.Bytes()
 }
 
-//func (sb *ScriptBuilder) MakeInvocationScript(scriptHash []byte, operation string, args []ContractParameter) {
-//	if len(operation) == 0 { // Neo.VM.Helper.cs: Line 28
-//		l := len(args)
-//		for i := l - 1; i >= 0; i-- {
-//			sb.EmitPushParameter(args[i])
-//		}
-//		sb.EmitAppCall(scriptHash, false)
-//	} else {
-//		if args != nil { // Neo.VM.Helper.cs: Line 43
-//			l := len(args)
-//			for i := l - 1; i >= 0; i-- {
-//				sb.EmitPushParameter(args[i])
-//			}
-//			sb.EmitPushInt(l)
-//			sb.Emit(PACK)
-//			sb.EmitPushString(operation)
-//			sb.EmitAppCall(scriptHash, false)
-//		} else { // Neo.VM.Helper.cs: Line 35
-//			sb.EmitPushBool(false)
-//			sb.EmitPushString(operation)
-//			sb.EmitAppCall(scriptHash, false)
-//		}
-//	}
-//}
-
 func (sb *ScriptBuilder) Emit(op OpCode, arg ...byte) error {
 	err := sb.buff.WriteByte(byte(op))
 	if err != nil {

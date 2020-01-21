@@ -2,6 +2,7 @@ package helper
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -103,3 +104,29 @@ func Abs(x int64) int64 {
 		return -x
 	}
 }
+
+// GenerateRandomBytes returns securely generated random bytes.
+// It will return an error if the system's secure random
+// number generator fails to function correctly, in which
+// case the caller should not continue.
+func GenerateRandomBytes(size int) ([]byte, error) {
+	b := make([]byte, size)
+	_, err := rand.Read(b)
+	// Note that err == nil only if we read len(b) bytes.
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func GetVarSize(value int) int {
+	if value < 0xFD {
+		return 1 // sizeof(byte)
+	} else if value < 0xFFFF {
+		return 1 + 2 // sizeof(byte) + sizeof(ushort)
+	} else {
+		return 1 + 4 // sizeof(byte) + sizeof(uint)
+	}
+}
+
+

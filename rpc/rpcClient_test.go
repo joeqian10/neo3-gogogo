@@ -849,7 +849,7 @@ func TestRpcClient_GetNep5Transfers(t *testing.T) {
 		}`))),
 	}, nil)
 
-	response := rpc.GetNep5Transfers("")
+	response := rpc.GetNep5Transfers("", nil, nil)
 	r := response.Result
 	assert.Equal(t, "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", r.Address)
 	assert.Equal(t, 1578471997998, r.Sent[0].Timestamp)

@@ -31,6 +31,6 @@ type IRpcClient interface {
 	ValidateAddress(address string) ValidateAddressResponse
 	// plugins
 	GetApplicationLog(hash string) GetApplicationLogResponse
-	GetNep5Transfers(address string, startTimestamp int, endTimestamp int) GetNep5TransfersResponse
 	GetNep5Balances(address string) GetNep5BalancesResponse
+	GetNep5Transfers(address string, startTimestamp *int, endTimestamp *int) GetNep5TransfersResponse
 }

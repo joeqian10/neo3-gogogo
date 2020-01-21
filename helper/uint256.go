@@ -7,16 +7,16 @@ import (
 	"strings"
 )
 
-const uint256Size = 32
+const UINT256SIZE = 32
 
 // UInt256 is a 32 byte long unsigned integer.
-type UInt256 [uint256Size]uint8
+type UInt256 [UINT256SIZE]uint8
 
 // UInt256FromString attempts to decode the given string (in BE representation) into an UInt256.
 func UInt256FromString(s string) (u UInt256, err error) {
 	s = strings.TrimPrefix(s, "0x")
-	if len(s) != uint256Size*2 {
-		return u, fmt.Errorf("expected string size of %d got %d", uint256Size*2, len(s))
+	if len(s) != UINT256SIZE*2 {
+		return u, fmt.Errorf("expected string size of %d got %d", UINT256SIZE*2, len(s))
 	}
 	b, err := hex.DecodeString(s)
 	if err != nil {
@@ -27,8 +27,8 @@ func UInt256FromString(s string) (u UInt256, err error) {
 
 // UInt256FromBytes attempts to decode the given bytes (in LE representation) into an UInt256.
 func UInt256FromBytes(b []byte) (u UInt256, err error) {
-	if len(b) != uint256Size {
-		return u, fmt.Errorf("expected []byte of size %d got %d", uint256Size, len(b))
+	if len(b) != UINT256SIZE {
+		return u, fmt.Errorf("expected []byte of size %d got %d", UINT256SIZE, len(b))
 	}
 	copy(u[:], b)
 	return u, nil
@@ -65,6 +65,16 @@ func (u UInt256) MarshalJSON() ([]byte, error) {
 	return []byte(`"0x` + u.String() + `"`), nil
 }
 
+func (u UInt256) Less(other UInt256) bool {
+	for k := len(u.Bytes()) - 1; k >= 0; k-- {
+		if u[k] == other[k] {
+			continue
+		}
+		return u[k] < other[k]
+	}
+	return false
+}
+
 // CompareTo compares two UInt256 with each other. Possible output: 1, -1, 0
 //  1 implies u > other.
 // -1 implies u < other.
@@ -78,4 +88,24 @@ func (u UInt256) CompareTo(other UInt256) int {
 		}
 	}
 	return 0
+}
+
+type UInt256Slice []UInt256
+
+func (us UInt256Slice) Len() int {
+	return len(us)
+}
+
+func (us UInt256Slice) Less(i int, j int) bool {
+	return us[i].Less(us[j])
+}
+
+func (us UInt256Slice) Swap(i, j int) {
+	t := us[i]
+	us[i] = us[j]
+	us[j] = t
+}
+
+func (us UInt256Slice) GetVarSize() int {
+	return GetVarSize(len(us)) + len(us)*UINT256SIZE
 }

@@ -234,9 +234,18 @@ func (n *RpcClient) GetNep5Balances(address string) GetNep5BalancesResponse {
 }
 
 // this endpoint needs RpcNep5Tracker plugin
-func (n *RpcClient) GetNep5Transfers(address string) GetNep5TransfersResponse {
+func (n *RpcClient) GetNep5Transfers(address string, startTime *int, endTime *int) GetNep5TransfersResponse {
 	response := GetNep5TransfersResponse{}
-	params := []interface{}{address}
+	var params []interface{}
+	if startTime != nil {
+		if endTime != nil {
+			params = []interface{}{address, *startTime, *endTime}
+		} else {
+			params = []interface{}{address, *startTime}
+		}
+	} else {
+		params = []interface{}{address}
+	}
 	_ = n.makeRequest("getnep5balances", params, &response)
 	return response
 }
