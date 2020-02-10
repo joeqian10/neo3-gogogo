@@ -122,7 +122,7 @@ func GenerateRandomBytes(size int) ([]byte, error) {
 func GetVarSize(value int) int {
 	if value < 0xFD {
 		return 1 // sizeof(byte)
-	} else if value < 0xFFFF {
+	} else if value <= 0xFFFF {
 		return 1 + 2 // sizeof(byte) + sizeof(ushort)
 	} else {
 		return 1 + 4 // sizeof(byte) + sizeof(uint)

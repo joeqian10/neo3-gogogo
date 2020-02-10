@@ -68,25 +68,49 @@ func TestAbs(t *testing.T) {
 	assert.Equal(t, int64(2020), abs)
 }
 
+func TestUInt16ToBytes(t *testing.T) {
+	var u uint16 = 0xbeef
+	b := UInt16ToBytes(u)
+	assert.Equal(t, []byte{0xef, 0xbe}, b)
+}
+
 func TestUInt32ToBytes(t *testing.T) {
 	var u uint32 = 0xdeadbeef
 	b := UInt32ToBytes(u)
 	assert.Equal(t, []byte{0xef, 0xbe, 0xad, 0xde}, b)
 }
 
-// todo
-func TestByteSlice_GetVarSize(t *testing.T) {
-
+func TestUInt64ToBytes(t *testing.T) {
+	var u uint64 = 0xfeedabeedeadbeef
+	b := UInt64ToBytes(u)
+	assert.Equal(t, []byte{0xef, 0xbe, 0xad, 0xde, 0xee, 0xab, 0xed, 0xfe}, b)
 }
 
-func TestByteSlice_IsMultiSigContract(t *testing.T) {
-
+func TestIntToBytes(t *testing.T) {
+	var u int = 0xdeadbeef
+	b := IntToBytes(u)
+	assert.Equal(t, []byte{0xef, 0xbe, 0xad, 0xde}, b)
 }
 
-func TestByteSlice_IsSignatureContract(t *testing.T) {
+func TestInt64ToBytes(t *testing.T) {
+	var u int64 = 0x0000feedabeebeef
+	b := Int64ToBytes(u)
+	assert.Equal(t, []byte{0xef, 0xbe, 0xee, 0xab, 0xed, 0xfe, 0x00, 0x00}, b)
+}
 
+func TestGenerateRandomBytes(t *testing.T) {
+	l := 8
+	b, err := GenerateRandomBytes(l)
+	assert.Nil(t, err)
+	assert.Equal(t, l, len(b))
 }
 
 func TestGetVarSize(t *testing.T) {
-
+	var r int
+	r = GetVarSize(0xF9)
+	assert.Equal(t, 1, r)
+	r = GetVarSize(0xFFFF)
+	assert.Equal(t, 3, r)
+	r = GetVarSize(0xFFFFFF)
+	assert.Equal(t, 5, r)
 }
