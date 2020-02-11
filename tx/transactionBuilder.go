@@ -1,6 +1,7 @@
 package tx
 
 import (
+	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"github.com/joeqian10/neo3-gogogo/helper"
@@ -39,7 +40,7 @@ func (tb *TransactionBuilder) MakeTransaction(script []byte, sender helper.UInt1
 	if err != nil {
 		return nil, err
 	}
-	nonce := uint(binary.LittleEndian.Uint32(rb))
+	nonce := binary.LittleEndian.Uint32(rb)
 	tx := new(Transaction)
 	// version
 	tx.SetVersion(0)
@@ -112,12 +113,12 @@ func (tb *TransactionBuilder) MakeTransaction(script []byte, sender helper.UInt1
 }
 
 // GetBlockHeight gets the current blockchain height via rpc
-func (tb *TransactionBuilder) GetBlockHeight() (uint, error) {
+func (tb *TransactionBuilder) GetBlockHeight() (uint32, error) {
 	response := tb.Client.GetBlockCount()
 	if response.HasError() {
 		return 0, fmt.Errorf(response.Error.Message)
 	}
-	count := uint(response.Result)
+	count := uint32(response.Result)
 	return count - 1, nil // height = index = count - 1, genesis block is index 0
 }
 
@@ -180,6 +181,7 @@ func (tb *TransactionBuilder) GetWitnessScript(hash helper.UInt160) ([]byte, err
 	if response.HasError() {
 		return nil, fmt.Errorf(response.Error.Message)
 	}
-	script := helper.HexTobytes(response.Result.Script)
+	script, err := base64.StdEncoding.DecodeString(response.Result.Script)
+	if err != nil {return nil, err}
 	return script, nil
 }

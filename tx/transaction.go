@@ -10,21 +10,21 @@ import (
 )
 
 const (
-	TransactionVersion          uint8 = 0 // neo-2.x
-	MaxTransactionSize                = 102400
-	MaxValidUntilBlockIncrement       = 2102400
-	MaxTransactionAttributes          = 16 // Maximum number of attributes that can be contained within a transaction
-	MaxCosigners                      = 16 // Maximum number of cosigners that can be contained within a transaction
+	TransactionVersion          uint8  = 0 // neo-2.x
+	MaxTransactionSize                 = 102400
+	MaxValidUntilBlockIncrement uint32 = 2102400
+	MaxTransactionAttributes           = 16 // Maximum number of attributes that can be contained within a transaction
+	MaxCosigners                       = 16 // Maximum number of cosigners that can be contained within a transaction
 )
 
 // base class
 type Transaction struct {
 	version         uint8
-	nonce           uint
+	nonce           uint32
 	sender          helper.UInt160
 	sysfee          int64
 	netfee          int64
-	validUntilBlock uint
+	validUntilBlock uint32
 	attributes      []*TransactionAttribute
 	cosigners       []*Cosigner
 	script          []byte
@@ -34,15 +34,30 @@ type Transaction struct {
 	_size int
 }
 
+func NewTransaction() *Transaction {
+	return &Transaction{
+		version:         uint8(0),
+		nonce:           0,
+		sender:          helper.UInt160{},
+		sysfee:          0,
+		netfee:          0,
+		validUntilBlock: 0,
+		attributes:      []*TransactionAttribute{},
+		cosigners:       []*Cosigner{},
+		script:          []byte{},
+		witnesses:       []*Witness{},
+	}
+}
+
 func (tx *Transaction) HeaderSize() int {
 	buf := bytes.Buffer{}
-	buf.WriteByte(byte(tx.version))
-	buf.Write(helper.UInt32ToBytes(uint32(tx.nonce)))
-	buf.Write(tx.sender.Bytes())
-	buf.Write(helper.UInt64ToBytes(uint64(tx.sysfee)))
-	buf.Write(helper.UInt64ToBytes(uint64(tx.netfee)))
-	buf.Write(helper.UInt32ToBytes(uint32(tx.validUntilBlock)))
-	return len(buf.Bytes())
+	buf.WriteByte(byte(tx.version))                             // 1
+	buf.Write(helper.UInt32ToBytes(uint32(tx.nonce)))           // 4
+	buf.Write(tx.sender.Bytes())                                // 20
+	buf.Write(helper.UInt64ToBytes(uint64(tx.sysfee)))          // 8
+	buf.Write(helper.UInt64ToBytes(uint64(tx.netfee)))          // 8
+	buf.Write(helper.UInt32ToBytes(uint32(tx.validUntilBlock))) // 4
+	return len(buf.Bytes())                                     // total 45
 }
 
 // GetAttributes is the getter of tx.attributes
@@ -69,25 +84,6 @@ func (tx *Transaction) SetCosigners(value []*Cosigner) {
 	tx._size = 0
 }
 
-// GetHash is the getter of tx._hash
-func (tx *Transaction) GetHash() helper.UInt256 {
-	if tx._hash == nil {
-		hash, _ := helper.UInt256FromBytes(crypto.Hash256(tx.GetHashData()))
-		tx._hash = &hash
-	}
-	return *tx._hash
-}
-
-// TODO UT
-func (tx *Transaction) GetHashData() []byte {
-	buf := io.NewBufBinaryWriter()
-	tx.SerializeUnsigned(buf.BinaryWriter)
-	if buf.Err != nil {
-		return nil
-	}
-	return buf.Bytes()
-}
-
 // GetNetworkFee is the getter of tx.netfee
 func (tx *Transaction) GetNetworkFee() int64 {
 	return tx.netfee
@@ -100,12 +96,12 @@ func (tx *Transaction) SetNetworkFee(value int64) {
 }
 
 // GetNonce is the getter of tx.nonce
-func (tx *Transaction) GetNonce() uint {
+func (tx *Transaction) GetNonce() uint32 {
 	return tx.nonce
 }
 
 // SetNonce is the setter of tx.nonce
-func (tx *Transaction) SetNonce(value uint) {
+func (tx *Transaction) SetNonce(value uint32) {
 	tx.nonce = value
 	tx._hash = nil
 }
@@ -133,22 +129,6 @@ func (tx *Transaction) SetSender(value helper.UInt160) {
 	tx._hash = nil
 }
 
-func (tx *Transaction) GetSize() int {
-	if tx._size == 0 {
-		tx._size = len(tx.RawTransaction())
-	}
-	return tx._size
-}
-
-func (tx *Transaction) RawTransaction() []byte {
-	buf := io.NewBufBinaryWriter()
-	tx.Serialize(buf.BinaryWriter)
-	if buf.Err != nil {
-		return nil
-	}
-	return buf.Bytes()
-}
-
 // GetSystemFee is the getter of tx.sysfee
 func (tx *Transaction) GetSystemFee() int64 {
 	return tx.sysfee
@@ -161,12 +141,12 @@ func (tx *Transaction) SetSystemFee(value int64) {
 }
 
 // GetValidUntilBlock is the getter of tx.validUntilBlock
-func (tx *Transaction) GetValidUntilBlock() uint {
+func (tx *Transaction) GetValidUntilBlock() uint32 {
 	return tx.validUntilBlock
 }
 
 // SetValidUntilBlock is the setter of tx.validUntilBlock
-func (tx *Transaction) SetValidUntilBlock(value uint) {
+func (tx *Transaction) SetValidUntilBlock(value uint32) {
 	tx.validUntilBlock = value
 	tx._hash = nil
 }
@@ -191,6 +171,41 @@ func (tx *Transaction) GetWitnesses() []*Witness {
 func (tx *Transaction) SetWitnesses(value []*Witness) {
 	tx.witnesses = value
 	tx._hash = nil
+}
+
+// GetHash is the getter of tx._hash
+func (tx *Transaction) GetHash() helper.UInt256 {
+	if tx._hash == nil {
+		hash, _ := helper.UInt256FromBytes(crypto.Hash256(tx.GetHashData()))
+		tx._hash = &hash
+	}
+	return *tx._hash
+}
+
+func (tx *Transaction) GetHashData() []byte {
+	buf := io.NewBufBinaryWriter()
+	tx.SerializeUnsigned(buf.BinaryWriter)
+	if buf.Err != nil {
+		return nil
+	}
+	return buf.Bytes()
+}
+
+// GetSize is the setter of tx._size
+func (tx *Transaction) GetSize() int {
+	if tx._size == 0 {
+		tx._size = len(tx.RawTransaction())
+	}
+	return tx._size
+}
+
+func (tx *Transaction) RawTransaction() []byte {
+	buf := io.NewBufBinaryWriter()
+	tx.Serialize(buf.BinaryWriter)
+	if buf.Err != nil {
+		return nil
+	}
+	return buf.Bytes()
 }
 
 // Deserialize implements Serializable interface.
@@ -295,7 +310,7 @@ func (tx *Transaction) SerializeWitnesses(bw *io.BinaryWriter) {
 }
 
 func (tx *Transaction) GetScriptHashesForVerifying() []helper.UInt160 {
-	hashmaps := map[helper.UInt160]bool{tx.sender:true}
+	hashmaps := map[helper.UInt160]bool{tx.sender: true}
 	for _, cosigner := range tx.cosigners {
 		if !hashmaps[cosigner.Account] {
 			hashmaps[cosigner.Account] = true
@@ -308,4 +323,3 @@ func (tx *Transaction) GetScriptHashesForVerifying() []helper.UInt160 {
 	sort.Sort(helper.UInt160Slice(hashes))
 	return hashes
 }
-

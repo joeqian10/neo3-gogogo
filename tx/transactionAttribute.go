@@ -20,7 +20,7 @@ func (attr *TransactionAttribute) Size() int {
 // Deserialize implements Serializable interface.
 func (attr *TransactionAttribute) Deserialize(br *io.BinaryReader) {
 	br.ReadLE(&attr.Usage)
-	// TODO check if Usage is defined
+	if attr.Usage.IsDefined() == false {attr.Usage = Url}
 	attr.Data = br.ReadVarBytes(252)
 }
 
