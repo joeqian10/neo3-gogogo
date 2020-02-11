@@ -3,14 +3,16 @@ package rpc
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/joeqian10/neo3-gogogo/helper"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/joeqian10/neo3-gogogo/helper"
+	"github.com/joeqian10/neo3-gogogo/rpc/models"
 )
 
-// add IHttpClient for mock unit test
+// IHttpClient for mock unit test
 type IHttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
@@ -251,6 +253,41 @@ func (n *RpcClient) GetNep5Transfers(address string, startTime *int, endTime *in
 }
 
 // Wallet
+func (n *RpcClient) CloseWallet() CloseWalletResponse {
+	response := CloseWalletResponse{}
+	params := []interface{}{}
+	_ = n.makeRequest("closewallet", params, &response)
+	return response
+}
+
+func (n *RpcClient) DumpPrivKey(address string) DumpPrivKeyResponse {
+	response := DumpPrivKeyResponse{}
+	params := []interface{}{address}
+	_ = n.makeRequest("dumpprivkey", params, &response)
+	return response
+}
+
+func (n *RpcClient) GetBalance(assetId string) GetBalanceResponse {
+	response := GetBalanceResponse{}
+	params := []interface{}{assetId}
+	_ = n.makeRequest("getbalance", params, &response)
+	return response
+}
+
+func (n *RpcClient) GetNewAddress() GetNewAddressResponse {
+	response := GetNewAddressResponse{}
+	params := []interface{}{}
+	_ = n.makeRequest("getnewaddress", params, &response)
+	return response
+}
+
+func (n *RpcClient) GetUnclaimedGas() GetUnclaimedGasResponse {
+	response := GetUnclaimedGasResponse{}
+	params := []interface{}{}
+	_ = n.makeRequest("getunclaimedgas", params, &response)
+	return response
+}
+
 func (n *RpcClient) ImportPrivKey(wif string) ImportPrivKeyResponse {
 	response := ImportPrivKeyResponse{}
 	params := []interface{}{wif}
@@ -265,16 +302,30 @@ func (n *RpcClient) ListAddress() ListAddressResponse {
 	return response
 }
 
-func (n *RpcClient) SendFrom(assetId string, from string, to string, amount uint32, fee float32, changeAddress string) SendFromResponse {
+func (n *RpcClient) OpenWallet(path string, password string) OpenWalletResponse {
+	response := OpenWalletResponse{}
+	params := []interface{}{path, password}
+	_ = n.makeRequest("openwallet", params, &response)
+	return response
+}
+
+func (n *RpcClient) SendFrom(assetId string, from string, to string, amount string) SendFromResponse {
 	response := SendFromResponse{}
-	params := []interface{}{assetId, from, to, amount, fee, changeAddress}
+	params := []interface{}{assetId, from, to, amount}
 	_ = n.makeRequest("sendfrom", params, &response)
 	return response
 }
 
-func (n *RpcClient) SendToAddress(assetId string, to string, amount uint32, fee float32, changeAddress string) SendToAddressResponse {
+func (n *RpcClient) SendMany(fromAddress string, outputs []models.RpcTransferOut) SendManyResponse {
+	response := SendManyResponse{}
+	params := []interface{}{fromAddress, outputs}
+	_ = n.makeRequest("sendfrom", params, &response)
+	return response
+}
+
+func (n *RpcClient) SendToAddress(assetId string, to string, amount string) SendToAddressResponse {
 	response := SendToAddressResponse{}
-	params := []interface{}{assetId, to, amount, fee, changeAddress}
+	params := []interface{}{assetId, to, amount}
 	_ = n.makeRequest("sendtoaddress", params, &response)
 	return response
 }

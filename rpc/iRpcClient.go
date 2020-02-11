@@ -1,6 +1,8 @@
 package rpc
 
-import "github.com/joeqian10/neo3-gogogo/helper"
+import (
+	"github.com/joeqian10/neo3-gogogo/helper"
+)
 
 // add IRpcClient for mock UT
 type IRpcClient interface {
@@ -33,4 +35,6 @@ type IRpcClient interface {
 	GetApplicationLog(hash string) GetApplicationLogResponse
 	GetNep5Balances(address string) GetNep5BalancesResponse
 	GetNep5Transfers(address string, startTimestamp *int, endTimestamp *int) GetNep5TransfersResponse
+	// wallet methods are not needed to mock
+
 }

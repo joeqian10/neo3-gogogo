@@ -85,18 +85,11 @@ func (r *RpcClientMock) GetVersion() GetVersionResponse {
 	return args.Get(0).(GetVersionResponse)
 }
 
-func (r *RpcClientMock) SendFrom(assetId string, from string, to string, amount uint32, fee float32, changeAddress string) SendFromResponse {
-	args := r.Called(assetId, from, to, amount, fee, changeAddress)
-	return args.Get(0).(SendFromResponse)
-}
 func (r *RpcClientMock) SendRawTransaction(s string) SendRawTransactionResponse {
 	args := r.Called(s)
 	return args.Get(0).(SendRawTransactionResponse)
 }
-func (r *RpcClientMock) SendToAddress(assetId string, to string, amount uint32, fee float32, changeAddress string) SendToAddressResponse {
-	args := r.Called(assetId, to, amount, fee, changeAddress)
-	return args.Get(0).(SendToAddressResponse)
-}
+
 func (r *RpcClientMock) SubmitBlock(s string) SubmitBlockResponse {
 	args := r.Called(s)
 	return args.Get(0).(SubmitBlockResponse)
@@ -145,9 +138,4 @@ func (r *RpcClientMock) GetNep5Transfers(s string, t1 *int, t2 *int) GetNep5Tran
 	return args.Get(0).(GetNep5TransfersResponse)
 }
 
-// wallet
-
-func (r *RpcClientMock) ImportPrivKey(s string) ImportPrivKeyResponse {
-	args := r.Called(s)
-	return args.Get(0).(ImportPrivKeyResponse)
-}
+// wallet methods are not needed to mock

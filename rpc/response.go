@@ -171,6 +171,38 @@ type GetNep5TransfersResponse struct {
 }
 
 // wallet
+type CloseWalletResponse struct {
+	RpcResponse
+	ErrorResponse
+	Result bool `json:"result"`
+}
+
+type DumpPrivKeyResponse struct {
+	RpcResponse
+	ErrorResponse
+	Result string `json:"result"`
+}
+
+type GetBalanceResponse struct {
+	RpcResponse
+	ErrorResponse
+	Result struct {
+		Balance string `json:"balance"`
+	} `json:"result"`
+}
+
+type GetNewAddressResponse struct {
+	RpcResponse
+	ErrorResponse
+	Result string `json:"result"`
+}
+
+type GetUnclaimedGasResponse struct {
+	RpcResponse
+	ErrorResponse
+	Result string `json:"result"`
+}
+
 type ImportPrivKeyResponse struct {
 	RpcResponse
 	ErrorResponse
@@ -183,7 +215,19 @@ type ListAddressResponse struct {
 	Result []models.RpcAddress `json:"result"`
 }
 
+type OpenWalletResponse struct {
+	RpcResponse
+	ErrorResponse
+	Result bool `json:"result"`
+}
+
 type SendFromResponse struct {
+	RpcResponse
+	ErrorResponse
+	Result models.RpcTransaction `json:"result"`
+}
+
+type SendManyResponse struct {
 	RpcResponse
 	ErrorResponse
 	Result models.RpcTransaction `json:"result"`
