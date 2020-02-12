@@ -33,6 +33,28 @@ func (sb *ScriptBuilder) Emit(op OpCode, arg ...byte) error {
 	return err
 }
 
+func (sb *ScriptBuilder) EmitAppCall(scriptHash helper.UInt160, operation string, args []ContractParameter) error {
+	var err error
+	if args == nil {
+		err = sb.EmitPushInt(0)
+		err = sb.Emit(NEWARRAY)
+		err = sb.EmitPushString(operation)
+		err = sb.EmitPushBytes(scriptHash.Bytes())
+		err = sb.EmitSysCall(Call.ToInteropMethodHash())
+	} else {
+		for i := len(args)-1; i >= 0; i-- {
+			err = sb.EmitPushParameter(args[i])
+		}
+		err = sb.EmitPushInt(len(args))
+		err = sb.Emit(PACK)
+		err = sb.EmitPushString(operation)
+		err = sb.EmitPushBytes(scriptHash.Bytes())
+		err = sb.EmitSysCall(Call.ToInteropMethodHash())
+	}
+	if err != nil {return err}
+	return nil
+}
+
 func (sb *ScriptBuilder) EmitCall(offset int) error {
 	if offset < -128 || offset > 127 {
 		return sb.Emit(CALL_L, helper.IntToBytes(offset)...)

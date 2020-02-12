@@ -16,6 +16,21 @@ func TestScriptBuilder_Emit(t *testing.T) {
 	assert.Equal(t, "41269b3a746cc75fcedc8cab923e2da5f9025ddf14", helper.BytesToHex(b))
 }
 
+func TestScriptBuilder_EmitAppCall(t *testing.T) {
+	scriptHash, _ := helper.UInt160FromString("14df5d02f9a52d3e92ab8cdcce5fc76c743a9b26")
+	operation := "name"
+	sb := NewScriptBuilder()
+	sb.EmitAppCall(scriptHash, operation, nil)
+	script := sb.ToArray()
+	assert.Equal(t, "10"+
+		"c3" +
+		"0c04"+
+		"6e616d65" +
+		"0c14" +
+		"269b3a746cc75fcedc8cab923e2da5f9025ddf14" +
+		"41627d5b52", helper.BytesToHex(script))
+}
+
 func TestScriptBuilder_EmitSysCall(t *testing.T) {
 	sb := NewScriptBuilder()
 	sb.EmitSysCall(0xE393C875)

@@ -19,6 +19,10 @@ type Witness struct {
 	_scriptHash         helper.UInt160 // script hash
 }
 
+func (w *Witness) Size() int {
+	return sc.ByteSlice(w.InvocationScript).GetVarSize() + sc.ByteSlice(w.VerificationScript).GetVarSize()
+}
+
 func (w *Witness) GetScriptHash() helper.UInt160 {
 	w._scriptHash, _ = helper.UInt160FromBytes(crypto.Hash160(w.VerificationScript))
 	return w._scriptHash

@@ -9,6 +9,13 @@ import (
 type InteropService string
 
 var (
+	// Contract
+	Create InteropService = "System.Contract.Create"
+	Update InteropService = "System.Contract.Update"
+	Destroy InteropService = "System.Contract.Destroy"
+	Call InteropService = "System.Contract.Call"
+	CallEx InteropService = "System.Contract.CallEx"
+	IsStandard InteropService = "System.Contract.IsStandard"
 	// Crypto
 	ECDsaVerify        InteropService = "Neo.Crypto.ECDsaVerify"
 	ECDsaCheckMultiSig InteropService = "Neo.Crypto.ECDsaCheckMultiSig"

@@ -167,4 +167,102 @@ func TestTransactionBuilder_GetWitnessScript(t *testing.T) {
 
 func TestTransactionBuilder_MakeTransaction(t *testing.T) {
 	//todo
+	var clientMock = new(rpc.RpcClientMock)
+	var tb = TransactionBuilder{
+		EndPoint: "",
+		Client:   clientMock,
+	}
+	// GetBlockHeight
+	clientMock.On("GetBlockCount", mock.Anything).Return(rpc.GetBlockCountResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: 1234,
+	})
+	// GetGasConsumed
+	clientMock.On("InvokeScript", mock.Anything).Return(rpc.InvokeResultResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: models.InvokeResult{
+			Script:      "00c1046e616d656763d26113bac4208254d98a3eebaee66230ead7b9",
+			State:       "HALT",
+			GasConsumed: "12600000",
+			Stack: []models.InvokeStackResult{
+				{
+					Type:  "ByteArray",
+					Value: "516c696e6b20546f6b656e",
+				},
+			},
+		},
+	})
+	// GetWitnessScript
+	clientMock.On("GetContractState", mock.Anything).Return(rpc.GetContractStateResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: models.ContractState{
+			Hash: "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
+			Script: "QUXEkoQ=",
+		},
+	})
+	// GetBalance
+	clientMock.On("GetNep5Balances", mock.Anything).Return(rpc.GetNep5BalancesResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: models.RpcNep5Balances{
+			Balances: []models.Nep5Balance{
+				{
+					AssetHash:        "9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
+					Amount:           10000,
+					LastUpdatedBlock: 123456,
+				},
+				{
+					AssetHash:        "8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", // gas
+					Amount:           800000000,
+					LastUpdatedBlock: 135790,
+				},
+			},
+			Address: "AGofsxAUDwt52KjaB664GYsqVAkULYvKNt",
+		},
+	})
+
+	sender, _ := helper.AddressToScriptHash("APPmjituYcgfNxjuQDy9vP73R2PmhFsYJR")
+	scriptHash, _ := helper.UInt160FromString("14df5d02f9a52d3e92ab8cdcce5fc76c743a9b26")
+	operation := "name"
+	sb := sc.NewScriptBuilder()
+	_ = sb.EmitAppCall(scriptHash, operation, nil)
+	script := sb.ToArray()
+	tx, err := tb.MakeTransaction(script, sender, nil,nil)
+	assert.Nil(t, err)
+	assert.Equal(t, sender.String(), tx.GetSender().String())
 }

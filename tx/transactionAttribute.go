@@ -3,6 +3,7 @@ package tx
 import (
 	"encoding/hex"
 	"encoding/json"
+	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/helper/io"
 	"github.com/joeqian10/neo3-gogogo/sc"
 )
@@ -45,5 +46,5 @@ func (ts TransactionAttributeSlice) GetVarSize() int {
 	for _, t := range ts {
 		size += t.Size()
 	}
-	return size
+	return helper.GetVarSize(len(ts)) + size
 }
