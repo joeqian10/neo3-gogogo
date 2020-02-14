@@ -19,6 +19,7 @@ type IHttpClient interface {
 
 type RpcClient struct {
 	Endpoint   *url.URL
+	_url       string
 	httpClient IHttpClient
 }
 
@@ -30,7 +31,11 @@ func NewClient(endpoint string) *RpcClient {
 	var netClient = &http.Client{
 		Timeout: time.Second * 60,
 	}
-	return &RpcClient{Endpoint: u, httpClient: netClient}
+	return &RpcClient{Endpoint: u, httpClient: netClient, _url: endpoint}
+}
+
+func (n *RpcClient) GetUrl() string {
+	return n._url
 }
 
 func (n *RpcClient) makeRequest(method string, params []interface{}, out interface{}) error {
@@ -198,7 +203,12 @@ func (n *RpcClient) InvokeFunction(scriptHash string, method string, args ...Inv
 
 func (n *RpcClient) InvokeScript(scriptInHex string, scriptHashesForVerifying ...helper.UInt160) InvokeResultResponse {
 	response := InvokeResultResponse{}
-	params := []interface{}{scriptInHex, scriptHashesForVerifying}
+	params := []interface{}{scriptInHex}
+	if scriptHashesForVerifying != nil {
+		for i := 0; i < len(scriptHashesForVerifying); i++ {
+			params = append(params, scriptHashesForVerifying[i].String())
+		}
+	}
 	_ = n.makeRequest("invokescript", params, &response)
 	return response
 }

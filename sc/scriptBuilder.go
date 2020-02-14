@@ -42,7 +42,7 @@ func (sb *ScriptBuilder) EmitAppCall(scriptHash helper.UInt160, operation string
 		err = sb.EmitPushBytes(scriptHash.Bytes())
 		err = sb.EmitSysCall(Call.ToInteropMethodHash())
 	} else {
-		for i := len(args)-1; i >= 0; i-- {
+		for i := len(args) - 1; i >= 0; i-- {
 			err = sb.EmitPushParameter(args[i])
 		}
 		err = sb.EmitPushInt(len(args))
@@ -51,7 +51,9 @@ func (sb *ScriptBuilder) EmitAppCall(scriptHash helper.UInt160, operation string
 		err = sb.EmitPushBytes(scriptHash.Bytes())
 		err = sb.EmitSysCall(Call.ToInteropMethodHash())
 	}
-	if err != nil {return err}
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -186,8 +188,8 @@ func (sb *ScriptBuilder) EmitPushParameter(data ContractParameter) error {
 	case Boolean:
 		err = sb.EmitPushBool(data.Value.(bool))
 	case Integer:
-		num := data.Value.(int64)
-		err = sb.EmitPushBigInt(*big.NewInt(num))
+		num := data.Value.(big.Int)
+		err = sb.EmitPushBigInt(num)
 	case Hash160:
 		u, e := helper.UInt160FromBytes(data.Value.([]byte))
 		if e != nil {

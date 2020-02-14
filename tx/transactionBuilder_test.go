@@ -1,13 +1,15 @@
 package tx
 
 import (
+	"math/big"
+	"testing"
+
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"github.com/joeqian10/neo3-gogogo/sc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 func TestNewTransactionBuilder(t *testing.T) {
@@ -15,14 +17,12 @@ func TestNewTransactionBuilder(t *testing.T) {
 	if tb == nil {
 		t.Fail()
 	}
-	assert.Equal(t, "http://seed1.ngd.network:20332", tb.EndPoint)
 }
 
 func TestTransactionBuilder_GetBlockHeight(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
 	var tb = TransactionBuilder{
-		EndPoint: "",
-		Client:   clientMock,
+		Client: clientMock,
 	}
 	clientMock.On("GetBlockCount", mock.Anything).Return(rpc.GetBlockCountResponse{
 		RpcResponse: rpc.RpcResponse{
@@ -46,8 +46,7 @@ func TestTransactionBuilder_GetBlockHeight(t *testing.T) {
 func TestTransactionBuilder_CalculateNetWorkFee(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
 	var tb = TransactionBuilder{
-		EndPoint: "",
-		Client:   clientMock,
+		Client: clientMock,
 	}
 
 	sb := sc.NewScriptBuilder()
@@ -65,10 +64,9 @@ func TestTransactionBuilder_CalculateNetWorkFee(t *testing.T) {
 func TestTransactionBuilder_GetBalance(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
 	var tb = TransactionBuilder{
-		EndPoint: "",
-		Client:   clientMock,
+		Client: clientMock,
 	}
-	clientMock.On("GetNep5Balances", mock.Anything).Return(rpc.GetNep5BalancesResponse{
+	clientMock.On("InvokeScript", mock.Anything).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -79,33 +77,26 @@ func TestTransactionBuilder_GetBalance(t *testing.T) {
 				Message: "",
 			},
 		},
-		Result: models.RpcNep5Balances{
-			Balances: []models.Nep5Balance{
-				{
-					AssetHash:        "9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
-					Amount:           10000,
-					LastUpdatedBlock: 123456,
-				},
-				{
-					AssetHash:        "8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
-					Amount:           8000,
-					LastUpdatedBlock: 135790,
-				},
-			},
-			Address: "AGofsxAUDwt52KjaB664GYsqVAkULYvKNt",
+		Result: models.InvokeResult{
+			Script:      "0c146925aa554712439a9c613ba114efa3fac23ddbca11c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+			State:       "HALT",
+			GasConsumed: "2007570",
+			Stack: []models.InvokeStackResult{{
+				Type:  "Integer",
+				Value: "8913620128",
+			}},
 		},
 	})
 
-	a, e := tb.GetBalance(helper.UInt160{}, GasToken)
+	a, e := tb.GetBalance(GasToken, helper.UInt160{})
 	assert.Nil(t, e)
-	assert.Equal(t, int64(8000), a)
+	assert.Equal(t, big.NewInt(8913620128), a)
 }
 
 func TestTransactionBuilder_GetGasConsumed(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
 	var tb = TransactionBuilder{
-		EndPoint: "",
-		Client:   clientMock,
+		Client: clientMock,
 	}
 	clientMock.On("InvokeScript", mock.Anything).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
@@ -139,8 +130,7 @@ func TestTransactionBuilder_GetGasConsumed(t *testing.T) {
 func TestTransactionBuilder_GetWitnessScript(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
 	var tb = TransactionBuilder{
-		EndPoint: "",
-		Client:   clientMock,
+		Client: clientMock,
 	}
 	clientMock.On("GetContractState", mock.Anything).Return(rpc.GetContractStateResponse{
 		RpcResponse: rpc.RpcResponse{
@@ -154,7 +144,7 @@ func TestTransactionBuilder_GetWitnessScript(t *testing.T) {
 			},
 		},
 		Result: models.ContractState{
-			Hash: "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
+			Hash:   "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
 			Script: "QUXEkoQ=",
 		},
 	})
@@ -169,8 +159,7 @@ func TestTransactionBuilder_MakeTransaction(t *testing.T) {
 	//todo
 	var clientMock = new(rpc.RpcClientMock)
 	var tb = TransactionBuilder{
-		EndPoint: "",
-		Client:   clientMock,
+		Client: clientMock,
 	}
 	// GetBlockHeight
 	clientMock.On("GetBlockCount", mock.Anything).Return(rpc.GetBlockCountResponse{
@@ -204,8 +193,8 @@ func TestTransactionBuilder_MakeTransaction(t *testing.T) {
 			GasConsumed: "12600000",
 			Stack: []models.InvokeStackResult{
 				{
-					Type:  "ByteArray",
-					Value: "516c696e6b20546f6b656e",
+					Type:  "Integer",
+					Value: "1000000000",
 				},
 			},
 		},
@@ -223,46 +212,17 @@ func TestTransactionBuilder_MakeTransaction(t *testing.T) {
 			},
 		},
 		Result: models.ContractState{
-			Hash: "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
+			Hash:   "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
 			Script: "QUXEkoQ=",
 		},
 	})
-	// GetBalance
-	clientMock.On("GetNep5Balances", mock.Anything).Return(rpc.GetNep5BalancesResponse{
-		RpcResponse: rpc.RpcResponse{
-			JsonRpc: "2.0",
-			ID:      1,
-		},
-		ErrorResponse: rpc.ErrorResponse{
-			Error: rpc.RpcError{
-				Code:    0,
-				Message: "",
-			},
-		},
-		Result: models.RpcNep5Balances{
-			Balances: []models.Nep5Balance{
-				{
-					AssetHash:        "9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
-					Amount:           10000,
-					LastUpdatedBlock: 123456,
-				},
-				{
-					AssetHash:        "8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", // gas
-					Amount:           800000000,
-					LastUpdatedBlock: 135790,
-				},
-			},
-			Address: "AGofsxAUDwt52KjaB664GYsqVAkULYvKNt",
-		},
-	})
 
-	sender, _ := helper.AddressToScriptHash("APPmjituYcgfNxjuQDy9vP73R2PmhFsYJR")
-	scriptHash, _ := helper.UInt160FromString("14df5d02f9a52d3e92ab8cdcce5fc76c743a9b26")
+	sender, _ := helper.AddressToScriptHash("NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ")
 	operation := "name"
 	sb := sc.NewScriptBuilder()
-	_ = sb.EmitAppCall(scriptHash, operation, nil)
+	_ = sb.EmitAppCall(NeoToken, operation, nil)
 	script := sb.ToArray()
-	tx, err := tb.MakeTransaction(script, sender, nil,nil)
+	tx, err := tb.MakeTransaction(script, sender, nil, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, sender.String(), tx.GetSender().String())
 }

@@ -3,10 +3,12 @@ package tx
 import (
 	"bytes"
 	"fmt"
+	"sort"
+
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/helper/io"
-	"sort"
+	"github.com/joeqian10/neo3-gogogo/wallet/keys"
 )
 
 const (
@@ -322,4 +324,57 @@ func (tx *Transaction) GetScriptHashesForVerifying() []helper.UInt160 {
 	}
 	sort.Sort(helper.UInt160Slice(hashes))
 	return hashes
+}
+
+// AddSignature adds signature for Transaction
+func (tx *Transaction) AddSignature(key *keys.KeyPair) error {
+	scriptHash := key.PublicKey.ScriptHash()
+	for _, witness := range tx.GetWitnesses() {
+		// the transaction has been signed with this KeyPair
+		if witness.GetScriptHash() == scriptHash {
+			return nil
+		}
+	}
+
+	// create witness
+	witness, err := CreateSignatureWitness(tx.GetHashData(), key)
+	if err != nil {
+		return err
+	}
+	tx.witnesses = append(tx.witnesses, witness)
+	sort.Slice(tx.witnesses, func(i, j int) bool {
+		return tx.witnesses[i].GetScriptHash().Less(tx.witnesses[j].GetScriptHash())
+	})
+	return nil
+}
+
+// AddMultiSignature adds multi-signature for Transaction
+func (tx *Transaction) AddMultiSignature(pairs []*keys.KeyPair, m int, publicKeys []*keys.PublicKey) error {
+	script, err := keys.CreateMultiSigRedeemScript(m, publicKeys...)
+	if err != nil {
+		return err
+	}
+
+	scriptHash, err := helper.UInt160FromBytes(crypto.Hash160(script))
+	if err != nil {
+		return err
+	}
+
+	for _, witness := range tx.witnesses {
+		// the transaction has been signed for this account
+		if witness.GetScriptHash() == scriptHash {
+			return nil
+		}
+	}
+
+	// create witness
+	witness, err := CreateMultiSignatureWitness(tx.GetHashData(), pairs, m, publicKeys)
+	if err != nil {
+		return err
+	}
+	tx.witnesses = append(tx.witnesses, witness)
+	sort.Slice(tx.witnesses, func(i, j int) bool {
+		return tx.witnesses[i].GetScriptHash().Less(tx.witnesses[j].GetScriptHash())
+	})
+	return nil
 }

@@ -9,6 +9,11 @@ type RpcClientMock struct {
 	mock.Mock
 }
 
+func (r *RpcClientMock) GetUrl() string {
+	args := r.Called()
+	return args.Get(0).(string)
+}
+
 // block chain
 func (r *RpcClientMock) GetBestBlockHash() GetBestBlockHashResponse {
 	args := r.Called()

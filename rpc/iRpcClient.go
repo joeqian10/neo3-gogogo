@@ -6,6 +6,7 @@ import (
 
 // add IRpcClient for mock UT
 type IRpcClient interface {
+	GetUrl() string
 	// block chain
 	GetBestBlockHash() GetBestBlockHashResponse
 	GetBlock(hashOrIndex string) GetBlockResponse

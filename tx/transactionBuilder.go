@@ -4,11 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"math"
+	"math/big"
+	"strconv"
+
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc"
 	"github.com/joeqian10/neo3-gogogo/sc"
-	"math"
-	"strconv"
 )
 
 const NeoTokenId = "9bde8f209c88dd0e7ca3bf0af0f476cdd8207789"
@@ -20,8 +22,7 @@ var NeoToken, _ = helper.UInt160FromString(NeoTokenId)
 var GasToken, _ = helper.UInt160FromString(GasTokenId)
 
 type TransactionBuilder struct {
-	EndPoint string
-	Client   rpc.IRpcClient
+	Client rpc.IRpcClient
 }
 
 func NewTransactionBuilder(endPoint string) *TransactionBuilder {
@@ -30,8 +31,16 @@ func NewTransactionBuilder(endPoint string) *TransactionBuilder {
 		return nil
 	}
 	return &TransactionBuilder{
-		EndPoint: endPoint,
-		Client:   client,
+		Client: client,
+	}
+}
+
+func NewTransactionBuilderFromClient(client rpc.IRpcClient) *TransactionBuilder {
+	if client == nil {
+		return nil
+	}
+	return &TransactionBuilder{
+		Client: client,
 	}
 }
 
@@ -104,9 +113,9 @@ func (tb *TransactionBuilder) MakeTransaction(script []byte, sender helper.UInt1
 	}
 	networkFee += int64(size) * 1000 // FeePerByte
 	tx.SetNetworkFee(networkFee)
-	// get balance of sender
-	value, err := tb.GetBalance(sender, GasToken)
-	if value >= tx.GetNetworkFee()+tx.GetSystemFee() {
+	// get gas balance of sender
+	value, err := tb.GetBalance(GasToken, sender)
+	if value.Int64() >= tx.GetNetworkFee()+tx.GetSystemFee() {
 		return tx, nil // return unsigned contract transaction
 	}
 	return nil, fmt.Errorf("insufficient GAS")
@@ -147,19 +156,27 @@ func (tb *TransactionBuilder) CalculateNetWorkFee(witness_script []byte, size *i
 }
 
 // GetBalance is used to get balance of an asset of an account
-func (tb *TransactionBuilder) GetBalance(account helper.UInt160, assetId helper.UInt160) (int64, error) {
-	response := tb.Client.GetNep5Balances(helper.ScriptHashToAddress(account))
-	if response.HasError() {
-		return 0, fmt.Errorf(response.Error.Message)
+func (tb *TransactionBuilder) GetBalance(assetHash helper.UInt160, account helper.UInt160) (*big.Int, error) {
+	sb := sc.NewScriptBuilder()
+	cp := sc.ContractParameter{
+		Type:  sc.Hash160,
+		Value: account.Bytes(),
 	}
-	balances := response.Result.Balances
-	// check if there is enough balance of this asset in this account
-	for _, balance := range balances {
-		if balance.AssetHash == assetId.String() {
-			return balance.Amount, nil
-		}
+	sb.EmitAppCall(assetHash, "balanceOf", []sc.ContractParameter{cp})
+	script := sb.ToArray()
+	response := tb.Client.InvokeScript(helper.BytesToHex(script))
+	msg := response.ErrorResponse.Error.Message
+	if len(msg) != 0 {
+		return nil, fmt.Errorf(msg)
 	}
-	return 0, fmt.Errorf("asset not found")
+	if response.Result.State == "FAULT" {
+		return nil, fmt.Errorf("engine faulted")
+	}
+	if len(response.Result.Stack) == 0 {
+		return nil, fmt.Errorf("no stack result returned")
+	}
+	stack := response.Result.Stack[0]
+	return stack.ToParameter().Value.(*big.Int), nil
 }
 
 // GetGasConsumed runs a script in ApplicationEngine in test mode and returns gas consumed
@@ -182,6 +199,8 @@ func (tb *TransactionBuilder) GetWitnessScript(hash helper.UInt160) ([]byte, err
 		return nil, fmt.Errorf(response.Error.Message)
 	}
 	script, err := base64.StdEncoding.DecodeString(response.Result.Script)
-	if err != nil {return nil, err}
+	if err != nil {
+		return nil, err
+	}
 	return script, nil
 }
