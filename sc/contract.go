@@ -2,6 +2,7 @@ package sc
 
 import (
 	"encoding/binary"
+
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 )
@@ -98,8 +99,7 @@ func (bs ByteSlice) IsMultiSigContract() (bool, int, int) {
 	case byte(PUSHINT16):
 		if len(bs) < i+3 {
 			return false, 0, 0
-		} else
-		if i++; n != int(binary.LittleEndian.Uint16(bs[i:i+2])) {
+		} else if i++; n != int(binary.LittleEndian.Uint16(bs[i:i+2])) {
 			return false, 0, 0
 		}
 		i += 2
@@ -122,8 +122,9 @@ func (bs ByteSlice) IsMultiSigContract() (bool, int, int) {
 		return false, 0, 0
 	}
 	i++
-	if len(bs) != i + 4 {
-		return false, 0, 0}
+	if len(bs) != i+4 {
+		return false, 0, 0
+	}
 	if uint(binary.LittleEndian.Uint32(bs[i:])) != ECDsaCheckMultiSig.ToInteropMethodHash() {
 		return false, 0, 0
 	}

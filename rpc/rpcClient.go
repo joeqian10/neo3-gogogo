@@ -21,6 +21,8 @@ type RpcClient struct {
 	Endpoint   *url.URL
 	_url       string
 	httpClient IHttpClient
+	userName   string
+	password   string
 }
 
 func NewClient(endpoint string) *RpcClient {
@@ -34,6 +36,11 @@ func NewClient(endpoint string) *RpcClient {
 	return &RpcClient{Endpoint: u, httpClient: netClient, _url: endpoint}
 }
 
+func (n *RpcClient) SetBasicAuth(user string, pass string) {
+	n.userName = user
+	n.password = pass
+}
+
 func (n *RpcClient) GetUrl() string {
 	return n._url
 }
@@ -44,6 +51,9 @@ func (n *RpcClient) makeRequest(method string, params []interface{}, out interfa
 	req, err := http.NewRequest("POST", n.Endpoint.String(), bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return err
+	}
+	if n.userName != "" && n.password != "" {
+		req.SetBasicAuth(n.userName, n.password)
 	}
 	req.Header.Add("content-type", "application/json")
 	req.Header.Set("Connection", "close")

@@ -11,6 +11,7 @@ import (
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc"
 	"github.com/joeqian10/neo3-gogogo/sc"
+	"github.com/joeqian10/neo3-gogogo/wallet/keys"
 )
 
 const NeoTokenId = "9bde8f209c88dd0e7ca3bf0af0f476cdd8207789"
@@ -21,8 +22,16 @@ const GasFactor = 100000000
 var NeoToken, _ = helper.UInt160FromString(NeoTokenId)
 var GasToken, _ = helper.UInt160FromString(GasTokenId)
 
+type SignItem struct {
+	Hash     helper.UInt160
+	Contract *sc.Contract
+	KeyPairs []*keys.KeyPair
+}
+
 type TransactionBuilder struct {
-	Client rpc.IRpcClient
+	Client    rpc.IRpcClient
+	SignStore []*SignItem
+	Tx        *Transaction
 }
 
 func NewTransactionBuilder(endPoint string) *TransactionBuilder {
@@ -50,36 +59,36 @@ func (tb *TransactionBuilder) MakeTransaction(script []byte, sender helper.UInt1
 		return nil, err
 	}
 	nonce := binary.LittleEndian.Uint32(rb)
-	tx := new(Transaction)
+	tb.Tx = new(Transaction)
 	// version
-	tx.SetVersion(0)
+	tb.Tx.SetVersion(0)
 	// nonce
-	tx.SetNonce(nonce)
+	tb.Tx.SetNonce(nonce)
 	// script
 	if script != nil {
-		tx.SetScript(script)
+		tb.Tx.SetScript(script)
 	} else {
-		tx.SetScript([]byte{})
+		tb.Tx.SetScript([]byte{})
 	}
 	// sender
-	tx.SetSender(sender)
+	tb.Tx.SetSender(sender)
 	// validUntilBlock
 	blockHeight, err := tb.GetBlockHeight()
 	if err != nil {
 		return nil, err
 	}
-	tx.SetValidUntilBlock(blockHeight + MaxValidUntilBlockIncrement)
+	tb.Tx.SetValidUntilBlock(blockHeight + MaxValidUntilBlockIncrement)
 	// attributes
 	if attributes != nil {
-		tx.SetAttributes(attributes)
+		tb.Tx.SetAttributes(attributes)
 	} else {
-		tx.SetAttributes([]*TransactionAttribute{})
+		tb.Tx.SetAttributes([]*TransactionAttribute{})
 	}
 	// cosigners
 	if cosigners != nil {
-		tx.SetCosigners(cosigners)
+		tb.Tx.SetCosigners(cosigners)
 	} else {
-		tx.SetCosigners([]*Cosigner{})
+		tb.Tx.SetCosigners([]*Cosigner{})
 	}
 	// sysfee
 	gasConsumed, err := tb.GetGasConsumed(script)
@@ -95,30 +104,73 @@ func (tb *TransactionBuilder) MakeTransaction(script []byte, sender helper.UInt1
 			gasConsumed -= remainder
 		}
 	}
-	tx.SetSystemFee(gasConsumed)
+	tb.Tx.SetSystemFee(gasConsumed)
+	return tb.Tx, nil
+}
 
-	hashes := tx.GetScriptHashesForVerifying()
+func (tb *TransactionBuilder) AddSignature(keyPair *keys.KeyPair) error {
+	contract := keys.CreateSignatureContract(keyPair.PublicKey)
+	return tb.AddSignItem(contract, keyPair)
+}
 
-	size := tx.HeaderSize() + TransactionAttributeSlice(attributes).GetVarSize() + CosignerSlice(cosigners).GetVarSize() + sc.ByteSlice(script).GetVarSize() + helper.GetVarSize(len(hashes))
-	var networkFee int64 = 0
-	for _, hash := range hashes {
-		witness_script, err := tb.GetWitnessScript(hash)
+func (tb *TransactionBuilder) AddMultiSig(keyPairs []*keys.KeyPair, m int, pubKeys []*keys.PublicKey) error {
+	contract := keys.CreateMultiSigContract(m, pubKeys)
+	for _, key := range keyPairs {
+		err := tb.AddSignItem(contract, key)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		if witness_script == nil {
-			continue
-		}
-		networkFee += tb.CalculateNetWorkFee(witness_script, &size)
 	}
-	networkFee += int64(size) * 1000 // FeePerByte
-	tx.SetNetworkFee(networkFee)
+	return nil
+}
+
+func (tb *TransactionBuilder) AddSignItem(contract *sc.Contract, keyPair *keys.KeyPair) error {
+	// check the contract is needed for signing
+	hashes := tb.Tx.GetScriptHashesForVerifying()
+	if !contract.GetScriptHash().Exists(hashes) {
+		return fmt.Errorf("AddSignItem error: mismatch hash %v", contract.GetScriptHash())
+	}
+
+	// add keyPair to existed item
+	isInStore := false
+	for _, item := range tb.SignStore {
+		if item.Hash == contract.GetScriptHash() {
+			isInStore = true
+			if !keyPair.Exists(item.KeyPairs) {
+				item.KeyPairs = append(item.KeyPairs, keyPair)
+			}
+		}
+	}
+
+	//add new SignItem
+	if !isInStore {
+		tb.SignStore = append(tb.SignStore, &SignItem{
+			Hash:     contract.GetScriptHash(),
+			Contract: contract,
+			KeyPairs: []*keys.KeyPair{keyPair},
+		})
+	}
+	return nil
+}
+
+func (tb *TransactionBuilder) Sign() error {
+	tb.Tx.SetNetworkFee(tb.CalculateNetworkFeeWithSignStore())
 	// get gas balance of sender
-	value, err := tb.GetBalance(GasToken, sender)
-	if value.Int64() >= tx.GetNetworkFee()+tx.GetSystemFee() {
-		return tx, nil // return unsigned contract transaction
+	value, err := tb.GetBalance(GasToken, tb.Tx.sender)
+	if err != nil {
+		return err
 	}
-	return nil, fmt.Errorf("insufficient GAS")
+
+	if value.Int64() < tb.Tx.GetNetworkFee()+tb.Tx.GetSystemFee() {
+		return fmt.Errorf("insufficient GAS balance")
+	}
+
+	// Sign with signStore
+	for _, item := range tb.SignStore {
+		tb.Tx.AddSignature(item.KeyPairs, item.Contract)
+	}
+
+	return nil
 }
 
 // GetBlockHeight gets the current blockchain height via rpc
@@ -131,8 +183,25 @@ func (tb *TransactionBuilder) GetBlockHeight() (uint32, error) {
 	return count - 1, nil // height = index = count - 1, genesis block is index 0
 }
 
-// CalculateNetWorkFee
-func (tb *TransactionBuilder) CalculateNetWorkFee(witness_script []byte, size *int) int64 {
+// CalculateNetworkFee
+func (tb *TransactionBuilder) CalculateNetworkFeeWithSignStore() int64 {
+	var networkFee int64 = 0
+	hashes := tb.Tx.GetScriptHashesForVerifying()
+	size := tb.Tx.HeaderSize() + TransactionAttributeSlice(tb.Tx.attributes).GetVarSize() + CosignerSlice(tb.Tx.cosigners).GetVarSize() + sc.ByteSlice(tb.Tx.script).GetVarSize() + helper.GetVarSize(len(hashes))
+	for _, hash := range hashes {
+		witness_script, _ := tb.GetWitnessScript(hash)
+
+		if witness_script == nil {
+			continue
+		}
+		networkFee += tb.CalculateNetworkFee(witness_script, &size)
+	}
+	networkFee += int64(size) * 1000 // FeePerByte
+	return networkFee
+}
+
+// CalculateNetworkFee for single witness
+func (tb *TransactionBuilder) CalculateNetworkFee(witness_script []byte, size *int) int64 {
 	var networkFee int64 = 0
 	if sc.ByteSlice(witness_script).IsSignatureContract() {
 		*size += 67 + sc.ByteSlice(witness_script).GetVarSize()
@@ -194,6 +263,14 @@ func (tb *TransactionBuilder) GetGasConsumed(script []byte) (int64, error) {
 
 // GetWitnessScript is used to get the script of a contract via its scriptHash
 func (tb *TransactionBuilder) GetWitnessScript(hash helper.UInt160) ([]byte, error) {
+	// try get script from SignStore
+	for _, item := range tb.SignStore {
+		if item.Hash == hash {
+			return item.Contract.Script, nil
+		}
+	}
+
+	// try get script from on-chain contract
 	response := tb.Client.GetContractState(hash.String())
 	if response.HasError() {
 		return nil, fmt.Errorf(response.Error.Message)

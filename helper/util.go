@@ -128,5 +128,3 @@ func GetVarSize(value int) int {
 		return 1 + 4 // sizeof(byte) + sizeof(uint)
 	}
 }
-
-

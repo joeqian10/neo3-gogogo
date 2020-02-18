@@ -47,7 +47,7 @@ func (p PublicKey) Size() int {
 func NewPublicKey(data []byte) (*PublicKey, error) {
 	pubKey := new(PublicKey)
 	br := io.NewBinaryReaderFromBuf(data)
-	pubKey.Deserialize(br);
+	pubKey.Deserialize(br)
 	if br.Err != nil {
 		return nil, br.Err
 	}
@@ -231,4 +231,28 @@ func CreateMultiSigRedeemScript(m int, ps ...*PublicKey) ([]byte, error) {
 		return nil, err
 	}
 	return sb.ToArray(), nil
+}
+
+// CreateMultiSigContract
+func CreateMultiSigContract(m int, publicKeys []*PublicKey) *sc.Contract {
+	script, _ := CreateMultiSigRedeemScript(m, publicKeys...)
+	parameters := make([]sc.ContractParameterType, m)
+	for i := 0; i < m; i++ {
+		parameters[i] = sc.Signature
+	}
+
+	return &sc.Contract{
+		Script:        script,
+		ParameterList: parameters,
+	}
+}
+
+// CreateSignatureContract
+func CreateSignatureContract(publicKey *PublicKey) *sc.Contract {
+	script := CreateSignatureRedeemScript(publicKey)
+
+	return &sc.Contract{
+		Script:        script,
+		ParameterList: []sc.ContractParameterType{sc.Signature},
+	}
 }

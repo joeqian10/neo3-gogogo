@@ -39,9 +39,9 @@ func TestBinaryWriter_WriteLE(t *testing.T) {
 
 func TestBinaryWriter_WriteLE2(t *testing.T) {
 	var (
-		b          = new(bytes.Buffer)
+		b        = new(bytes.Buffer)
 		val uint = 0x01020304
-		bin        = []byte{0x04, 0x03, 0x02, 0x01}
+		bin      = []byte{0x04, 0x03, 0x02, 0x01}
 	)
 	bw := NewBinaryWriterFromIO(b)
 	bw.WriteLE(uint32(val)) // need to convert to uint32, or there's an error

@@ -89,5 +89,4 @@ func TestEncryptWallet(t *testing.T) {
 
 	_ = wallet2.DecryptAll(password)
 	assert.Equal(t, keys.KeyCases[0].PrivateKey, wallet2.Accounts[0].KeyPair.String())
-
 }

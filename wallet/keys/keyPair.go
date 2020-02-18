@@ -117,6 +117,16 @@ func (p *KeyPair) Sign(message []byte) ([]byte, error) {
 	return signature, nil
 }
 
+// Exists returns true if p is in list
+func (p *KeyPair) Exists(list []*KeyPair) bool {
+	for _, item := range list {
+		if item.String() == p.String() {
+			return true
+		}
+	}
+	return false
+}
+
 // Verify returns true if the signature is valid and corresponds
 // to the hash and public key
 func VerifySignature(message []byte, signature []byte, p *PublicKey) bool {

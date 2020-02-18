@@ -51,7 +51,7 @@ func (br *BinaryReader) ReadUInt64Bytes() []byte {
 	if br.Err != nil {
 		return nil
 	}
-	return b;
+	return b
 }
 
 // ReadVarUInt reads a variable-length-encoded integer from the underlying reader.
@@ -81,7 +81,8 @@ func (br *BinaryReader) ReadVarUInt(max uint64) uint64 {
 		result = uint64(b)
 	}
 	if result > max {
-		br.Err = fmt.Errorf("max value exceeded")}
+		br.Err = fmt.Errorf("max value exceeded")
+	}
 	return result
 }
 

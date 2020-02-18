@@ -45,7 +45,7 @@ func (u UInt160) String() string {
 	return hex.EncodeToString(ReverseBytes(u.Bytes()))
 }
 
-// Equals returns true if both UInt256 values are the same.
+// Equals returns true if both UInt160 values are the same.
 func (u UInt160) Equals(other UInt160) bool {
 	return u == other
 }
@@ -76,6 +76,16 @@ func (u *UInt160) UnmarshalJSON(data []byte) (err error) {
 // MarshalJSON implements the json marshaller interface.
 func (u UInt160) MarshalJSON() ([]byte, error) {
 	return []byte(`"0x` + u.String() + `"`), nil
+}
+
+// Exists checks u exists in list
+func (u UInt160) Exists(list []UInt160) bool {
+	for _, a := range list {
+		if a == u {
+			return true
+		}
+	}
+	return false
 }
 
 type UInt160Slice []UInt160

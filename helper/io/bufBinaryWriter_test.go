@@ -12,8 +12,8 @@ func TestNewBufBinaryWriter(t *testing.T) {
 
 func TestBufBinaryWriter_Bytes(t *testing.T) {
 	var (
-		val     uint32 = 0xdeadbeef
-		bin     = []byte{0xde, 0xad, 0xbe, 0xef}
+		val uint32 = 0xdeadbeef
+		bin        = []byte{0xde, 0xad, 0xbe, 0xef}
 	)
 	bw := NewBufBinaryWriter()
 	bw.WriteBE(val)

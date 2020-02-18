@@ -4,19 +4,20 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sort"
+
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/helper/io"
 	"github.com/joeqian10/neo3-gogogo/sc"
 	"github.com/joeqian10/neo3-gogogo/wallet/keys"
-	"sort"
 )
 
 // Witness
 type Witness struct {
 	InvocationScript   []byte         // signature
 	VerificationScript []byte         // pub key
-	_scriptHash         helper.UInt160 // script hash
+	_scriptHash        helper.UInt160 // script hash
 }
 
 func (w *Witness) Size() int {
@@ -69,28 +70,18 @@ func CreateWitnessWithScriptHash(scriptHash helper.UInt160, invocationScript []b
 	return
 }
 
-// create single signature witness
-func CreateSignatureWitness(msg []byte, pair *keys.KeyPair) (witness *Witness, err error) {
-	// 	invocationScript: push signature
-	signature, err := pair.Sign(msg)
+// CreateContractWitness
+func CreateContractWitness(msg []byte, pairs []*keys.KeyPair, contract *sc.Contract) (witness *Witness, err error) {
+	invocationScript, err := CreateSignatureInvocation(msg, pairs)
 	if err != nil {
-		return
+		return witness, err
 	}
-	builder := sc.NewScriptBuilder()
-	_ = builder.EmitPushBytes(signature)
-	invocationScript := builder.ToArray()
 
-	// verificationScript: SignatureRedeemScript
-	verificationScript := keys.CreateSignatureRedeemScript(pair.PublicKey)
-	return CreateWitness(invocationScript, verificationScript)
+	return CreateWitness(invocationScript, contract.Script)
 }
 
-// create multi-signature witness
-func CreateMultiSignatureWitness(msg []byte, pairs []*keys.KeyPair, least int, publicKeys []*keys.PublicKey) (witness *Witness, err error) {
-	// TODO ensure the pairs match with publicKeys
-	if len(pairs) == least {
-		return witness, fmt.Errorf("the multi-signature contract needs least %v signatures", least)
-	}
+// CreateSignatureInvocation pushs signature
+func CreateSignatureInvocation(msg []byte, pairs []*keys.KeyPair) (invocationScript []byte, err error) {
 	// invocationScript: push signature
 	sort.Slice(pairs, func(i, j int) bool {
 		return pairs[i].PublicKey.Compare(pairs[j].PublicKey) == 1
@@ -99,16 +90,12 @@ func CreateMultiSignatureWitness(msg []byte, pairs []*keys.KeyPair, least int, p
 	for _, pair := range pairs {
 		signature, err := pair.Sign(msg)
 		if err != nil {
-			return witness, err
+			return invocationScript, err
 		}
 		err = builder.EmitPushBytes(signature)
 		if err != nil {
-			return witness, err
+			return invocationScript, err
 		}
 	}
-	invocationScript := builder.ToArray()
-
-	// verificationScript: CreateMultiSigRedeemScript
-	verificationScript, _ := keys.CreateMultiSigRedeemScript(least, publicKeys...)
-	return CreateWitness(invocationScript, verificationScript)
+	return builder.ToArray(), nil
 }

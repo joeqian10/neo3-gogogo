@@ -43,7 +43,7 @@ func TestTransactionBuilder_GetBlockHeight(t *testing.T) {
 	assert.Equal(t, uint32(1233), a)
 }
 
-func TestTransactionBuilder_CalculateNetWorkFee(t *testing.T) {
+func TestTransactionBuilder_CalculateNetworkFee(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
 	var tb = TransactionBuilder{
 		Client: clientMock,
@@ -55,7 +55,7 @@ func TestTransactionBuilder_CalculateNetWorkFee(t *testing.T) {
 	_ = sb.EmitSysCall(sc.ECDsaVerify.ToInteropMethodHash())
 	script := sb.ToArray()
 	var size int = 0
-	fee := tb.CalculateNetWorkFee(script, &size)
+	fee := tb.CalculateNetworkFee(script, &size)
 
 	assert.Equal(t, int64(180+180+30+1000000), fee)
 	assert.Equal(t, 67+1+41, size)

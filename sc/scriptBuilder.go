@@ -79,7 +79,7 @@ func (sb *ScriptBuilder) EmitJump(op OpCode, offset int) error {
 	}
 }
 
-func (sb *ScriptBuilder) EmitPushBigInt(number big.Int) error {
+func (sb *ScriptBuilder) EmitPushBigInt(number *big.Int) error {
 	if number.Cmp(big.NewInt(-1)) >= 0 && number.Cmp(big.NewInt(16)) <= 0 {
 		var b = byte(number.Int64())
 		return sb.Emit(PUSH0 + OpCode(b))
@@ -131,7 +131,7 @@ func PadRight(data []byte, length int) []byte {
 }
 
 func (sb *ScriptBuilder) EmitPushInt(number int) error {
-	return sb.EmitPushBigInt(*big.NewInt(int64(number)))
+	return sb.EmitPushBigInt(big.NewInt(int64(number)))
 }
 
 func (sb *ScriptBuilder) EmitPushBool(data bool) error {
@@ -188,7 +188,7 @@ func (sb *ScriptBuilder) EmitPushParameter(data ContractParameter) error {
 	case Boolean:
 		err = sb.EmitPushBool(data.Value.(bool))
 	case Integer:
-		num := data.Value.(big.Int)
+		num := data.Value.(*big.Int)
 		err = sb.EmitPushBigInt(num)
 	case Hash160:
 		u, e := helper.UInt160FromBytes(data.Value.([]byte))
