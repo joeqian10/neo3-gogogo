@@ -195,7 +195,7 @@ func CreateSignatureRedeemScript(p *PublicKey) []byte {
 	sb := sc.NewScriptBuilder()
 	_ = sb.EmitPushBytes(p.EncodeCompression())
 	_ = sb.Emit(sc.PUSHNULL)
-	sb.EmitSysCall(sc.ECDsaVerify.ToInteropMethodHash())
+	_ = sb.EmitSysCall(sc.ECDsaVerify.ToInteropMethodHash())
 	return sb.ToArray()
 }
 

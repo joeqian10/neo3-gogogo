@@ -354,8 +354,6 @@ func (tx *Transaction) AddSignature(pairs []*keys.KeyPair, contract *sc.Contract
 		return err
 	}
 	tx.witnesses = append(tx.witnesses, witness)
-	sort.Slice(tx.witnesses, func(i, j int) bool {
-		return tx.witnesses[i].GetScriptHash().Less(tx.witnesses[j].GetScriptHash())
-	})
+	sort.Sort(WitnessSlice(tx.witnesses))
 	return nil
 }

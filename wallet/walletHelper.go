@@ -23,15 +23,6 @@ func NewWalletHelper(rpc rpc.IRpcClient, account *Account) *WalletHelper {
 	}
 }
 
-// GetBalance is used to get balance of nep5 asset, include neo and gas
-func (w *WalletHelper) GetBalance(assetId helper.UInt160, address string) (balance *big.Int, err error) {
-	account, err := helper.AddressToScriptHash(address)
-	if err != nil {
-		return nil, err
-	}
-	return nep5.NewNep5Helper(w.Client).BalanceOf(assetId, account)
-}
-
 // Transfer is used to transfer neo or gas or other nep5 asset, from Account
 func (w *WalletHelper) Transfer(assetId helper.UInt160, to string, amount *big.Int) (string, error) {
 	t, err := helper.AddressToScriptHash(to)
@@ -39,29 +30,61 @@ func (w *WalletHelper) Transfer(assetId helper.UInt160, to string, amount *big.I
 		return "", err
 	}
 
-	tx, err := nep5.NewNep5Helper(w.Client).CreateTransferTx(assetId, w.Account.KeyPair, t, amount)
+	tr, err := nep5.NewNep5Helper(assetId, w.Client).CreateTransferTx(w.Account.KeyPair, t, amount)
 	if err != nil {
 		return "", err
 	}
 
 	// use RPC to send the tx
-	response := w.Client.SendRawTransaction(hex.EncodeToString(tx.ToByteArray()))
+	response := w.Client.SendRawTransaction(hex.EncodeToString(tr.ToByteArray()))
 	msg := response.ErrorResponse.Error.Message
 	if len(msg) != 0 {
 		return "", fmt.Errorf(msg)
 	}
-	return tx.GetHash().String(), nil
+	return response.Result.Hash, nil
+}
+
+// ClaimGas for Account
+func (w *WalletHelper) ClaimGas() (string, error) {
+	f, err := helper.AddressToScriptHash(w.Account.Address)
+	if err != nil {
+		return "", err
+	}
+	balance, err := w.GetBalance(tx.NeoToken)
+	if err != nil {
+		return "", err
+	}
+	t, err := nep5.NewNep5Helper(tx.NeoToken, w.Client).CreateTransferTx(w.Account.KeyPair, f, balance)
+	if err != nil {
+		return "", err
+	}
+	// use RPC to send the tx
+	response := w.Client.SendRawTransaction(hex.EncodeToString(t.ToByteArray()))
+	msg := response.ErrorResponse.Error.Message
+	if len(msg) != 0 {
+		return "", fmt.Errorf(msg)
+	}
+	return response.Result.Hash, nil
+}
+
+// GetBalance is used to get balance of nep5 asset, include neo and gas
+func (w *WalletHelper) GetBalance(assetId helper.UInt160) (balance *big.Int, err error) {
+	account, err := helper.AddressToScriptHash(w.Account.Address)
+	if err != nil {
+		return nil, err
+	}
+	return nep5.NewNep5Helper(assetId, w.Client).BalanceOf(account)
 }
 
 // GetUnClaimedGas for Account
-func (w *WalletHelper) GetUnClaimedGas(address string) (float64, error) {
-	hash, err := helper.AddressToScriptHash(address)
+func (w *WalletHelper) GetUnClaimedGas() (float64, error) {
+	hash, err := helper.AddressToScriptHash(w.Account.Address)
 	if err != nil {
 		return 0, err
 	}
 	height := int64(w.Client.GetBlockCount().Result - 1)
 	sb := sc.NewScriptBuilder()
-	sb.EmitAppCall(tx.NeoToken, "unclaimedGas", []sc.ContractParameter{
+	_ = sb.EmitAppCall(tx.NeoToken, "unclaimedGas", []sc.ContractParameter{
 		{Type: sc.Hash160, Value: hash.Bytes()},
 		{Type: sc.Integer, Value: big.NewInt(height)}})
 	script := hex.EncodeToString(sb.ToArray())
@@ -73,27 +96,4 @@ func (w *WalletHelper) GetUnClaimedGas(address string) (float64, error) {
 	}
 	value := float64(stack.ToParameter().Value.(*big.Int).Int64()) / tx.GasFactor
 	return value, nil
-}
-
-// ClaimGas for Account
-func (w *WalletHelper) ClaimGas() (string, error) {
-	f, err := helper.AddressToScriptHash(w.Account.Address)
-	if err != nil {
-		return "", err
-	}
-	balance, err := w.GetBalance(tx.NeoToken, w.Account.Address)
-	if err != nil {
-		return "", err
-	}
-	tx, err := nep5.NewNep5Helper(w.Client).CreateTransferTx(tx.NeoToken, w.Account.KeyPair, f, balance)
-	if err != nil {
-		return "", err
-	}
-	// use RPC to send the tx
-	response := w.Client.SendRawTransaction(hex.EncodeToString(tx.ToByteArray()))
-	msg := response.ErrorResponse.Error.Message
-	if len(msg) != 0 {
-		return "", fmt.Errorf(msg)
-	}
-	return tx.GetHash().String(), nil
 }

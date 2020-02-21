@@ -17,6 +17,12 @@ type Cosigner struct {
 	AllowedGroups    []*keys.PublicKey
 }
 
+func NewCosigner(account helper.UInt160) *Cosigner {
+	return &Cosigner{
+		Account:account,
+	}
+}
+
 func (c *Cosigner) Size() int {
 	size := 20 + 1 // Account + Scopes
 	if c.Scopes&CustomContracts != 0 {

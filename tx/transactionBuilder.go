@@ -127,14 +127,15 @@ func (tb *TransactionBuilder) AddMultiSig(keyPairs []*keys.KeyPair, m int, pubKe
 func (tb *TransactionBuilder) AddSignItem(contract *sc.Contract, keyPair *keys.KeyPair) error {
 	// check the contract is needed for signing
 	hashes := tb.Tx.GetScriptHashesForVerifying()
-	if !contract.GetScriptHash().Exists(hashes) {
+	contractScriptHash := contract.GetScriptHash()
+	if !contractScriptHash.Exists(hashes) {
 		return fmt.Errorf("AddSignItem error: mismatch hash %v", contract.GetScriptHash())
 	}
 
 	// add keyPair to existed item
 	isInStore := false
 	for _, item := range tb.SignStore {
-		if item.Hash == contract.GetScriptHash() {
+		if item.Hash == contractScriptHash {
 			isInStore = true
 			if !keyPair.Exists(item.KeyPairs) {
 				item.KeyPairs = append(item.KeyPairs, keyPair)
@@ -145,7 +146,7 @@ func (tb *TransactionBuilder) AddSignItem(contract *sc.Contract, keyPair *keys.K
 	//add new SignItem
 	if !isInStore {
 		tb.SignStore = append(tb.SignStore, &SignItem{
-			Hash:     contract.GetScriptHash(),
+			Hash:     contractScriptHash,
 			Contract: contract,
 			KeyPairs: []*keys.KeyPair{keyPair},
 		})
@@ -154,6 +155,7 @@ func (tb *TransactionBuilder) AddSignItem(contract *sc.Contract, keyPair *keys.K
 }
 
 func (tb *TransactionBuilder) Sign() error {
+	if tb.Tx == nil {return fmt.Errorf("no transaction to sign")}
 	tb.Tx.SetNetworkFee(tb.CalculateNetworkFeeWithSignStore())
 	// get gas balance of sender
 	value, err := tb.GetBalance(GasToken, tb.Tx.sender)
@@ -167,34 +169,29 @@ func (tb *TransactionBuilder) Sign() error {
 
 	// Sign with signStore
 	for _, item := range tb.SignStore {
-		tb.Tx.AddSignature(item.KeyPairs, item.Contract)
+		err = tb.Tx.AddSignature(item.KeyPairs, item.Contract)
+		if err != nil {return err}
 	}
 
 	return nil
-}
-
-// GetBlockHeight gets the current blockchain height via rpc
-func (tb *TransactionBuilder) GetBlockHeight() (uint32, error) {
-	response := tb.Client.GetBlockCount()
-	if response.HasError() {
-		return 0, fmt.Errorf(response.Error.Message)
-	}
-	count := uint32(response.Result)
-	return count - 1, nil // height = index = count - 1, genesis block is index 0
 }
 
 // CalculateNetworkFee
 func (tb *TransactionBuilder) CalculateNetworkFeeWithSignStore() int64 {
 	var networkFee int64 = 0
 	hashes := tb.Tx.GetScriptHashesForVerifying()
-	size := tb.Tx.HeaderSize() + TransactionAttributeSlice(tb.Tx.attributes).GetVarSize() + CosignerSlice(tb.Tx.cosigners).GetVarSize() + sc.ByteSlice(tb.Tx.script).GetVarSize() + helper.GetVarSize(len(hashes))
+	size := tb.Tx.HeaderSize() +
+		TransactionAttributeSlice(tb.Tx.attributes).GetVarSize() +
+		CosignerSlice(tb.Tx.cosigners).GetVarSize() +
+		sc.ByteSlice(tb.Tx.script).GetVarSize() +
+		helper.GetVarSize(len(hashes))
 	for _, hash := range hashes {
-		witness_script, _ := tb.GetWitnessScript(hash)
+		witnessScript, _ := tb.GetWitnessScript(hash)
 
-		if witness_script == nil {
+		if witnessScript == nil {
 			continue
 		}
-		networkFee += tb.CalculateNetworkFee(witness_script, &size)
+		networkFee += tb.CalculateNetworkFee(witnessScript, &size)
 	}
 	networkFee += int64(size) * 1000 // FeePerByte
 	return networkFee
@@ -222,6 +219,16 @@ func (tb *TransactionBuilder) CalculateNetworkFee(witness_script []byte, size *i
 		// support more contract types in the future
 	}
 	return networkFee
+}
+
+// GetBlockHeight gets the current blockchain height via rpc
+func (tb *TransactionBuilder) GetBlockHeight() (uint32, error) {
+	response := tb.Client.GetBlockCount()
+	if response.HasError() {
+		return 0, fmt.Errorf(response.Error.Message)
+	}
+	count := uint32(response.Result)
+	return count - 1, nil // height = index = count - 1, genesis block is index 0
 }
 
 // GetBalance is used to get balance of an asset of an account

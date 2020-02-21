@@ -14,21 +14,63 @@ import (
 
 // Nep5Helper is nep5 wrapper class, api reference: https://github.com/neo-project/proposals/blob/master/nep-5.mediawiki#name
 type Nep5Helper struct {
-	Client rpc.IRpcClient
+	ScriptHash helper.UInt160
+	Client     rpc.IRpcClient
 }
 
-func NewNep5Helper(client rpc.IRpcClient) *Nep5Helper {
+func NewNep5Helper(scriptHash helper.UInt160, client rpc.IRpcClient) *Nep5Helper {
 	if client == nil {
 		return nil
 	}
 	return &Nep5Helper{
-		Client: client,
+		ScriptHash: scriptHash,
+		Client:     client,
 	}
 }
 
-func (n *Nep5Helper) TotalSupply(scriptHash helper.UInt160) (*big.Int, error) {
+func (n *Nep5Helper) Name() (string, error) {
 	sb := sc.NewScriptBuilder()
-	sb.EmitAppCall(scriptHash, "totalSupply", []sc.ContractParameter{})
+	_ = sb.EmitAppCall(n.ScriptHash, "name", []sc.ContractParameter{})
+	script := sb.ToArray()
+	response := n.Client.InvokeScript(helper.BytesToHex(script))
+	stack, err := PopInvokeStack(response)
+	if err != nil {
+		return "", err
+	}
+	return string(stack.ToParameter().Value.([]byte)), nil
+}
+
+func (n *Nep5Helper) Symbol() (string, error) {
+	sb := sc.NewScriptBuilder()
+	_ = sb.EmitAppCall(n.ScriptHash, "symbol", []sc.ContractParameter{})
+	script := sb.ToArray()
+	response := n.Client.InvokeScript(helper.BytesToHex(script))
+	stack, err := PopInvokeStack(response)
+	if err != nil {
+		return "", err
+	}
+	return string(stack.ToParameter().Value.([]byte)), nil
+}
+
+func (n *Nep5Helper) Decimals() (int, error) {
+	sb := sc.NewScriptBuilder()
+	_ = sb.EmitAppCall(n.ScriptHash, "decimals", []sc.ContractParameter{})
+	script := sb.ToArray()
+	response := n.Client.InvokeScript(helper.BytesToHex(script))
+	stack, err := PopInvokeStack(response)
+	if err != nil {
+		return 0, err
+	}
+	return int(stack.ToParameter().Value.(*big.Int).Int64()), nil
+}
+
+func (n *Nep5Helper) BalanceOf(account helper.UInt160) (*big.Int, error) {
+	return tx.NewTransactionBuilderFromClient(n.Client).GetBalance(n.ScriptHash, account)
+}
+
+func (n *Nep5Helper) TotalSupply() (*big.Int, error) {
+	sb := sc.NewScriptBuilder()
+	_ = sb.EmitAppCall(n.ScriptHash, "totalSupply", []sc.ContractParameter{})
 	script := sb.ToArray()
 	response := n.Client.InvokeScript(helper.BytesToHex(script))
 	stack, err := PopInvokeStack(response)
@@ -53,48 +95,8 @@ func PopInvokeStack(response rpc.InvokeResultResponse) (*models.InvokeStackResul
 	return &stack, nil
 }
 
-func (n *Nep5Helper) Name(scriptHash helper.UInt160) (string, error) {
-	sb := sc.NewScriptBuilder()
-	sb.EmitAppCall(scriptHash, "name", []sc.ContractParameter{})
-	script := sb.ToArray()
-	response := n.Client.InvokeScript(helper.BytesToHex(script))
-	stack, err := PopInvokeStack(response)
-	if err != nil {
-		return "", err
-	}
-	return string(stack.ToParameter().Value.([]byte)), nil
-}
-
-func (n *Nep5Helper) Symbol(scriptHash helper.UInt160) (string, error) {
-	sb := sc.NewScriptBuilder()
-	sb.EmitAppCall(scriptHash, "symbol", []sc.ContractParameter{})
-	script := sb.ToArray()
-	response := n.Client.InvokeScript(helper.BytesToHex(script))
-	stack, err := PopInvokeStack(response)
-	if err != nil {
-		return "", err
-	}
-	return string(stack.ToParameter().Value.([]byte)), nil
-}
-
-func (n *Nep5Helper) Decimals(scriptHash helper.UInt160) (int, error) {
-	sb := sc.NewScriptBuilder()
-	sb.EmitAppCall(scriptHash, "decimals", []sc.ContractParameter{})
-	script := sb.ToArray()
-	response := n.Client.InvokeScript(helper.BytesToHex(script))
-	stack, err := PopInvokeStack(response)
-	if err != nil {
-		return 0, err
-	}
-	return int(stack.ToParameter().Value.(*big.Int).Int64()), nil
-}
-
-func (n *Nep5Helper) BalanceOf(scriptHash helper.UInt160, account helper.UInt160) (*big.Int, error) {
-	return tx.NewTransactionBuilderFromClient(n.Client).GetBalance(scriptHash, account)
-}
-
 // CreateTransferTx creates nep-5 transfer transaction
-func (n *Nep5Helper) CreateTransferTx(scriptHash helper.UInt160, fromKey *keys.KeyPair, to helper.UInt160, amount *big.Int) (*tx.Transaction, error) {
+func (n *Nep5Helper) CreateTransferTx(fromKey *keys.KeyPair, to helper.UInt160, amount *big.Int) (*tx.Transaction, error) {
 	sb := sc.NewScriptBuilder()
 	from := fromKey.PublicKey.ScriptHash()
 	cp1 := sc.ContractParameter{
@@ -109,11 +111,11 @@ func (n *Nep5Helper) CreateTransferTx(scriptHash helper.UInt160, fromKey *keys.K
 		Type:  sc.Integer,
 		Value: amount,
 	}
-	sb.EmitAppCall(scriptHash, "transfer", []sc.ContractParameter{cp1, cp2, cp3})
+	_ = sb.EmitAppCall(n.ScriptHash, "transfer", []sc.ContractParameter{cp1, cp2, cp3})
 	script := sb.ToArray()
 
 	tb := tx.NewTransactionBuilderFromClient(n.Client)
-	tx, err := tb.MakeTransaction(script, from, nil, []*tx.Cosigner{{Account: from, Scopes: tx.CalledByEntry}})
+	t, err := tb.MakeTransaction(script, from, nil, []*tx.Cosigner{{Account: from, Scopes: tx.CalledByEntry}})
 	if err != nil {
 		return nil, err
 	}
@@ -125,5 +127,5 @@ func (n *Nep5Helper) CreateTransferTx(scriptHash helper.UInt160, fromKey *keys.K
 	if err != nil {
 		return nil, err
 	}
-	return tx, nil
+	return t, nil
 }
