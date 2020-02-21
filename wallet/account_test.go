@@ -19,7 +19,7 @@ func TestNewAccount(t *testing.T) {
 
 func TestDecryptAccount(t *testing.T) {
 	for _, testCase := range keys.KeyCases {
-		acc, err := NewAccountFromNep2(testCase.Nep2key, testCase.Passphrase)
+		acc, err := NewAccountFromNEP2(testCase.Nep2key, testCase.Passphrase)
 		if err != nil {
 			t.Fatal(err)
 		}

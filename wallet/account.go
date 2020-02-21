@@ -77,7 +77,7 @@ func NewAccountFromWIF(wif string) (*Account, error) {
 
 // NewAccountFromNep2 decrypts the nep2Key with the given passphrase and
 // returns the decrypted Account.
-func NewAccountFromNep2(nep2Key, passphrase string) (*Account, error) {
+func NewAccountFromNEP2(nep2Key, passphrase string) (*Account, error) {
 	wif, err := keys.NEP2Decrypt(nep2Key, passphrase)
 	if err != nil {
 		return nil, err

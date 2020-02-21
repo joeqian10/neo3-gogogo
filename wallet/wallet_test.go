@@ -52,13 +52,13 @@ func TestNewWallet(t *testing.T) {
 	assert.Equal(t, len(testWallet.Accounts), 2)
 	assert.Equal(t, testWallet.Accounts[1].Address, keys.KeyCases[0].Address)
 
-	err = testWallet.ImportFromNep2Key(keys.KeyCases[1].Nep2key, keys.KeyCases[1].Passphrase)
+	err = testWallet.ImportFromNEP2Key(keys.KeyCases[1].Nep2key, keys.KeyCases[1].Passphrase)
 	assert.Nil(t, err)
 	assert.Equal(t, len(testWallet.Accounts), 3)
 	assert.Equal(t, testWallet.Accounts[2].Address, keys.KeyCases[1].Address)
 
 	// add duplicate account, the length does not increase
-	err = testWallet.ImportFromNep2Key(keys.KeyCases[1].Nep2key, keys.KeyCases[1].Passphrase)
+	err = testWallet.ImportFromNEP2Key(keys.KeyCases[1].Nep2key, keys.KeyCases[1].Passphrase)
 	assert.Nil(t, err)
 	assert.Equal(t, len(testWallet.Accounts), 3)
 }
