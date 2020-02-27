@@ -14,6 +14,7 @@ import (
 )
 
 type WitnessSlice []*Witness
+
 func (ws WitnessSlice) Len() int           { return len(ws) }
 func (ws WitnessSlice) Less(i, j int) bool { return ws[i]._scriptHash.Less(ws[j]._scriptHash) }
 func (ws WitnessSlice) Swap(i, j int)      { ws[i], ws[j] = ws[j], ws[i] }
@@ -88,7 +89,7 @@ func CreateContractWitness(msg []byte, pairs []*keys.KeyPair, contract *sc.Contr
 // CreateSignatureInvocation pushes signature
 func CreateSignatureInvocation(msg []byte, pairs []*keys.KeyPair) (invocationScript []byte, err error) {
 	// invocationScript: push signature
-	sort.Sort(sort.Reverse(keys.KeyPairSlice(pairs))) // sort in descending order
+	sort.Sort(keys.KeyPairSlice(pairs)) // sort in ascending order
 
 	builder := sc.NewScriptBuilder()
 	for _, pair := range pairs {
