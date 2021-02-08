@@ -1,8 +1,8 @@
 package helper
 
 import (
-	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/stretchr/testify/assert"
+	"math/big"
 	"testing"
 )
 
@@ -12,9 +12,9 @@ func TestBytesToHex(t *testing.T) {
 	assert.Equal(t, "deadbeef", r)
 }
 
-func TestHexTobytes(t *testing.T) {
+func TestHexToBytes(t *testing.T) {
 	s := "deadbeef"
-	r := HexTobytes(s)
+	r := HexToBytes(s)
 	assert.Equal(t, []byte{0xde, 0xad, 0xbe, 0xef}, r)
 }
 
@@ -42,19 +42,6 @@ func TestReverseBytes(t *testing.T) {
 	r = ReverseBytes(b)
 	assert.Equal(t, []byte{1, 2, 3}, b)
 	assert.Equal(t, []byte{3, 2, 1}, r)
-}
-
-func TestAddressToScriptHash(t *testing.T) {
-	r, err := AddressToScriptHash("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf")
-	assert.Nil(t, err)
-	u, _ := UInt160FromBytes(crypto.Hash160([]byte{0x01}))
-	assert.Equal(t, u.String(), r.String())
-}
-
-func TestScriptHashToAddress(t *testing.T) {
-	u, _ := UInt160FromBytes(crypto.Hash160([]byte{0x01}))
-	a := ScriptHashToAddress(u)
-	assert.Equal(t, "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf", a)
 }
 
 func TestReverseString(t *testing.T) {
@@ -113,4 +100,14 @@ func TestGetVarSize(t *testing.T) {
 	assert.Equal(t, 3, r)
 	r = GetVarSize(0xFFFFFF)
 	assert.Equal(t, 5, r)
+}
+
+func TestBigIntToNeoBytes(t *testing.T) {
+	b := big.NewInt(-200)
+	bs := BigIntToNeoBytes(b)
+	assert.Equal(t, []byte{0x38, 0xff}, bs)
+}
+
+func TestBigIntFromNeoBytes(t *testing.T) {
+	// todo
 }

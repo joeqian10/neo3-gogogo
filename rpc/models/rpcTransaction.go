@@ -11,7 +11,7 @@ type RpcTransaction struct {
 	NetFee          string                    `json:"net_fee"`
 	ValidUntilBlock int                       `json:"valid_until_block"`
 	Attributes      []RpcTransactionAttribute `json:"attributes"`
-	Cosigners       []RpcCosigner             `json:"cosigners"`
+	Signers         []RpcSigner               `json:"signers"`
 	Script          string                    `json:"script"`
 	Witnesses       []RpcWitness              `json:"witnesses"`
 	BlockHash       string                    `json:"blockhash"`
@@ -25,7 +25,7 @@ type RpcTransactionAttribute struct {
 	Data  string `json:"data"`
 }
 
-type RpcCosigner struct {
+type RpcSigner struct {
 	Account          string   `json:"account"`
 	Scopes           string   `json:"scopes"`
 	AllowedContracts []string `json:"allowedContracts"`

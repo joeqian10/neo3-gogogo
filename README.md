@@ -101,7 +101,7 @@ func SampleMethod() {
 
 ### 3.2 "helper" module
 
-As its name indicated, this module acts as a helper and provides some standard data types used in neo, such as `UInt160`, `UInt256`, and some auxiliary methods with basic functionalities including conversion between a hex string and a byte array, conversion between a script hash and a standard neo address, concatenating/reversing byte arrays and so on.
+As its name indicated, this module acts as a helper and provides some standard param types used in neo, such as `UInt160`, `UInt256`, and some auxiliary methods with basic functionalities including conversion between a hex string and a byte array, conversion between a script hash and a standard neo address, concatenating/reversing byte arrays and so on.
 
 #### 3.2.1 Create a new UInt160 object from a big-endian hex string
 
@@ -124,7 +124,7 @@ func (u UInt160) String() string
 #### 3.2.4 Convert a UInt160 object to a littel-endian byte array
 
 ```golang
-func (u UInt160) Bytes() []byte
+func (u UInt160) ToByteArray() []byte
 ```
 
 #### 3.2.5 Create a new UInt256 object from a big-endian hex string
@@ -148,7 +148,7 @@ func (u UInt256) String() string
 #### 3.2.8 Convert a UInt256 object to a littel-endian byte array
 
 ```golang
-func (u UInt256) Bytes() []byte
+func (u UInt256) ToByteArray() []byte
 ```
 
 #### 3.2.9 Concatenate two byte arrays
@@ -172,7 +172,7 @@ func HexTobytes(hexstring string) (b []byte)
 #### 3.2.12 Reverse a byte array
 
 ```golang
-func ReverseBytes(data []byte) []byte
+func ReverseBytes(param []byte) []byte
 ```
 
 #### 3.2.13 Convert an address string to a script hash
@@ -214,7 +214,7 @@ func SampleMethod() {
     b1, err := hex.DecodeString(hexStr)
     v2, err := helper.UInt160FromBytes(ReverseBytes(b))
     s1 := v1.String()
-    ba1 := v2.Bytes()
+    ba1 := v2.ToByteArray()
     // v1 and v2 are equal
 
     // UInt256
@@ -223,14 +223,14 @@ func SampleMethod() {
     b2, err := hex.DecodeString(hexStr)
     u2, err := helper.UInt256FromBytes(ReverseBytes(b))
     s2 := u1.String()
-    ba2 := u2.Bytes()
+    ba2 := u2.ToByteArray()
     // u1 and u2 are equal
 
-    // reverse bytes
+    // reverse bs
     b3 := []byte{1, 2, 3}
     r := helper.ReverseBytes(b3)
 
-    // concatenate bytes
+    // concatenate bs
     b4 := []byte{4, 5, 6}
     c := helper.ConcatBytes(b3, b4)
 
@@ -249,7 +249,7 @@ func SampleMethod() {
     // reverse a string
     s3 := helper.ReverseString(s)
 
-    // generate random bytes
+    // generate random bs
     ba, err := helper.GenerateRandomBytes(10)
     ...
 }
@@ -377,19 +377,19 @@ func (sb *ScriptBuilder) EmitPushInt(number int) error
 #### 3.4.9 Emit an operation code to push a boolean value
 
 ```golang
-func (sb *ScriptBuilder) EmitPushBool(data bool) error
+func (sb *ScriptBuilder) EmitPushBool(param bool) error
 ```
 
 #### 3.4.10 Emit an operation code to push a byte array
 
 ```golang
-func (sb *ScriptBuilder) EmitPushBytes(data []byte) error
+func (sb *ScriptBuilder) EmitPushBytes(param []byte) error
 ```
 
 #### 3.4.11 Emit an operation code to push a string
 
 ```golang
-func (sb *ScriptBuilder) EmitPushString(data string) error
+func (sb *ScriptBuilder) EmitPushString(param string) error
 ```
 
 #### 3.4.12 Emit an operation code to push a raw byte array
@@ -401,7 +401,7 @@ func (sb *ScriptBuilder) EmitRaw(arg []byte) error
 #### 3.4.13 Emit an operation code to push a ContractParameter
 
 ```golang
-func (sb *ScriptBuilder) EmitPushParameter(data ContractParameter) error
+func (sb *ScriptBuilder) EmitPushParameter(param ContractParameter) error
 ```
 
 #### 3.4.12 Emit an operation code to call a system method
@@ -424,8 +424,8 @@ func SampleMethod() {
 
     // call a specific method from a specific contract
     scriptHash, _ := helper.UInt160FromString("b9d7ea3062e6aeeb3e8ad9548220c4ba1361d263")
-    sb.EmitAppCall(scriptHash.Bytes(), "name", nil)
-    bytes := sb.ToArray()
+    sb.EmitAppCall(scriptHash.ToByteArray(), "name", nil)
+    bs := sb.ToArray()
 
     ...
 }
@@ -451,7 +451,7 @@ func NewTransactionBuilderFromClient(client rpc.IRpcClient) *TransactionBuilder
 #### 3.5.3 Make an unsigned transaction
 
 ```golang
-func (tb *TransactionBuilder) MakeTransaction(script []byte, sender helper.UInt160, attributes []*TransactionAttribute, cosigners []*Cosigner) (*Transaction, error)
+func (tb *TransactionBuilder) MakeTransaction(script []byte, sender helper.UInt160, attributes []*TransactionAttribute, cosigners []*Signer) (*Transaction, error)
 ```
 
 #### 3.5.4 Add a single signed signature to TransactionBuild's SignStore
@@ -463,7 +463,7 @@ func (tb *TransactionBuilder) AddSignature(keyPair *keys.KeyPair) error
 #### 3.5.5 Add a multi signed signature to TransactionBuild's SignStore
 
 ```golang
-func (tb *TransactionBuilder) AddMultiSig(keyPairs []*keys.KeyPair, m int, pubKeys []*keys.PublicKey) error
+func (tb *TransactionBuilder) AddMultiSig(keyPairs []*keys.KeyPair, m int, pubKeys1 []*keys.PublicKey) error
 ```
 
 #### 3.5.6 Add a SignItem to TransactionBuilder's SignStore
@@ -530,13 +530,13 @@ func SampleMethod() {
 
     sb := sc.NewScriptBuilder()
     scriptHash, _ := helper.UInt160FromString("b9d7ea3062e6aeeb3e8ad9548220c4ba1361d263")
-    sb.EmitAppCall(scriptHash.Bytes(), "name", nil)
-    bytes := sb.ToArray()
+    sb.EmitAppCall(scriptHash.ToByteArray(), "name", nil)
+    bs := sb.ToArray()
 
     // build a transaction
     sender, _ := helper.AddressToScriptHash("APPmjituYcgfNxjuQDy9vP73R2PmhFsYJR")
 
-    t, _ := tb.MakeTransaction(bytes, sender, nil, nil)
+    t, _ := tb.MakeTransaction(bs, sender, nil, nil)
     // get the raw byte array of this transaction
     unsignedRaw := t.UnsignedRawTransaction()
 
@@ -554,60 +554,60 @@ func SampleMethod() {
 
 ### 3.6 "wallet" module
 
-This module defines the account and the wallet in the neo network, and methods for creating an account or a wallet, signing a message/verifying signature with private/public key pair are also provided. For more information about the neo wallet, refer to [Wallet]().
+This module defines the account and the wallet in the neo network, and methods for creating an account or a wallet, signing a message/verifying signature with private/public key pair are also provided. For more information about the neo wallet, refer to [NEP6Wallet]().
 
 #### 3.6.1 Create a new account
 
 ```golang
-func NewAccount() (*Account, error)
+func NewAccount() (*NEP6Account, error)
 ```
 
 #### 3.6.2 Create a new account from a WIF key
 
 ```golang
-func NewAccountFromWIF(wif string) (*Account, error)
+func NewAccountFromWIF(wif string) (*NEP6Account, error)
 ```
 
 #### 3.6.3 Create a new account from an encrypted key according to NEP-2
 
 ```golang
-func NewAccountFromNEP2(nep2Key, passphrase string) (*Account, error)
+func NewAccountFromNEP2(nep2Key, passphrase string) (*NEP6Account, error)
 ```
 
 #### 3.6.4 Create a new wallet
 
 ```golang
-func NewWallet() *Wallet
+func NewWallet() *NEP6Wallet
 ```
 
 #### 3.6.5 Add a new account into the wallet
 
 ```golang
-func (w *Wallet) AddNewAccount() error
+func (w *NEP6Wallet) AddNewAccount() error
 ```
 
 #### 3.6.6 Import an account from a WIF key
 
 ```golang
-func (w *Wallet) ImportFromWIF(wif string) error
+func (w *NEP6Wallet) ImportFromWIF(wif string) error
 ```
 
 #### 3.6.7 Import an account from an encrypted key according to NEP-2
 
 ```golang
-func (w *Wallet) ImportFromNEP2Key(nep2Key, passphare string) error
+func (w *NEP6Wallet) ImportFromNEP2Key(nep2Key, passphare string) error
 ```
 
 #### 3.6.8 Add an existing account into the wallet
 
 ```golang
-func (w *Wallet) AddAccount(acc *Account)
+func (w *NEP6Wallet) AddAccount(acc *NEP6Account)
 ```
 
 #### 3.6.9 Create a WalletHelper
 
 ```golang
-func NewWalletHelper(rpc rpc.IRpcClient, account *Account) *WalletHelper
+func NewWalletHelper(rpc rpc.IRpcClient, account *NEP6Account) *WalletHelper
 ```
 
 #### 3.6.10 Transfer assets
@@ -720,46 +720,46 @@ func SampleMethod() {
 
 This module is to make life easier when dealing with NEP-5 tokens. Methods for querying basic information of a NEP-5 token, such as name, total supply, are provided. Also, it offers the ability to test run the scripts to transfer and get the balance of a NEP-5 token. For more information about NEP-5, refer to [NEP-5]().
 
-#### 3.7.1 Create a new Nep5Helper with token script hash and a rpc client
+#### 3.7.1 Create a new Nep17Helper with token script hash and a rpc client
 
 ```golang
-func NewNep5Helper(scriptHash helper.UInt160, client rpc.IRpcClient) *Nep5Helper
+func NewNep5Helper(scriptHash helper.UInt160, client rpc.IRpcClient) *Nep17Helper
 ```
 
 #### 3.7.2 Get the total supply of a NEP-5 token
 
 ```golang
-func (n *Nep5Helper) TotalSupply() (*big.Int, error)
+func (n *Nep17Helper) TotalSupply() (*big.Int, error)
 ```
 
 #### 3.7.3 Get the name of a NEP-5 token
 
 ```golang
-func (n *Nep5Helper) Name() (string, error)
+func (n *Nep17Helper) Name() (string, error)
 ```
 
 #### 3.7.4 Get the symbol of a NEP-5 token
 
 ```golang
-func (n *Nep5Helper) Symbol() (string, error)
+func (n *Nep17Helper) Symbol() (string, error)
 ```
 
 #### 3.7.5 Get the decimals of a NEP-5 token
 
 ```golang
-func (n *Nep5Helper) Decimals() (int, error)
+func (n *Nep17Helper) Decimals() (int, error)
 ```
 
 #### 3.7.6 Get the balance of a NEP-5 token of an account
 
 ```golang
-func (n *Nep5Helper) BalanceOf(account helper.UInt160) (*big.Int, error)
+func (n *Nep17Helper) BalanceOf(account helper.UInt160) (*big.Int, error)
 ```
 
 #### 3.7.7 Create a transaction to transfer NEP-5 token
 
 ```golang
-func (n *Nep5Helper) CreateTransferTx(fromKey *keys.KeyPair, to helper.UInt160, amount *big.Int) (*tx.Transaction, error)
+func (n *Nep17Helper) CreateTransferTx(fromKey *keys.KeyPair, to helper.UInt160, amount *big.Int) (*tx.Transaction, error)
 ```
 
 *Typical usage:*
@@ -772,7 +772,7 @@ import "github.com/joeqian10/neo-gogogo/nep5"
 import "github.com/joeqian10/neo-gogogo/wallet"
 
 func SampleMethod() {
-    // create a Nep5Helper
+    // create a Nep17Helper
     scriptHash, _ := helper.UInt160FromString("0xb9d7ea3062e6aeeb3e8ad9548220c4ba1361d263")
     var testNetEndPoint = "http://seed1.ngd.network:20332"
     nh := nep5.NewNep5Helper(scriptHash, testNetEndPoint)

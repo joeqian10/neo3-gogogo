@@ -2,7 +2,6 @@ package io
 
 import (
 	"bytes"
-	"errors"
 )
 
 // BufBinaryWriter is an additional layer on top of BinaryWriter that
@@ -19,13 +18,14 @@ func NewBufBinaryWriter() *BufBinaryWriter {
 	return &BufBinaryWriter{BinaryWriter: NewBinaryWriterFromIO(b), buf: b}
 }
 
-// Bytes returns resulting buffer and makes future writes return an error.
+// Bytes returns resulting buffer and reset to prevent future writes
 func (bw *BufBinaryWriter) Bytes() []byte {
 	if bw.Err != nil {
 		return nil
 	}
-	bw.Err = errors.New("buffer already drained")
-	return bw.buf.Bytes()
+	b := bw.buf.Bytes()
+	bw.Reset()
+	return b
 }
 
 // Reset resets the state of the buffer, making it usable again. It can

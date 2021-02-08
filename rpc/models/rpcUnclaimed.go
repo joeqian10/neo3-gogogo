@@ -6,7 +6,12 @@ type UnclaimedGasInWallet struct {
 }
 
 type UnclaimedGasInAddress struct {
-	Available   float64 `json:"available"`
-	Unavailable float64 `json:"unavailable"`
-	Unclaimed   float64 `json:"unclaimed"`
+	Available   uint64 `json:"available"`
+	Unavailable uint64 `json:"unavailable"`
+	Unclaimed   uint64 `json:"unclaimed"`
+}
+
+type UnclaimedGas struct {
+	Unclaimed uint64 `json:"unclaimed"`
+	Address   string `json:"address"`
 }

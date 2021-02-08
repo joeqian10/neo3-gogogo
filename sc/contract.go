@@ -2,31 +2,169 @@ package sc
 
 import (
 	"encoding/binary"
-
+	"fmt"
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
+	"sort"
 )
 
 type Contract struct {
 	Script        []byte
 	ParameterList []ContractParameterType
-	_scriptHash   helper.UInt160
-	_address      string
+	scriptHash    *helper.UInt160
+	address       string
+}
+
+func CreateContract(parameterList []ContractParameterType, redeemScript []byte) *Contract {
+	return &Contract{
+		Script:        redeemScript,
+		ParameterList: parameterList,
+	}
 }
 
 // GetAddress is the getter of _address
 func (c *Contract) GetAddress() string {
-	if c._address == "" {
-		c._address = helper.ScriptHashToAddress(c._scriptHash)
+	if c.address == "" {
+		c.address = crypto.ScriptHashToAddress(c.GetScriptHash())
 	}
-	return c._address
+	return c.address
 }
 
 // GetScriptHash is the getter of _scriptHash
-func (c *Contract) GetScriptHash() helper.UInt160 {
-	c._scriptHash, _ = helper.UInt160FromBytes(crypto.Hash160(c.Script))
-	return c._scriptHash
+func (c *Contract) GetScriptHash() *helper.UInt160 {
+	if c.scriptHash == nil {
+		c.scriptHash = helper.UInt160FromBytes(crypto.Hash160(c.Script))
+	}
+	return c.scriptHash
 }
+
+// create signature check script
+func CreateSignatureRedeemScript(p *crypto.ECPoint) ([]byte, error) {
+	sb := NewScriptBuilder()
+	sb.EmitPushBytes(p.EncodePoint(true))
+	sb.Emit(PUSHNULL)
+	sb.EmitSysCall(VerifyWithECDsaSecp256r1.ToInteropMethodHash())
+	b, err := sb.ToArray()
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+// CreateSignatureContract
+func CreateSignatureContract(publicKey *crypto.ECPoint) (*Contract, error) {
+	script, err := CreateSignatureRedeemScript(publicKey)
+	if err != nil {
+		return nil, err
+	}
+	return &Contract{
+		Script:        script,
+		ParameterList: []ContractParameterType{Signature},
+	}, nil
+}
+
+// create multi-signature check script
+func CreateMultiSigRedeemScript(m int, ps []crypto.ECPoint) ([]byte, error) {
+	if !(m >= 1 && m <= len(ps) && len(ps) <= 1024) {
+		return nil, fmt.Errorf("argument exception: %v, %v", m, len(ps))
+	}
+	sb := NewScriptBuilder()
+	sb.EmitPushInteger(m)
+	pubKeys := crypto.PublicKeySlice(ps)
+	sort.Sort(pubKeys)
+	for _, p := range pubKeys {
+		sb.EmitPushBytes(p.EncodePoint(true))
+	}
+	sb.EmitPushInteger(pubKeys.Len())
+	sb.Emit(PUSHNULL)
+	sb.EmitSysCall(CheckMultisigWithECDsaSecp256r1.ToInteropMethodHash())
+	b, err := sb.ToArray()
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+// CreateMultiSigContract
+func CreateMultiSigContract(m int, publicKeys []crypto.ECPoint) (*Contract, error) {
+	script, err := CreateMultiSigRedeemScript(m, publicKeys)
+	if err != nil {
+		return nil, err
+	}
+	parameters := make([]ContractParameterType, m)
+	for i := 0; i < m; i++ {
+		parameters[i] = Signature
+	}
+
+	return &Contract{
+		Script:        script,
+		ParameterList: parameters,
+	}, nil
+}
+
+//// create signature check script
+//func CreateSignatureRedeemScript(p *keys.PublicKey) ([]byte, error) {
+//	sb := NewScriptBuilder()
+//	sb.EmitPushBytes(p.EncodePoint(true))
+//	sb.Emit(PUSHNULL)
+//	sb.EmitSysCall(VerifyWithECDsaSecp256r1.ToInteropMethodHash())
+//	b, err := sb.ToArray()
+//	if err != nil {
+//		return nil, err
+//	}
+//	return b, nil
+//}
+//
+//// CreateSignatureContract
+//func CreateSignatureContract(publicKey *keys.PublicKey) (*Contract, error) {
+//	script, err := CreateSignatureRedeemScript(publicKey)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return &Contract{
+//		Script:        script,
+//		ParameterList: []ContractParameterType{Signature},
+//	}, nil
+//}
+//
+//// create multi-signature check script
+//func CreateMultiSigRedeemScript(m int, ps []keys.PublicKey) ([]byte, error) {
+//	if !(m >= 1 && m < len(ps) && len(ps) <= 1024) {
+//		return nil, fmt.Errorf("argument exception: %v,%v", m, len(ps))
+//	}
+//	sb := NewScriptBuilder()
+//	sb.EmitPushInteger(m)
+//	pubKeys := keys.PublicKeySlice(ps)
+//	sort.Sort(pubKeys)
+//	for _, p := range pubKeys {
+//		sb.EmitPushBytes(p.EncodePoint(true))
+//	}
+//	sb.EmitPushInteger(pubKeys.Len())
+//	sb.Emit(PUSHNULL)
+//	sb.EmitSysCall(CheckMultisigWithECDsaSecp256r1.ToInteropMethodHash())
+//	b, err := sb.ToArray()
+//	if err != nil {
+//		return nil, err
+//	}
+//	return b, nil
+//}
+//
+//// CreateMultiSigContract
+//func CreateMultiSigContract(m int, publicKeys []keys.PublicKey) (*Contract, error) {
+//	script, err := CreateMultiSigRedeemScript(m, publicKeys)
+//	if err != nil {
+//		return nil, err
+//	}
+//	parameters := make([]ContractParameterType, m)
+//	for i := 0; i < m; i++ {
+//		parameters[i] = Signature
+//	}
+//
+//	return &Contract{
+//		Script:        script,
+//		ParameterList: parameters,
+//	}, nil
+//}
 
 type ByteSlice []byte
 
@@ -34,99 +172,135 @@ func (bs ByteSlice) GetVarSize() int {
 	return helper.GetVarSize(len(bs)) + len(bs)*1
 }
 
+func (bs ByteSlice) IsStandardContract() bool {
+	return bs.IsSignatureContract() || bs.IsMultiSigContract()
+}
+
 func (bs ByteSlice) IsSignatureContract() bool {
-	if len(bs) != 41 {
+	return IsSignatureContract(bs)
+}
+
+func (bs ByteSlice) IsMultiSigContract() bool {
+	b, _, _, _ := IsMultiSigContract(bs)
+	return b
+}
+
+func (bs ByteSlice) IsMultiSigContractWithCounts() (bool, int, int) {
+	b, m, n, _ := IsMultiSigContract(bs)
+	return b, m, n
+}
+
+func (bs ByteSlice) IsMultiSigContractWithPoints() (bool, int, []crypto.ECPoint) {
+	b, m, _, points := IsMultiSigContract(bs)
+	return b, m, points
+}
+
+func IsSignatureContract(script []byte) bool {
+	if len(script) != 41 {
 		return false
 	}
-	if bs[0] != byte(PUSHDATA1) ||
-		bs[1] != 33 ||
-		bs[35] != byte(PUSHNULL) ||
-		bs[36] != byte(SYSCALL) ||
-		uint(binary.LittleEndian.Uint32(bs[37:])) != ECDsaVerify.ToInteropMethodHash() {
+	if script[0] != byte(PUSHDATA1) ||
+		script[1] != 33 ||
+		script[35] != byte(PUSHNULL) ||
+		script[36] != byte(SYSCALL) ||
+		uint(binary.LittleEndian.Uint32(script[37:])) != VerifyWithECDsaSecp256r1.ToInteropMethodHash() {
 		return false
 	}
 	return true
 }
 
-func (bs ByteSlice) IsMultiSigContract() (bool, int, int) {
+func IsMultiSigContract(script []byte) (bool, int, int, []crypto.ECPoint) {
 	var m, n int = 0, 0
 	var i int = 0
-	if len(bs) < 43 {
-		return false, m, n
+	if len(script) < 43 {
+		return false, m, n, nil
 	}
-	switch bs[i] {
+	switch script[i] {
 	case byte(PUSHINT8):
 		i++
-		m = int(bs[i])
+		m = int(script[i])
 		i++
+		break
 	case byte(PUSHINT16):
 		i++
-		m = int(binary.LittleEndian.Uint16(bs[i : i+2]))
+		m = int(binary.LittleEndian.Uint16(script[i : i+2]))
 		i += 2
+		break
 	case byte(PUSH1), byte(PUSH2), byte(PUSH3), byte(PUSH4),
 		byte(PUSH5), byte(PUSH6), byte(PUSH7), byte(PUSH8),
 		byte(PUSH9), byte(PUSH10), byte(PUSH11), byte(PUSH12),
 		byte(PUSH13), byte(PUSH14), byte(PUSH15), byte(PUSH16):
-		m = int(bs[i] - byte(PUSH0))
+		m = int(script[i] - byte(PUSH0))
 		i++
+		break
 	default:
-		return false, 0, 0
+		return false, 0, 0, nil
 	}
 	if m < 1 || m > 1024 {
-		return false, 0, 0
+		return false, 0, 0, nil
 	}
-	for bs[i] == byte(PUSHDATA1) {
-		if len(bs) <= i+35 {
-			return false, 0, 0
+	points := make([]crypto.ECPoint, 0)
+	for script[i] == byte(PUSHDATA1) {
+		if len(script) <= i+35 {
+			return false, 0, 0, nil
 		}
 		i++
-		if bs[i] != 33 {
-			return false, 0, 0
+		if script[i] != 33 {
+			return false, 0, 0, nil
 		}
+		// add point
+		point, _ := crypto.DecodePoint(script[i+1:i+34], &crypto.P256)
+		points = append(points, *point)
 		i += 34
 		n++
 	}
 	if n < m || n > 1024 {
-		return false, 0, 0
+		return false, 0, 0, nil
 	}
-	switch bs[i] {
+	switch script[i] {
 	case byte(PUSHINT8):
-		i++
-		if n != int(bs[i]) {
-			return false, 0, 0
+		if len(script) <= i+1 {
+			return false, 0, 0, nil
 		}
 		i++
+		if n != int(script[i]) {
+			return false, 0, 0, nil
+		}
+		i++
+		break
 	case byte(PUSHINT16):
-		if len(bs) < i+3 {
-			return false, 0, 0
-		} else if i++; n != int(binary.LittleEndian.Uint16(bs[i:i+2])) {
-			return false, 0, 0
+		if len(script) < i+3 {
+			return false, 0, 0, nil
+		} else if i++; n != int(binary.LittleEndian.Uint16(script[i:i+2])) {
+			return false, 0, 0, nil
 		}
 		i += 2
+		break
 	case byte(PUSH1), byte(PUSH2), byte(PUSH3), byte(PUSH4),
 		byte(PUSH5), byte(PUSH6), byte(PUSH7), byte(PUSH8),
 		byte(PUSH9), byte(PUSH10), byte(PUSH11), byte(PUSH12),
 		byte(PUSH13), byte(PUSH14), byte(PUSH15), byte(PUSH16):
-		if n != int(bs[i]-byte(PUSH0)) {
-			return false, 0, 0
+		if n != int(script[i]-byte(PUSH0)) {
+			return false, 0, 0, nil
 		}
 		i++
+		break
 	default:
-		return false, 0, 0
+		return false, 0, 0, nil
 	}
-	if bs[i] != byte(PUSHNULL) {
-		return false, 0, 0
+	if len(script) != i+6 {
+		return false, 0, 0, nil
+	}
+	if script[i] != byte(PUSHNULL) {
+		return false, 0, 0, nil
 	}
 	i++
-	if bs[i] != byte(SYSCALL) {
-		return false, 0, 0
+	if script[i] != byte(SYSCALL) {
+		return false, 0, 0, nil
 	}
 	i++
-	if len(bs) != i+4 {
-		return false, 0, 0
+	if uint(binary.LittleEndian.Uint32(script[i:])) != CheckMultisigWithECDsaSecp256r1.ToInteropMethodHash() {
+		return false, 0, 0, nil
 	}
-	if uint(binary.LittleEndian.Uint32(bs[i:])) != ECDsaCheckMultiSig.ToInteropMethodHash() {
-		return false, 0, 0
-	}
-	return true, m, n
+	return true, m, n, points
 }

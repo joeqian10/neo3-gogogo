@@ -1,52 +1,52 @@
 package tx
 
 import (
-	"encoding/hex"
-	"encoding/json"
+	"fmt"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/helper/io"
-	"github.com/joeqian10/neo3-gogogo/sc"
 )
 
-type TransactionAttribute struct {
-	Usage TransactionAttributeUsage
-	Data  []byte
+type ITransactionAttribute interface {
+	GetAttributeType() TransactionAttributeType
+	AllowMultiple() bool
+	GetAttributeSize() int
+
+	Deserialize(br *io.BinaryReader)
+	Serialize(bw *io.BinaryWriter)
+	DeserializeWithoutType(br *io.BinaryReader)
+	SerializeWithoutType(bw *io.BinaryWriter)
 }
 
-func (attr *TransactionAttribute) Size() int {
-	size := 1 + sc.ByteSlice(attr.Data).GetVarSize()
-	return size
-}
-
-// Deserialize implements Serializable interface.
-func (attr *TransactionAttribute) Deserialize(br *io.BinaryReader) {
-	br.ReadLE(&attr.Usage)
-	if attr.Usage.IsDefined() == false {
-		attr.Usage = Url
+func CreateTransactionAttribute(attributeType TransactionAttributeType) ITransactionAttribute {
+	b := byte(attributeType)
+	switch b {
+	case 0x01:
+		return &HighPriorityAttribute{}
+	case 0x11:
+		a, _ := NewOracleResponseAttribute()
+		return a
+	default:
+		return nil
 	}
-	attr.Data = br.ReadVarBytes(252)
 }
 
-// Serialize implements Serializable interface.
-func (attr *TransactionAttribute) Serialize(bw *io.BinaryWriter) {
-	bw.WriteLE(attr.Usage)
-	bw.WriteVarBytes(attr.Data)
+func DeserializeFrom(br *io.BinaryReader) ITransactionAttribute {
+	t := TransactionAttributeType(br.ReadByte())
+	a := CreateTransactionAttribute(t)
+	if a == nil {
+		br.Err = fmt.Errorf("format error: invalid attribute type")
+		return nil
+	}
+	a.DeserializeWithoutType(br)
+	return a
 }
 
-// MarshalJSON implements the json Marshaller interface.
-func (attr *TransactionAttribute) MarshalJSON() ([]byte, error) {
-	return json.Marshal(map[string]string{
-		"usage": attr.Usage.String(),
-		"data":  hex.EncodeToString(attr.Data),
-	})
-}
-
-type TransactionAttributeSlice []*TransactionAttribute
+type TransactionAttributeSlice []ITransactionAttribute
 
 func (ts TransactionAttributeSlice) GetVarSize() int {
 	var size int = 0
 	for _, t := range ts {
-		size += t.Size()
+		size += t.GetAttributeSize()
 	}
 	return helper.GetVarSize(len(ts)) + size
 }

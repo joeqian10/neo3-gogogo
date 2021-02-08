@@ -26,10 +26,12 @@ func TestBufBinaryWriter_Reset(t *testing.T) {
 	bw := NewBufBinaryWriter()
 	for i := 0; i < 3; i++ {
 		bw.WriteLE(uint32(i))
-		assert.Nil(t, bw.Err)
-		_ = bw.Bytes()
-		assert.NotNil(t, bw.Err)
-		bw.Reset()
-		assert.Nil(t, bw.Err)
 	}
+	assert.Nil(t, bw.Err)
+	b := bw.Bytes()
+	assert.Equal(t, 12, len(b))
+	bw.Reset()
+	b = bw.Bytes()
+	assert.Equal(t, 0, len(b))
+	assert.Nil(t, bw.Err)
 }

@@ -5,33 +5,43 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/helper/io"
+	"github.com/joeqian10/neo3-gogogo/keys"
 	"github.com/joeqian10/neo3-gogogo/sc"
-	"github.com/joeqian10/neo3-gogogo/wallet/keys"
 )
 
 const (
+	Neo3Magic                   uint32 = 0x4F454E
 	TransactionVersion          uint8  = 0 // neo-2.x
 	MaxTransactionSize                 = 102400
-	MaxValidUntilBlockIncrement uint32 = 2102400
-	MaxTransactionAttributes           = 16 // Maximum number of attributes that can be contained within a transaction
-	MaxCosigners                       = 16 // Maximum number of cosigners that can be contained within a transaction
+	MaxValidUntilBlockIncrement uint32 = 5760 // 24 hours
+	MaxTransactionAttributes           = 16   // Maximum number of attributes that can be contained within a transaction
+	MaxSigners                         = 16   // Maximum number of cosigners that can be contained within a transaction
 )
+
+const NeoTokenId = "9bde8f209c88dd0e7ca3bf0af0f476cdd8207789"
+const GasTokenId = "8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b"
+
+const GasFactor = 100000000
+const ExecFeeFactor = 30
+const FeePerByte = 1000
+const ECDsaVerifyPrice = 1 << 15
+
+var NeoToken, _ = helper.UInt160FromString(NeoTokenId)
+var GasToken, _ = helper.UInt160FromString(GasTokenId)
 
 // base class
 type Transaction struct {
 	version         uint8
 	nonce           uint32
-	sender          helper.UInt160
 	sysfee          int64
 	netfee          int64
 	validUntilBlock uint32
-	attributes      []*TransactionAttribute
-	cosigners       []*Cosigner
+	signers         []Signer
+	attributes      []ITransactionAttribute
 	script          []byte
-	witnesses       []*Witness
+	witnesses       []Witness
 
 	_hash *helper.UInt256
 	_size int
@@ -41,50 +51,59 @@ func NewTransaction() *Transaction {
 	return &Transaction{
 		version:         uint8(0),
 		nonce:           0,
-		sender:          helper.UInt160{},
 		sysfee:          0,
 		netfee:          0,
 		validUntilBlock: 0,
-		attributes:      []*TransactionAttribute{},
-		cosigners:       []*Cosigner{},
+		signers:         []Signer{},
+		attributes:      []ITransactionAttribute{},
 		script:          []byte{},
-		witnesses:       []*Witness{},
+		witnesses:       []Witness{},
 	}
 }
 
 func (tx *Transaction) HeaderSize() int {
 	buf := bytes.Buffer{}
-	buf.WriteByte(byte(tx.version))                             // 1
-	buf.Write(helper.UInt32ToBytes(uint32(tx.nonce)))           // 4
-	buf.Write(tx.sender.Bytes())                                // 20
-	buf.Write(helper.UInt64ToBytes(uint64(tx.sysfee)))          // 8
-	buf.Write(helper.UInt64ToBytes(uint64(tx.netfee)))          // 8
-	buf.Write(helper.UInt32ToBytes(uint32(tx.validUntilBlock))) // 4
-	return len(buf.Bytes())                                     // total 45
+	buf.WriteByte(tx.version)                           // 1
+	buf.Write(helper.UInt32ToBytes(tx.nonce))           // 4
+	buf.Write(helper.UInt64ToBytes(uint64(tx.sysfee)))  // 8
+	buf.Write(helper.UInt64ToBytes(uint64(tx.netfee)))  // 8
+	buf.Write(helper.UInt32ToBytes(tx.validUntilBlock)) // 4
+	return len(buf.Bytes())                             // total 25
 }
 
 // GetAttributes is the getter of tx.attributes
-func (tx *Transaction) GetAttributes() []*TransactionAttribute {
+func (tx *Transaction) GetAttributes() []ITransactionAttribute {
 	return tx.attributes
 }
 
 // SetAttributes is the setter of tx.attributes
-func (tx *Transaction) SetAttributes(value []*TransactionAttribute) {
+func (tx *Transaction) SetAttributes(value []ITransactionAttribute) {
 	tx.attributes = value
 	tx._hash = nil
 	tx._size = 0
 }
 
-// GetCosigners is the getter of tx.cosigners
-func (tx *Transaction) GetCosigners() []*Cosigner {
-	return tx.cosigners
+/// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
+/// <para>Note that this property must be used with care. Getting the value of this property multiple times will return the same result. The value of this property can only be obtained after the transaction has been completely built (no longer modified).</para>
+func (tx *Transaction) FeePerByte() int64 {
+	return tx.netfee / int64(tx._size)
 }
 
-// SetCosigners is the setter of tx.cosigners
-func (tx *Transaction) SetCosigners(value []*Cosigner) {
-	tx.cosigners = value
-	tx._hash = nil
-	tx._size = 0
+// GetHash is the getter of tx._hash
+func (tx *Transaction) GetHash() *helper.UInt256 {
+	if tx._hash == nil {
+		tx._hash = tx.CalculateHash()
+	}
+	return tx._hash
+}
+
+func (tx *Transaction) CalculateHash() *helper.UInt256 {
+	return CalculateHash(tx)
+}
+
+// GetHashData returns unsigned tx data
+func (tx *Transaction) GetHashData(magic uint32) []byte {
+	return GetHashDataWithMagic(tx, magic)
 }
 
 // GetNetworkFee is the getter of tx.netfee
@@ -121,15 +140,29 @@ func (tx *Transaction) SetScript(value []byte) {
 	tx._size = 0
 }
 
-// GetSender is the getter of tx.sender
-func (tx *Transaction) GetSender() helper.UInt160 {
-	return tx.sender
+// GetSender
+func (tx *Transaction) GetSender() *helper.UInt160 {
+	return tx.signers[0].Account
 }
 
-// SetSender is the setter of tx.sender
-func (tx *Transaction) SetSender(value helper.UInt160) {
-	tx.sender = value
+// GetSigners is the getter of tx.signers
+func (tx *Transaction) GetSigners() []Signer {
+	return tx.signers
+}
+
+// SetSigners is the setter of tx.signers
+func (tx *Transaction) SetSigners(value []Signer) {
+	tx.signers = value
 	tx._hash = nil
+	tx._size = 0
+}
+
+// GetSize is the getter of tx._size
+func (tx *Transaction) GetSize() int {
+	if tx._size == 0 {
+		tx._size = len(tx.RawTransaction())
+	}
+	return tx._size
 }
 
 // GetSystemFee is the getter of tx.sysfee
@@ -166,33 +199,14 @@ func (tx *Transaction) SetVersion(value uint8) {
 }
 
 // GetWitnesses is the getter of tx.witnesses
-func (tx *Transaction) GetWitnesses() []*Witness {
+func (tx *Transaction) GetWitnesses() []Witness {
 	return tx.witnesses
 }
 
 // SetWitnesses is the setter of tx.witnesses
-func (tx *Transaction) SetWitnesses(value []*Witness) {
+func (tx *Transaction) SetWitnesses(value []Witness) {
 	tx.witnesses = value
 	tx._hash = nil
-}
-
-// GetHash is the getter of tx._hash
-func (tx *Transaction) GetHash() helper.UInt256 {
-	if tx._hash == nil {
-		hash, _ := helper.UInt256FromBytes(crypto.Hash256(tx.GetHashData()))
-		tx._hash = &hash
-	}
-	return *tx._hash
-}
-
-// GetHashData returns unsigned tx data
-func (tx *Transaction) GetHashData() []byte {
-	buf := io.NewBufBinaryWriter()
-	tx.SerializeUnsigned(buf.BinaryWriter)
-	if buf.Err != nil {
-		return nil
-	}
-	return buf.Bytes()
 }
 
 // ToByteArray returns signed tx data
@@ -203,14 +217,6 @@ func (tx *Transaction) ToByteArray() []byte {
 		return nil
 	}
 	return buf.Bytes()
-}
-
-// GetSize is the setter of tx._size
-func (tx *Transaction) GetSize() int {
-	if tx._size == 0 {
-		tx._size = len(tx.RawTransaction())
-	}
-	return tx._size
 }
 
 func (tx *Transaction) RawTransaction() []byte {
@@ -233,52 +239,82 @@ func (tx *Transaction) DeserializeUnsigned(br *io.BinaryReader) {
 	br.ReadLE(&tx.version)
 	if tx.version > 0 {
 		br.Err = fmt.Errorf("format error: version > 0")
+		return
 	}
 	// nonce
 	br.ReadLE(&tx.nonce)
-	// sender
-	br.ReadLE(&tx.sender)
 	// sysfee
 	br.ReadLE(&tx.sysfee)
 	if tx.sysfee < 0 {
 		br.Err = fmt.Errorf("format error: sysfee < 0")
-	}
-	if tx.sysfee%100000000 != 0 {
-		br.Err = fmt.Errorf("format error: sysfee is not an integer")
+		return
 	}
 	// netfee
 	br.ReadLE(&tx.netfee)
 	if tx.netfee < 0 {
 		br.Err = fmt.Errorf("format error: netfee < 0")
+		return
+	}
+	if tx.sysfee + tx.netfee < tx.sysfee {
+		br.Err = fmt.Errorf("format error: overflow")
+		return
 	}
 	// validUntilBlock
 	br.ReadLE(&tx.validUntilBlock)
+	// signers
+	tx.signers = deserializeSigners(br, MaxTransactionAttributes)
 	// attributes
-	lenAttributes := br.ReadVarUInt(MaxTransactionAttributes)
-	tx.attributes = make([]*TransactionAttribute, lenAttributes)
-	for i := 0; i < int(lenAttributes); i++ {
-		tx.attributes[i] = &TransactionAttribute{} // may not be needed
-		tx.attributes[i].Deserialize(br)
-	}
-	// cosigners
-	lenCosigners := br.ReadVarUInt(MaxCosigners)
-	tx.cosigners = make([]*Cosigner, lenCosigners)
-	for i := 0; i < int(lenCosigners); i++ {
-		tx.cosigners[i] = &Cosigner{} // may not be needed
-		tx.cosigners[i].Deserialize(br)
-	}
+	tx.attributes = deserializeAttributes(br, MaxTransactionAttributes - len(tx.signers))
 	// script
-	tx.script = br.ReadVarBytes(65535)
+	tx.script = br.ReadVarBytesWithMaxLimit(65535)
 	if len(tx.script) == 0 {
 		br.Err = fmt.Errorf("format error: script is empty")
 	}
 }
 
+func deserializeAttributes(br *io.BinaryReader, maxCount int) []ITransactionAttribute {
+	count := int(br.ReadVarUIntWithMaxLimit(uint64(maxCount)))
+	result := make([]ITransactionAttribute, count)
+	m := make(map[TransactionAttributeType]ITransactionAttribute)
+	for i := 0; i < count; i++ {
+		attribute := DeserializeFrom(br)
+		if attribute == nil {
+			return nil
+		}
+		if !attribute.AllowMultiple() && m[attribute.GetAttributeType()] == attribute {
+			br.Err = fmt.Errorf("format error: duplicate attribute")
+			return nil
+		}
+		result[i] = attribute
+	}
+	return result
+}
+
+func deserializeSigners(br *io.BinaryReader, maxCount int) []Signer {
+	count := int(br.ReadVarUIntWithMaxLimit(uint64(maxCount)))
+	if count == 0 {
+		br.Err = fmt.Errorf("format error: signer count is zero")
+		return nil
+	}
+	result := make([]Signer, count)
+	m := make(map[helper.UInt160]Signer)
+	for i := 0; i < count; i++ {
+		signer := NewDefaultSigner()
+		signer.Deserialize(br)
+		if t, ok := m[*signer.Account]; ok && (&t).CompareTo(signer) == 0 {
+			br.Err = fmt.Errorf("format error: duplicate signer")
+			return nil
+		}
+		result[i] = *signer
+	}
+	return result
+}
+
 func (tx *Transaction) DeserializeWitnesses(br *io.BinaryReader) {
-	lenWitnesses := br.ReadVarUInt(16777216)
-	tx.witnesses = make([]*Witness, lenWitnesses)
+	lenWitnesses := br.ReadVarUInt()
+	tx.witnesses = make([]Witness, lenWitnesses)
 	for i := 0; i < int(lenWitnesses); i++ {
-		tx.witnesses[i] = &Witness{}
+		tx.witnesses[i] = Witness{}
 		tx.witnesses[i].Deserialize(br)
 	}
 }
@@ -294,23 +330,21 @@ func (tx *Transaction) SerializeUnsigned(bw *io.BinaryWriter) {
 	bw.WriteLE(tx.version)
 	// nonce
 	bw.WriteLE(tx.nonce)
-	// sender
-	bw.WriteLE(tx.sender)
 	// sysfee
 	bw.WriteLE(tx.sysfee)
 	// netfee
 	bw.WriteLE(tx.netfee)
 	// validUntilBlock
 	bw.WriteLE(tx.validUntilBlock)
+	// signers
+	bw.WriteVarUInt(uint64(len(tx.signers)))
+	for _, signer := range tx.signers {
+		signer.Serialize(bw)
+	}
 	// attributes
 	bw.WriteVarUInt(uint64(len(tx.attributes)))
 	for _, attr := range tx.attributes {
 		attr.Serialize(bw)
-	}
-	// cosigners
-	bw.WriteVarUInt(uint64(len(tx.cosigners)))
-	for _, cosigner := range tx.cosigners {
-		cosigner.Serialize(bw)
 	}
 	// script
 	bw.WriteVarBytes(tx.script)
@@ -324,22 +358,16 @@ func (tx *Transaction) SerializeWitnesses(bw *io.BinaryWriter) {
 }
 
 func (tx *Transaction) GetScriptHashesForVerifying() []helper.UInt160 {
-	hashmaps := map[helper.UInt160]bool{tx.sender: true}
-	for _, cosigner := range tx.cosigners {
-		if !hashmaps[cosigner.Account] {
-			hashmaps[cosigner.Account] = true
-		}
+	result := make([]helper.UInt160, len(tx.signers))
+	for i, s := range tx.signers {
+		result[i] = *s.Account
 	}
-	hashes := []helper.UInt160{}
-	for key, _ := range hashmaps {
-		hashes = append(hashes, key)
-	}
-	sort.Sort(helper.UInt160Slice(hashes))
-	return hashes
+	return result
 }
 
+// todo,
 // AddSignature adds signature for Transaction
-func (tx *Transaction) AddSignature(pairs []*keys.KeyPair, contract *sc.Contract) error {
+func (tx *Transaction) AddSignature(pairs []keys.KeyPair, contract *sc.Contract) error {
 	scriptHash := contract.GetScriptHash()
 	for _, witness := range tx.GetWitnesses() {
 		// the transaction has been signed with this KeyPair
@@ -349,11 +377,11 @@ func (tx *Transaction) AddSignature(pairs []*keys.KeyPair, contract *sc.Contract
 	}
 
 	// create witness
-	witness, err := CreateContractWitness(tx.GetHashData(), pairs, contract)
+	witness, err := CreateContractWitness(tx.GetHashData(Neo3Magic), pairs, contract)
 	if err != nil {
 		return err
 	}
-	tx.witnesses = append(tx.witnesses, witness)
+	tx.witnesses = append(tx.witnesses, *witness)
 	sort.Sort(WitnessSlice(tx.witnesses))
 	return nil
 }

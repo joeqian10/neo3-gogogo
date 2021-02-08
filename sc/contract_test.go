@@ -1,45 +1,118 @@
 package sc
 
 import (
+	"crypto/elliptic"
+	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
+var p256 = elliptic.P256()
+var G, _ = crypto.CreateECPoint(p256.Params().Gx, p256.Params().Gy, &p256)
+
+func TestCreateContract(t *testing.T) {
+	script := make([]byte, 32)
+	paramList := []ContractParameterType{Signature}
+	c := CreateContract(paramList, script)
+	assert.Equal(t, helper.BytesToHex(script), helper.BytesToHex(c.Script))
+	assert.Equal(t, 1, len(c.ParameterList))
+	assert.Equal(t, Signature, c.ParameterList[0])
+}
+
+func TestContract_GetAddress(t *testing.T) {
+	c, err := CreateSignatureContract(G)
+	assert.Nil(t, err)
+	expectedArray := make([]byte, 41)
+	expectedArray[0] = byte(PUSHDATA1)
+	expectedArray[1] = 0x21
+	tmp := G.EncodePoint(true)
+	assert.Equal(t, 33, len(tmp))
+
+	for i := 0; i < len(tmp); i++ {
+		expectedArray[i+2] = tmp[i]
+	}
+	expectedArray[35] = byte(PUSHNULL)
+	expectedArray[36] = byte(SYSCALL)
+	tmp = helper.UInt32ToBytes(uint32(VerifyWithECDsaSecp256r1.ToInteropMethodHash()))
+	assert.Equal(t, 4, len(tmp))
+
+	for i := 0; i < len(tmp); i++ {
+		expectedArray[i+37] = tmp[i]
+	}
+	assert.Equal(t, crypto.ScriptHashToAddress(crypto.BytesToScriptHash(expectedArray)), c.GetAddress())
+}
+
+func TestContract_GetScriptHash(t *testing.T) {
+	c, err := CreateSignatureContract(G)
+	assert.Nil(t, err)
+
+	expectedArray := make([]byte, 41)
+	expectedArray[0] = byte(PUSHDATA1)
+	expectedArray[1] = 0x21
+	tmp := G.EncodePoint(true)
+	assert.Equal(t, 33, len(tmp))
+
+	for i := 0; i < len(tmp); i++ {
+		expectedArray[i+2] = tmp[i]
+	}
+	expectedArray[35] = byte(PUSHNULL)
+	expectedArray[36] = byte(SYSCALL)
+	tmp = helper.UInt32ToBytes(uint32(VerifyWithECDsaSecp256r1.ToInteropMethodHash()))
+	assert.Equal(t, 4, len(tmp))
+
+	for i := 0; i < len(tmp); i++ {
+		expectedArray[i+37] = tmp[i]
+	}
+	assert.Equal(t, (crypto.BytesToScriptHash(expectedArray)).String(), c.GetScriptHash().String())
+}
+
 func TestByteSlice_GetVarSize(t *testing.T) {
-	b := helper.HexTobytes("deadbeef")
+	b := helper.HexToBytes("deadbeef")
 	size := ByteSlice(b).GetVarSize()
 	assert.Equal(t, 5, size)
 }
 
-func TestByteSlice_IsMultiSigContract(t *testing.T) {
-	m := 4
-	sb := NewScriptBuilder()
-	_ = sb.EmitPushInt(m)
-	_ = sb.EmitPushBytes(helper.HexTobytes("025e5eb8e89ab16cda6e5f646de54a8e9e9e8ce0a64e44db6b6ffeff8a6369f268"))
-	_ = sb.EmitPushBytes(helper.HexTobytes("025e5eb8e89ab16cda6e5f646de54a8e9e9e8ce0a64e44db6b6ffeff8a6369f268"))
-	_ = sb.EmitPushBytes(helper.HexTobytes("025e5eb8e89ab16cda6e5f646de54a8e9e9e8ce0a64e44db6b6ffeff8a6369f268"))
-	_ = sb.EmitPushBytes(helper.HexTobytes("025e5eb8e89ab16cda6e5f646de54a8e9e9e8ce0a64e44db6b6ffeff8a6369f268"))
-	_ = sb.EmitPushInt(m)
-	_ = sb.Emit(PUSHNULL)
-	_ = sb.EmitSysCall(ECDsaCheckMultiSig.ToInteropMethodHash())
-	script := sb.ToArray()
-	b, mt, nt := ByteSlice(script).IsMultiSigContract()
-	assert.Equal(t, true, b)
-	assert.Equal(t, 4, mt)
-	assert.Equal(t, 4, nt)
-}
-
 func TestByteSlice_IsSignatureContract(t *testing.T) {
-	//p, err := keys.NewPublicKeyFromString("025e5eb8e89ab16cda6e5f646de54a8e9e9e8ce0a64e44db6b6ffeff8a6369f268")
-	//assert.Nil(t, err)
-	//script := keys.CreateSignatureRedeemScript(p)
-	//b := ByteSlice(script).IsSignatureContract()
-	sb := NewScriptBuilder()
-	_ = sb.EmitPushBytes(helper.HexTobytes("025e5eb8e89ab16cda6e5f646de54a8e9e9e8ce0a64e44db6b6ffeff8a6369f268"))
-	_ = sb.Emit(PUSHNULL)
-	_ = sb.EmitSysCall(ECDsaVerify.ToInteropMethodHash())
-	script := sb.ToArray()
+	script, err := CreateSignatureRedeemScript(G)
+	assert.Nil(t, err)
+
 	b := ByteSlice(script).IsSignatureContract()
 	assert.Equal(t, true, b)
+}
+
+func TestByteSlice_IsMultiSigContract(t *testing.T) {
+	pubKeys1 := make([]crypto.ECPoint, 20)
+	for i := 0; i < 20; i++ {
+		pubKeys1[i] = *G
+	}
+	script1, err := CreateMultiSigRedeemScript(20, pubKeys1)
+	assert.Nil(t, err)
+	b1, m1, n1 := ByteSlice(script1).IsMultiSigContractWithCounts()
+	assert.Equal(t, true, b1)
+	assert.Equal(t, 20, m1)
+	assert.Equal(t, 20, n1)
+
+	pubKeys2 := make([]crypto.ECPoint, 256)
+	for i := 0; i < 256; i++ {
+		pubKeys2[i] = *G
+	}
+	script2, err := CreateMultiSigRedeemScript(4, pubKeys2)
+	assert.Nil(t, err)
+	b2, m2, n2 := ByteSlice(script2).IsMultiSigContractWithCounts()
+	assert.Equal(t, true, b2)
+	assert.Equal(t, 4, m2)
+	assert.Equal(t, 256, n2)
+
+	pubKeys3 := make([]crypto.ECPoint, 256)
+	for i := 0; i < 256; i++ {
+		pubKeys3[i] = *G
+	}
+	script3, err := CreateMultiSigRedeemScript(4, pubKeys3)
+	assert.Nil(t, err)
+	script3[len(script3)-1] = 0x00
+	b3, m3, p := ByteSlice(script3).IsMultiSigContractWithPoints()
+	assert.Equal(t, false, b3)
+	assert.Equal(t, 0, m3)
+	assert.Nil(t, p)
 }

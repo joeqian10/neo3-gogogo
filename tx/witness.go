@@ -9,39 +9,46 @@ import (
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/helper/io"
+	"github.com/joeqian10/neo3-gogogo/keys"
 	"github.com/joeqian10/neo3-gogogo/sc"
-	"github.com/joeqian10/neo3-gogogo/wallet/keys"
 )
 
-type WitnessSlice []*Witness
+type WitnessSlice []Witness
 
 func (ws WitnessSlice) Len() int           { return len(ws) }
 func (ws WitnessSlice) Less(i, j int) bool { return ws[i]._scriptHash.Less(ws[j]._scriptHash) }
 func (ws WitnessSlice) Swap(i, j int)      { ws[i], ws[j] = ws[j], ws[i] }
 
+/// <summary>
+/// This is designed to allow a MultiSig 21/11 (committee)
+/// Invocation = 11 * (64 + 2) = 726
+/// </summary>
+const MaxInvocationScript = 1024
+/// <summary>
+/// Verification = m + (PUSH_PubKey * 21) + length + null + syscall = 1 + ((2 + 33) * 21) + 2 + 1 + 5 = 744
+/// </summary>
+const MaxVerificationScript = 1024
+
 // Witness
 type Witness struct {
 	InvocationScript   []byte         // signature
 	VerificationScript []byte         // pub key
-	_scriptHash        helper.UInt160 // script hash
+	_scriptHash        *helper.UInt160 // script hash
+}
+
+func (w *Witness) GetScriptHash() *helper.UInt160 {
+	w._scriptHash = crypto.BytesToScriptHash(w.VerificationScript)
+	return w._scriptHash
 }
 
 func (w *Witness) Size() int {
 	return sc.ByteSlice(w.InvocationScript).GetVarSize() + sc.ByteSlice(w.VerificationScript).GetVarSize()
 }
 
-func (w *Witness) GetScriptHash() helper.UInt160 {
-	w._scriptHash, _ = helper.UInt160FromBytes(crypto.Hash160(w.VerificationScript))
-	return w._scriptHash
-}
-
 // Deserialize implements Serializable interface.
 func (w *Witness) Deserialize(br *io.BinaryReader) {
-	// This is designed to allow a MultiSig 10/10 (around 1003 bytes) ~1024 bytes
-	// Invocation = 10 * 64 + 10 = 650 ~ 664  (exact is 653)
-	w.InvocationScript = br.ReadVarBytes(663)
-	// Verification = 10 * 33 + 10 = 340 ~ 360   (exact is 351)
-	w.VerificationScript = br.ReadVarBytes(361)
+	w.InvocationScript = br.ReadVarBytesWithMaxLimit(MaxInvocationScript)
+	w.VerificationScript = br.ReadVarBytesWithMaxLimit(MaxVerificationScript)
 }
 
 // Serialize implements Serializable interface.
@@ -61,33 +68,33 @@ func (w *Witness) MarshalJSON() ([]byte, error) {
 }
 
 // Create Witness with invocationScript and verificationScript
-func CreateWitness(invocationScript []byte, verificationScript []byte) (witness *Witness, err error) {
+func CreateWitness(invocationScript []byte, verificationScript []byte) (*Witness, error) {
 	if len(verificationScript) == 0 {
 		return nil, fmt.Errorf("verificationScript should not be empty")
 	}
-	witness = &Witness{InvocationScript: invocationScript, VerificationScript: verificationScript}
-	witness._scriptHash, err = helper.UInt160FromBytes(crypto.Hash160(witness.VerificationScript))
-	return
+	witness := &Witness{InvocationScript: invocationScript, VerificationScript: verificationScript}
+	witness._scriptHash = helper.UInt160FromBytes(crypto.Hash160(witness.VerificationScript))
+	return witness, nil
 }
 
 // this is only used for empty VerificationScript, neo block chain will search the contract script with scriptHash
-func CreateWitnessWithScriptHash(scriptHash helper.UInt160, invocationScript []byte) (witness *Witness) {
+func CreateWitnessWithScriptHash(scriptHash *helper.UInt160, invocationScript []byte) (witness *Witness) {
 	witness = &Witness{InvocationScript: invocationScript, VerificationScript: []byte{}, _scriptHash: scriptHash}
 	return
 }
 
 // CreateContractWitness
-func CreateContractWitness(msg []byte, pairs []*keys.KeyPair, contract *sc.Contract) (witness *Witness, err error) {
+func CreateContractWitness(msg []byte, pairs []keys.KeyPair, contract *sc.Contract) (*Witness, error) {
 	invocationScript, err := CreateSignatureInvocation(msg, pairs)
 	if err != nil {
-		return witness, err
+		return nil, err
 	}
 
 	return CreateWitness(invocationScript, contract.Script)
 }
 
 // CreateSignatureInvocation pushes signature
-func CreateSignatureInvocation(msg []byte, pairs []*keys.KeyPair) (invocationScript []byte, err error) {
+func CreateSignatureInvocation(msg []byte, pairs []keys.KeyPair) ([]byte, error) {
 	// invocationScript: push signature
 	sort.Sort(keys.KeyPairSlice(pairs)) // sort in ascending order
 
@@ -95,12 +102,9 @@ func CreateSignatureInvocation(msg []byte, pairs []*keys.KeyPair) (invocationScr
 	for _, pair := range pairs {
 		signature, err := pair.Sign(msg)
 		if err != nil {
-			return invocationScript, err
+			return nil, err
 		}
-		err = builder.EmitPushBytes(signature)
-		if err != nil {
-			return invocationScript, err
-		}
+		builder.EmitPushBytes(signature)
 	}
-	return builder.ToArray(), nil
+	return builder.ToArray()
 }

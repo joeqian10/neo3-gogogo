@@ -18,11 +18,13 @@ type RpcBlockHeader struct {
 
 type RpcBlock struct {
 	RpcBlockHeader
-	ConsensusData struct {
-		PrimaryIndex int    `json:"primary"`
-		Nonce        string `json:"nonce"`
-	} `json:"consensus_data"`
+	ConsensusData RpcConsensusData `json:"consensusdata"`
 	Tx []RpcTransaction `json:"tx"`
+}
+
+type RpcConsensusData struct {
+	PrimaryIndex int    `json:"primary"`
+	Nonce        string `json:"nonce"`
 }
 
 //func (bh *RpcBlockHeader) Deserialize(br *io.BinaryReader) {

@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"github.com/joeqian10/neo3-gogogo/helper"
+	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -19,6 +20,7 @@ func (r *RpcClientMock) GetBestBlockHash() GetBestBlockHashResponse {
 	args := r.Called()
 	return args.Get(0).(GetBestBlockHashResponse)
 }
+
 func (r *RpcClientMock) GetBlock(hashOrIndex string) GetBlockResponse {
 	args := r.Called(hashOrIndex)
 	return args.Get(0).(GetBlockResponse)
@@ -69,9 +71,14 @@ func (r *RpcClientMock) GetTransactionHeight(s string) GetTransactionHeightRespo
 	return args.Get(0).(GetTransactionHeightResponse)
 }
 
-func (r *RpcClientMock) GetValidators() GetValidatorsResponse {
+func (r *RpcClientMock) GetNextBlockValidators() GetNextBlockValidatorsResponse {
 	args := r.Called()
-	return args.Get(0).(GetValidatorsResponse)
+	return args.Get(0).(GetNextBlockValidatorsResponse)
+}
+
+func (r *RpcClientMock) GetCommittee() GetCommitteeResponse {
+	args := r.Called()
+	return args.Get(0).(GetCommitteeResponse)
 }
 
 // node
@@ -100,7 +107,28 @@ func (r *RpcClientMock) SubmitBlock(s string) SubmitBlockResponse {
 	return args.Get(0).(SubmitBlockResponse)
 }
 
+// plugins
+func (r *RpcClientMock) GetApplicationLog(s string) GetApplicationLogResponse {
+	args := r.Called(s)
+	return args.Get(0).(GetApplicationLogResponse)
+}
+
+func (r *RpcClientMock) GetNep17Balances(s string) GetNep17BalancesResponse {
+	args := r.Called(s)
+	return args.Get(0).(GetNep17BalancesResponse)
+}
+
+func (r *RpcClientMock) GetNep17Transfers(s string, t1 *int, t2 *int) GetNep17TransfersResponse {
+	args := r.Called(s, t1, t2)
+	return args.Get(0).(GetNep17TransfersResponse)
+}
+
 // smart contract
+func (r *RpcClientMock) InvokeContractVerify(s string, a []models.RpcContractParameter, signers models.RpcSigners) InvokeResultResponse {
+	args := r.Called(s, a, signers)
+	return args.Get(0).(InvokeResultResponse)
+}
+
 func (r *RpcClientMock) InvokeFunction(s1 string, s2 string, a ...InvokeFunctionStackArg) InvokeResultResponse {
 	args := r.Called(s1, s2, a)
 	return args.Get(0).(InvokeResultResponse)
@@ -111,15 +139,36 @@ func (r *RpcClientMock) InvokeScript(s string, v ...helper.UInt160) InvokeResult
 	return args.Get(0).(InvokeResultResponse)
 }
 
+func (r *RpcClientMock) GetUnclaimedGas(s string) GetUnclaimedGasResponse {
+	args := r.Called(s)
+	return args.Get(0).(GetUnclaimedGasResponse)
+}
+
+// state
+func (r *RpcClientMock) GetProof(s1, s2, s3 string) GetProofResponse {
+	args := r.Called(s1, s2, s3)
+	return args.Get(0).(GetProofResponse)
+}
+
+func (r *RpcClientMock) GetStateHeight() GetStateHeightResponse {
+	args := r.Called()
+	return args.Get(0).(GetStateHeightResponse)
+}
+
+func (r *RpcClientMock) GetStateRoot(u uint32) GetStateRootResponse {
+	args := r.Called(u)
+	return args.Get(0).(GetStateRootResponse)
+}
+
+func (r *RpcClientMock) VerifyProof(s string, b []byte) VerifyProofResponse {
+	args := r.Called(s, b)
+	return args.Get(0).(VerifyProofResponse)
+}
+
 // utilities
 func (r *RpcClientMock) ListPlugins() ListPluginsResponse {
 	args := r.Called()
 	return args.Get(0).(ListPluginsResponse)
-}
-
-func (r *RpcClientMock) ListAddress() ListAddressResponse {
-	args := r.Called()
-	return args.Get(0).(ListAddressResponse)
 }
 
 func (r *RpcClientMock) ValidateAddress(s string) ValidateAddressResponse {
@@ -127,20 +176,63 @@ func (r *RpcClientMock) ValidateAddress(s string) ValidateAddressResponse {
 	return args.Get(0).(ValidateAddressResponse)
 }
 
-// plugins
-func (r *RpcClientMock) GetApplicationLog(s string) GetApplicationLogResponse {
+// wallet
+func (r *RpcClientMock) CloseWallet() CloseWalletResponse {
+	args := r.Called()
+	return args.Get(0).(CloseWalletResponse)
+}
+
+func (r *RpcClientMock) DumpPrivKey(s string) DumpPrivKeyResponse {
 	args := r.Called(s)
-	return args.Get(0).(GetApplicationLogResponse)
+	return args.Get(0).(DumpPrivKeyResponse)
 }
 
-func (r *RpcClientMock) GetNep5Balances(s string) GetNep5BalancesResponse {
+func (r *RpcClientMock) GetNewAddress() GetNewAddressResponse {
+	args := r.Called()
+	return args.Get(0).(GetNewAddressResponse)
+}
+
+func (r *RpcClientMock) GetWalletBalance(s string) GetWalletBalanceResponse  {
 	args := r.Called(s)
-	return args.Get(0).(GetNep5BalancesResponse)
+	return args.Get(0).(GetWalletBalanceResponse)
 }
 
-func (r *RpcClientMock) GetNep5Transfers(s string, t1 *int, t2 *int) GetNep5TransfersResponse {
-	args := r.Called(s, t1, t2)
-	return args.Get(0).(GetNep5TransfersResponse)
+func (r *RpcClientMock) GetWalletUnclaimedGas() GetWalletUnclaimedGasResponse {
+	args := r.Called()
+	return args.Get(0).(GetWalletUnclaimedGasResponse)
 }
 
-// wallet methods are not needed to mock
+func (r *RpcClientMock) ImportPrivKey(s string) ImportPrivKeyResponse {
+	args := r.Called(s)
+	return args.Get(0).(ImportPrivKeyResponse)
+}
+
+func (r *RpcClientMock) CalculateNetworkFee(s string) CalculateNetworkFeeResponse {
+	args := r.Called(s)
+	return args.Get(0).(CalculateNetworkFeeResponse)
+}
+
+func (r *RpcClientMock) ListAddress() ListAddressResponse {
+	args := r.Called()
+	return args.Get(0).(ListAddressResponse)
+}
+
+func (r *RpcClientMock) OpenWallet(s1 string, s2 string) OpenWalletResponse {
+	args := r.Called(s1, s2)
+	return args.Get(0).(OpenWalletResponse)
+}
+
+func (r *RpcClientMock) SendFrom(s1, s2, s3, s4 string) SendFromResponse {
+	args := r.Called(s1, s2, s3, s4)
+	return args.Get(0).(SendFromResponse)
+}
+
+func (r *RpcClientMock) SendMany(s string, o []models.RpcTransferOut, rs ...models.RpcSigner) SendManyResponse {
+	args := r.Called(s, o, rs)
+	return args.Get(0).(SendManyResponse)
+}
+
+func (r *RpcClientMock) SendToAddress(s1, s2, s3 string) SendToAddressResponse {
+	args := r.Called(s1, s2, s3)
+	return args.Get(0).(SendToAddressResponse)
+}

@@ -1,11 +1,10 @@
 package tx
 
-type WitnessScope uint8
+type WitnessScope byte
 
 const (
-	/// Global allows this witness in all contexts (default Neo2 behavior).
-	/// This cannot be combined with other flags.
-	Global WitnessScope = 0x00
+	/// No contract was witnessed. Only sign the transaction.
+	None WitnessScope = 0x00
 
 	/// CalledByEntry means that this condition must hold: EntryScriptHash == CallingScriptHash
 	/// No params is needed, as the witness/permission/signature given on first invocation will automatically expire if entering deeper internal invokes
@@ -17,4 +16,16 @@ const (
 
 	/// Custom pubkey for group members
 	CustomGroups WitnessScope = 0x20
+
+	/// Global allows this witness in all contexts (default Neo2 behavior)
+	/// This cannot be combined with other flags
+	Global WitnessScope = 0x80
 )
+
+func (w WitnessScope) CompareTo(other WitnessScope) int {
+	if w > other {return 1}
+	if w == other {
+		return 0	
+	}
+	return -1
+}

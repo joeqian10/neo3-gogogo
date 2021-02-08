@@ -5,8 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
-	"github.com/joeqian10/neo3-gogogo/crypto"
+	"math/big"
 )
 
 // bytes to hex string
@@ -15,8 +14,8 @@ func BytesToHex(b []byte) string {
 }
 
 // Simple hex string to bytes
-func HexTobytes(hexstring string) (b []byte) {
-	b, _ = hex.DecodeString(hexstring)
+func HexToBytes(s string) (b []byte) {
+	b, _ = hex.DecodeString(s)
 	return b
 }
 
@@ -37,24 +36,6 @@ func ReverseBytes(data []byte) []byte {
 		b[i], b[j] = b[j], b[i]
 	}
 	return b
-}
-
-func ScriptHashToAddress(scriptHash UInt160) string {
-	var addressVersion byte = 0x35
-	data := append([]byte{addressVersion}, scriptHash.Bytes()...)
-	return crypto.Base58CheckEncode(data)
-}
-
-func AddressToScriptHash(address string) (UInt160, error) {
-	data, err := crypto.Base58CheckDecode(address)
-	var u UInt160
-	if err != nil {
-		return u, err
-	}
-	if data == nil || len(data) != 21 || data[0] != 0x35 {
-		return u, fmt.Errorf("invalid address string")
-	}
-	return UInt160FromBytes(data[1:])
 }
 
 // ReverseString, "abcd" to "dcba"
@@ -90,11 +71,39 @@ func IntToBytes(n int) []byte {
 	return buff
 }
 
+// Int16ToBytes ...
+func Int16ToBytes(n int16) []byte {
+	var buff = make([]byte, 2)
+	binary.LittleEndian.PutUint16(buff, uint16(n))
+	return buff
+}
+
 // Int64ToBytes ...
 func Int64ToBytes(n int64) []byte {
 	var buff = make([]byte, 8)
 	binary.LittleEndian.PutUint64(buff, uint64(n))
 	return buff
+}
+
+func BytesToUInt64(bs []byte) uint64 {
+	bs = PadRight(bs, 8)
+	return binary.LittleEndian.Uint64(bs)
+}
+
+func BytesToUInt32(bs []byte) uint32 {
+	bs = PadRight(bs, 4)
+	return binary.LittleEndian.Uint32(bs)
+}
+
+func PadRight(data []byte, length int) []byte {
+	if len(data) >= length {
+		return data[:length] // return the most left bytes of length
+	}
+	newData := data
+	for len(newData) < length {
+		newData = append(newData, byte(0))
+	}
+	return newData
 }
 
 func Abs(x int64) int64 {
@@ -127,4 +136,99 @@ func GetVarSize(value int) int {
 	} else {
 		return 1 + 4 // sizeof(byte) + sizeof(uint)
 	}
+}
+
+func BigIntToNeoBytes(data *big.Int) []byte {
+	bs := data.Bytes()
+	if len(bs) == 0 {
+		return []byte{}
+	}
+	// golang big.Int use big-endian
+	bs = ReverseBytes(bs)
+	// bs now is little-endian
+	if data.Sign() < 0 {
+		for i, b := range bs {
+			bs[i] = ^b
+		}
+		for i := 0; i < len(bs); i++ {
+			if bs[i] == 255 {
+				bs[i] = 0
+			} else {
+				bs[i] += 1
+				break
+			}
+		}
+		if bs[len(bs)-1] < 128 {
+			bs = append(bs, 255)
+		}
+	} else {
+		if bs[len(bs)-1] >= 128 {
+			bs = append(bs, 0)
+		}
+	}
+	return bs
+}
+
+var bigOne = big.NewInt(1)
+
+func BigIntFromNeoBytes(ba []byte) *big.Int {
+	res := big.NewInt(0)
+	l := len(ba)
+	if l == 0 {
+		return res
+	}
+
+	bs := make([]byte, 0, l)
+	bs = append(bs, ba...)
+	bs = ReverseBytes(bs)
+
+	if bs[0]>>7 == 1 {
+		for i, b := range bs {
+			bs[i] = ^b
+		}
+
+		temp := big.NewInt(0)
+		temp.SetBytes(bs)
+		temp.Add(temp, bigOne)
+		bs = temp.Bytes()
+		res.SetBytes(bs)
+		return res.Neg(res)
+	}
+
+	res.SetBytes(bs)
+	return res
+}
+
+// a>b, returns 1
+// a==b, returns 0
+// a<b, returns -1
+func CompareTo(a, b uint64) int {
+	if a > b {
+		return 1
+	}
+	if a == b {
+		return 0
+	}
+	return -1
+}
+
+func XOR(a, b []byte) []byte {
+	if len(a) != len(b) {
+		panic("cannot XOR unequal length arrays")
+	}
+	dst := make([]byte, len(a))
+	for i := 0; i < len(dst); i++ {
+		dst[i] = a[i] ^ b[i]
+	}
+	return dst
+}
+
+// ToNibbles ..
+func ToNibbles(data []byte) []byte {
+	r := make([]byte, len(data)*2)
+	for i := 0; i < len(data); i++ {
+		r[i*2] = data[i] >> 4
+		r[i*2+1] = data[i] & 0x0f
+	}
+	return r
 }

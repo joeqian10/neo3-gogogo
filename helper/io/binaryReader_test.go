@@ -51,7 +51,7 @@ func TestBinaryReader_ReadVarUInt(t *testing.T) {
 		bin    = []byte{0xfd, 0xad, 0xde}
 	)
 	br := NewBinaryReaderFromBuf(bin)
-	result = uint16(br.ReadVarUInt(uint64(18446744073709551615)))
+	result = uint16(br.ReadVarUIntWithMaxLimit(uint64(18446744073709551615)))
 	assert.Nil(t, br.Err)
 	assert.Equal(t, val, result)
 }
@@ -63,7 +63,7 @@ func TestBinaryReader_ReadVarBytes(t *testing.T) {
 		bin    = []byte{0xfd, 0x01, 0x00, 0xff}
 	)
 	br := NewBinaryReaderFromBuf(bin)
-	result = br.ReadVarBytes(0x1000000)
+	result = br.ReadVarBytes()
 	assert.Nil(t, br.Err)
 	assert.Equal(t, hex.EncodeToString([]byte{val}), hex.EncodeToString(result))
 }

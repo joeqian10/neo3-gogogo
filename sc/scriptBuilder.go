@@ -3,173 +3,171 @@ package sc
 import (
 	"bytes"
 	"fmt"
-	"math/big"
-
 	"github.com/joeqian10/neo3-gogogo/helper"
+	"github.com/joeqian10/neo3-gogogo/helper/io"
+	"go/types"
+	"math/big"
+	"strings"
 )
 
 type ScriptBuilder struct {
 	buff *bytes.Buffer
+	errs []error // new design, put all errors in the array
+}
+
+func (sb *ScriptBuilder) addError(err error) {
+	if err != nil {
+		sb.errs = append(sb.errs, err)
+	}
 }
 
 func NewScriptBuilder() ScriptBuilder {
-	return ScriptBuilder{buff: new(bytes.Buffer)}
-}
-
-// ToArray converts ScriptBuilder to byte array
-func (sb *ScriptBuilder) ToArray() []byte {
-	return sb.buff.Bytes()
-}
-
-func (sb *ScriptBuilder) Emit(op OpCode, arg ...byte) error {
-	err := sb.buff.WriteByte(byte(op))
-	if err != nil {
-		return err
+	return ScriptBuilder{
+		buff: new(bytes.Buffer),
+		errs: make([]error, 0),
 	}
+}
+
+// ToArray converts ScriptBuilder to byte array, pop out all errors
+func (sb *ScriptBuilder) ToArray() ([]byte, error) {
+	if len(sb.errs) == 0 {
+		return sb.buff.Bytes(), nil
+	}
+
+	var ss []string
+	for _, err := range sb.errs {
+		ss = append(ss, err.Error())
+	}
+	return sb.buff.Bytes(), fmt.Errorf(strings.Join(ss, "\n"))
+}
+
+func (sb *ScriptBuilder) Emit(op OpCode, arg ...byte) {
+	err := sb.buff.WriteByte(byte(op))
+	sb.addError(err)
 
 	if arg != nil {
 		_, err = sb.buff.Write(arg)
+		sb.addError(err)
 	}
-	return err
 }
 
-func (sb *ScriptBuilder) EmitAppCall(scriptHash helper.UInt160, operation string, args []ContractParameter) error {
-	var err error
-	if args == nil {
-		err = sb.EmitPushInt(0)
-		err = sb.Emit(NEWARRAY)
-		err = sb.EmitPushString(operation)
-		err = sb.EmitPushBytes(scriptHash.Bytes())
-		err = sb.EmitSysCall(Call.ToInteropMethodHash())
-	} else {
-		for i := len(args) - 1; i >= 0; i-- {
-			err = sb.EmitPushParameter(args[i])
-		}
-		err = sb.EmitPushInt(len(args))
-		err = sb.Emit(PACK)
-		err = sb.EmitPushString(operation)
-		err = sb.EmitPushBytes(scriptHash.Bytes())
-		err = sb.EmitSysCall(Call.ToInteropMethodHash())
-	}
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (sb *ScriptBuilder) EmitCall(offset int) error {
+func (sb *ScriptBuilder) EmitCall(offset int) {
 	if offset < -128 || offset > 127 {
-		return sb.Emit(CALL_L, helper.IntToBytes(offset)...)
+		sb.Emit(CALL_L, helper.IntToBytes(offset)...)
 	} else {
-		return sb.Emit(CALL, byte(offset))
+		sb.Emit(CALL, byte(offset))
 	}
 }
 
-func (sb *ScriptBuilder) EmitJump(op OpCode, offset int) error {
+func (sb *ScriptBuilder) EmitJump(op OpCode, offset int) {
 	if op < JMP || op > JMPLE_L {
-		return fmt.Errorf("invalid OpCode")
+		sb.addError(fmt.Errorf("argument out of range: invalid OpCode"))
 	}
-	if int(op)%2 == 0 && offset < -128 || offset > 127 {
+	if int(op)%2 == 0 && (offset < -128 || offset > 127) {
 		op += 1
 	}
 	if int(op)%2 == 0 {
-		return sb.Emit(op, byte(offset))
+		sb.Emit(op, byte(offset))
 	} else {
-		return sb.Emit(op, helper.IntToBytes(offset)...)
+		sb.Emit(op, helper.IntToBytes(offset)...)
 	}
 }
 
-func (sb *ScriptBuilder) EmitPushBigInt(number *big.Int) error {
-	if number.Cmp(big.NewInt(-1)) >= 0 && number.Cmp(big.NewInt(16)) <= 0 {
+func (sb *ScriptBuilder) EmitPushBigInt(number *big.Int) {
+	if number.Cmp(big.NewInt(-1)) >= 0 && number.Cmp(big.NewInt(16)) <= 0 { // >=-1 || <=16
 		var b = byte(number.Int64())
-		return sb.Emit(PUSH0 + OpCode(b))
+		sb.Emit(PUSH0 + OpCode(b))
+		return
 	}
 	// need little endian
-	data := helper.ReverseBytes(number.Bytes()) // Bytes() returns big-endian
+	data := helper.BigIntToNeoBytes(number) // ToByteArray() returns big-endian
 	if len(data) == 1 {
-		if number.Cmp(big.NewInt(128)) >= 0 && number.Cmp(big.NewInt(0xff)) <= 0 {
-			return sb.Emit(PUSHINT16, PadRight(data, 2)...)
-		} // 0b_00000000_10000000 ~ 0b_00000000_11111111, 8 -> 16 bits
-		return sb.Emit(PUSHINT8, data...)
+		sb.Emit(PUSHINT8, data...)
+	} else if len(data) == 2 {
+		sb.Emit(PUSHINT16, data...)
+	} else if len(data) <= 4 {
+		sb.Emit(PUSHINT32, helper.PadRight(data, 4)...)
+	} else if len(data) <= 8 {
+		sb.Emit(PUSHINT64, helper.PadRight(data, 8)...)
+	} else if len(data) <= 16 {
+		sb.Emit(PUSHINT128, helper.PadRight(data, 16)...)
+	} else if len(data) <= 32 {
+		sb.Emit(PUSHINT256, helper.PadRight(data, 32)...)
+	} else {
+		sb.addError(fmt.Errorf("argument out of range: number"))
 	}
-	if len(data) == 2 {
-		if number.Cmp(big.NewInt(0x8000)) >= 0 && number.Cmp(big.NewInt(0xffff)) <= 0 {
-			return sb.Emit(PUSHINT32, PadRight(data, 4)...)
-		} // 0b_00000000_10000000_00000000 ~ 0b_00000000_11111111_11111111, 16 -> 32 bits
-		return sb.Emit(PUSHINT16, data...)
-	}
-	if len(data) <= 4 {
-		if number.Cmp(big.NewInt(0x80000000)) >= 0 && number.Cmp(big.NewInt(0xffffffff)) <= 0 {
-			return sb.Emit(PUSHINT64, PadRight(data, 8)...)
-		} // 0b_00000000_10000000_00000000_00000000_00000000 ~ 0b_00000000_11111111_11111111_11111111_11111111, 32 -> 64 bits
-		return sb.Emit(PUSHINT32, PadRight(data, 4)...)
-	}
-	if len(data) <= 8 {
-		if number.Cmp(new(big.Int).SetUint64(0x8000000000000000)) >= 0 && number.Cmp(new(big.Int).SetUint64(0xffffffffffffffff)) <= 0 {
-			return sb.Emit(PUSHINT128, PadRight(data, 16)...)
-		}
-		return sb.Emit(PUSHINT64, PadRight(data, 8)...)
-	}
-	if len(data) <= 16 {
-		return sb.Emit(PUSHINT128, PadRight(data, 16)...)
-	}
-	if len(data) <= 32 {
-		return sb.Emit(PUSHINT256, PadRight(data, 32)...)
-	}
-	return fmt.Errorf("argument out of range")
 }
 
-func PadRight(data []byte, length int) []byte {
-	if len(data) >= length {
-		return data
+// new design, support all integer types
+func (sb *ScriptBuilder) EmitPushInteger(num interface{}) {
+	switch num.(type) {
+	case int8:
+		sb.EmitPushBigInt(big.NewInt(int64(num.(int8))))
+		break
+	case uint8:
+		sb.EmitPushBigInt(big.NewInt(int64(num.(uint8))))
+		break
+	case int16:
+		sb.EmitPushBigInt(big.NewInt(int64(num.(int16))))
+		break
+	case uint16:
+		sb.EmitPushBigInt(big.NewInt(int64(num.(uint16))))
+		break
+	case int32:
+		sb.EmitPushBigInt(big.NewInt(int64(num.(int32))))
+		break
+	case uint32:
+		sb.EmitPushBigInt(big.NewInt(int64(num.(uint32))))
+		break
+	case int64:
+		sb.EmitPushBigInt(big.NewInt(num.(int64)))
+		break
+	case uint64:
+		sb.EmitPushBigInt(big.NewInt(int64(num.(uint64))))
+		break
+	case int:
+		sb.EmitPushBigInt(big.NewInt(int64(num.(int))))
+		break
+	case uint:
+		sb.EmitPushBigInt(big.NewInt(int64(num.(uint))))
+		break
+	default:
+		sb.addError(fmt.Errorf("param is not of integer type"))
 	}
-	newData := data
-	for len(newData) < length {
-		newData = append(newData, byte(0))
-	}
-	return newData
 }
 
-func (sb *ScriptBuilder) EmitPushInt(number int) error {
-	return sb.EmitPushBigInt(big.NewInt(int64(number)))
-}
-
-func (sb *ScriptBuilder) EmitPushBool(data bool) error {
+func (sb *ScriptBuilder) EmitPushBool(data bool) {
 	if data {
-		return sb.Emit(PUSH1)
+		sb.Emit(PUSH1)
 	} else {
-		return sb.Emit(PUSH0)
+		sb.Emit(PUSH0)
 	}
 }
 
-func (sb *ScriptBuilder) EmitPushBytes(data []byte) error {
+func (sb *ScriptBuilder) EmitPushBytes(data []byte) {
 	if data == nil {
-		return fmt.Errorf("data is empty")
+		sb.addError(fmt.Errorf("data is empty"))
+		return
 	}
-	le := len(data)
-	var err error
-	if le < int(0x100) {
-		err = sb.Emit(PUSHDATA1)
-		sb.buff.WriteByte(byte(le))
+	l := len(data)
+	if l < int(0x100) {
+		sb.Emit(PUSHDATA1)
+		sb.buff.WriteByte(byte(l))
 		sb.buff.Write(data)
-	} else if le < int(0x10000) {
-		err = sb.Emit(PUSHDATA2)
-		sb.buff.Write(helper.UInt16ToBytes(uint16(le)))
+	} else if l < int(0x10000) {
+		sb.Emit(PUSHDATA2)
+		sb.buff.Write(helper.UInt16ToBytes(uint16(l)))
 		sb.buff.Write(data)
 	} else {
-		err = sb.Emit(PUSHDATA4)
-		sb.buff.Write(helper.UInt32ToBytes(uint32(le)))
+		sb.Emit(PUSHDATA4)
+		sb.buff.Write(helper.UInt32ToBytes(uint32(l)))
 		sb.buff.Write(data)
 	}
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // Convert the string to UTF8 format encoded byte array
-func (sb *ScriptBuilder) EmitPushString(data string) error {
-	return sb.EmitPushBytes([]byte(data))
+func (sb *ScriptBuilder) EmitPushString(data string) {
+	sb.EmitPushBytes([]byte(data))
 }
 
 // EmitRaw pushes a raw byte array
@@ -179,54 +177,187 @@ func (sb *ScriptBuilder) EmitRaw(arg []byte) {
 	}
 }
 
-func (sb *ScriptBuilder) EmitPushParameter(data ContractParameter) error {
-	var err error
-	switch data.Type {
-	case Signature:
-	case ByteArray:
-		err = sb.EmitPushBytes(data.Value.([]byte))
-	case Boolean:
-		err = sb.EmitPushBool(data.Value.(bool))
-	case Integer:
-		num := data.Value.(*big.Int)
-		err = sb.EmitPushBigInt(num)
-	case Hash160:
-		u, e := helper.UInt160FromBytes(data.Value.([]byte))
-		if e != nil {
-			return e
-		}
-		err = sb.EmitPushBytes(u.Bytes())
-	case Hash256:
-		u, e := helper.UInt256FromBytes(data.Value.([]byte))
-		if e != nil {
-			return e
-		}
-		err = sb.EmitPushBytes(u.Bytes())
-	case PublicKey:
-		err = sb.EmitPushBytes(data.Value.([]byte))
-	case String:
-		s := string(data.Value.(string))
-		err = sb.EmitPushString(s)
-	case Array:
-		a := data.Value.([]ContractParameter)
-		for i := len(a) - 1; i >= 0; i-- {
-			e := sb.EmitPushParameter(a[i])
-			if e != nil {
-				return e
-			}
-		}
-		err = sb.EmitPushInt(len(a))
-		if err != nil {
-			return err
-		}
-		err = sb.Emit(PACK)
-	}
-	if err != nil {
-		return err
-	}
-	return nil
+func (sb *ScriptBuilder) EmitSysCall(api uint) {
+	sb.Emit(SYSCALL, helper.UInt32ToBytes(uint32(api))...)
 }
 
-func (sb *ScriptBuilder) EmitSysCall(api uint) error {
-	return sb.Emit(SYSCALL, helper.UInt32ToBytes(uint32(api))...)
+// below methods are from the extension helper in VM.Helper.cs
+
+func (sb *ScriptBuilder) CreateArray(list []interface{}) {
+	if list == nil || len(list) == 0 {
+		sb.Emit(NEWARRAY0)
+		return
+	}
+	for i := len(list) - 1; i >= 0; i-- {
+		sb.EmitPushObject(list[i])
+	}
+	sb.EmitPushInteger(len(list))
+	sb.Emit(PACK)
+}
+
+func (sb *ScriptBuilder) CreateMap(m map[interface{}]interface{}) {
+	sb.Emit(NEWMAP)
+	if m != nil {
+		for k, v := range m {
+			sb.Emit(DUP)
+			sb.EmitPushObject(k)
+			sb.EmitPushObject(v)
+			sb.Emit(SETITEM)
+		}
+	}
+}
+
+func (sb *ScriptBuilder) EmitOpCodes(ops ...OpCode) {
+	if ops == nil {
+		return
+	}
+	for _, op := range ops {
+		sb.Emit(op)
+	}
+}
+
+func (sb *ScriptBuilder) EmitDynamicCall(scriptHash *helper.UInt160, operation string) {
+	sb.Emit(NEWARRAY0)
+	sb.EmitPushObject(All)
+	sb.EmitPushString(operation)
+	sb.EmitPushSerializable(scriptHash)
+	sb.EmitSysCall(Call.ToInteropMethodHash())
+}
+
+func (sb *ScriptBuilder) EmitDynamicCallParam(scriptHash *helper.UInt160, operation string, args ...ContractParameter) {
+	for i := len(args) - 1; i >= 0; i-- {
+		sb.EmitPushParameter(args[i])
+	}
+	sb.EmitPushInteger(len(args))
+	sb.Emit(PACK)
+	sb.EmitPushObject(All)
+	sb.EmitPushString(operation)
+	sb.EmitPushSerializable(scriptHash)
+	sb.EmitSysCall(Call.ToInteropMethodHash())
+}
+
+func (sb *ScriptBuilder) EmitDynamicCallObj(scriptHash *helper.UInt160, operation string, objs []interface{}) {
+	for i := len(objs) - 1; i >= 0; i-- {
+		sb.EmitPushObject(objs[i])
+	}
+	sb.EmitPushInteger(len(objs))
+	sb.Emit(PACK)
+	sb.EmitPushObject(All)
+	sb.EmitPushString(operation)
+	sb.EmitPushSerializable(scriptHash)
+	sb.EmitSysCall(Call.ToInteropMethodHash())
+}
+
+func (sb *ScriptBuilder) EmitPushSerializable(data io.ISerializable) {
+	b, e := io.ToArray(data)
+	sb.addError(e)
+	sb.EmitPushBytes(b)
+}
+
+func (sb *ScriptBuilder) EmitPushParameter(param ContractParameter) {
+	if param.Value == nil {
+		sb.Emit(PUSHNULL)
+		return
+	}
+	switch param.Type {
+	case Signature:
+	case ByteArray:
+		sb.EmitPushBytes(param.Value.([]byte))
+		break
+	case Boolean:
+		sb.EmitPushBool(param.Value.(bool))
+		break
+	case Integer:
+		sb.EmitPushObject(param.Value)
+		break
+	case Hash160:
+		sb.EmitPushSerializable(param.Value.(*helper.UInt160))
+		break
+	case Hash256:
+		sb.EmitPushSerializable(param.Value.(*helper.UInt256))
+		break
+	case PublicKey:
+		sb.EmitPushBytes(param.Value.([]byte)) // import cycle not allowed
+		break
+	case String:
+		sb.EmitPushString(param.Value.(string))
+		break
+	case Array:
+		a := param.Value.([]ContractParameter)
+		for i := len(a) - 1; i >= 0; i-- {
+			sb.EmitPushParameter(a[i])
+		}
+		sb.EmitPushInteger(len(a))
+		sb.Emit(PACK)
+		break
+	case Map:
+		pairs := param.Value.(map[interface{}]interface{})
+		sb.CreateMap(pairs)
+		break
+	default:
+		sb.addError(fmt.Errorf("invalid param type"))
+		break
+	}
+}
+
+func (sb *ScriptBuilder) EmitPushObject(obj interface{}) {
+	switch obj.(type) {
+	case CallFlags:
+		sb.EmitPushBigInt(big.NewInt(int64(obj.(CallFlags))))
+		break
+	case bool:
+		sb.EmitPushBool(obj.(bool))
+		break
+	case []byte:
+		sb.EmitPushBytes(obj.([]byte))
+		break
+	case string:
+		sb.EmitPushString(obj.(string))
+		break
+	case big.Int:
+		bi := obj.(big.Int)
+		sb.EmitPushBigInt(&bi)
+		break
+	case *big.Int:
+		sb.EmitPushBigInt(obj.(*big.Int))
+		break
+	case io.ISerializable:
+		sb.EmitPushSerializable(obj.(io.ISerializable))
+		break
+	case int8, uint8, int16, uint16,
+	     int32, uint32, int64, uint64,
+	     int, uint:
+		sb.EmitPushInteger(obj)
+		break
+	case ContractParameter:
+		sb.EmitPushParameter(obj.(ContractParameter))
+		break
+	case types.Nil:
+		sb.Emit(PUSHNULL)
+		break
+	default:
+		sb.addError(fmt.Errorf("invalid argument type"))
+		break
+	}
+}
+
+func (sb *ScriptBuilder) EmitSysCallWithParam(method uint, args ...interface{}) {
+	if args != nil {
+		l := len(args)
+		for i := l - 1; i >= 0; i-- {
+			sb.EmitPushObject(args[i])
+		}
+	}
+	sb.EmitSysCall(method)
+}
+
+// Generate scripts to call a specific method from a specific contract.
+func MakeScript(scriptHash *helper.UInt160, operation string, objs []interface{}) ([]byte, error) {
+	sb := NewScriptBuilder()
+	if objs != nil && len(objs) > 0 {
+		sb.EmitDynamicCallObj(scriptHash, operation, objs)
+	} else {
+		sb.EmitDynamicCall(scriptHash, operation)
+	}
+	return sb.ToArray()
 }

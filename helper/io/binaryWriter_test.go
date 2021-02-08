@@ -2,7 +2,7 @@ package io
 
 import (
 	"bytes"
-	"github.com/joeqian10/neo3-gogogo/helper"
+	"encoding/binary"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -68,7 +68,9 @@ func TestBinaryWriter_WriteVarBytes(t *testing.T) {
 		bin        = []byte{0x04, 0xef, 0xbe, 0xad, 0xde}
 	)
 	bw := NewBinaryWriterFromIO(b)
-	bw.WriteVarBytes(helper.UInt32ToBytes(val))
+	var buff = make([]byte, 4)
+	binary.LittleEndian.PutUint32(buff, val)
+	bw.WriteVarBytes(buff)
 	assert.Nil(t, bw.Err)
 	assert.Equal(t, b.Bytes(), bin)
 }
