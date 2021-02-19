@@ -1,6 +1,6 @@
 package blockchain
 
-import "github.com/joeqian10/neo3-gogogo/helper/io"
+import "github.com/joeqian10/neo3-gogogo/io"
 
 //StorageItem value to store on blockchain
 type StorageItem struct {

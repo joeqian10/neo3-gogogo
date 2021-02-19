@@ -14,7 +14,7 @@ type Nep17Helper struct {
 	Client     rpc.IRpcClient
 }
 
-func NewNep5Helper(scriptHash *helper.UInt160, client rpc.IRpcClient) *Nep17Helper {
+func NewNep17Helper(scriptHash *helper.UInt160, client rpc.IRpcClient) *Nep17Helper {
 	if client == nil {
 		return nil
 	}

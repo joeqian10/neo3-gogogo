@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/helper/io"
+	"github.com/joeqian10/neo3-gogogo/io"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"github.com/joeqian10/neo3-gogogo/tx"
 )

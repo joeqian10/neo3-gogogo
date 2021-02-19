@@ -2,7 +2,7 @@ package blockchain
 
 import (
 	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/helper/io"
+	"github.com/joeqian10/neo3-gogogo/io"
 )
 
 //Storagekey key use to store StorageItem on blockchain

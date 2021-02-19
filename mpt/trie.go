@@ -7,7 +7,7 @@ import (
 
 	"github.com/joeqian10/neo3-gogogo/blockchain"
 	"github.com/joeqian10/neo3-gogogo/helper"
-	nio "github.com/joeqian10/neo3-gogogo/helper/io"
+	nio "github.com/joeqian10/neo3-gogogo/io"
 )
 
 //Trie mpt tree

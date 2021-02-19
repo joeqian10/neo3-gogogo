@@ -2,7 +2,7 @@ package tx
 
 import (
 	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/helper/io"
+	"github.com/joeqian10/neo3-gogogo/io"
 	"github.com/joeqian10/neo3-gogogo/sc"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -121,7 +121,7 @@ func TestTransaction_HeaderSize(t *testing.T) {
 	assert.Equal(t, 25, headerSize)
 }
 
-func TestTransaction_RawTransaction(t *testing.T) {
+func TestTransaction_ToByteArray(t *testing.T) {
 	tx := Transaction{
 		version:         0x00,
 		nonce:           0x01020304,
@@ -133,7 +133,7 @@ func TestTransaction_RawTransaction(t *testing.T) {
 		script:          []byte{byte(sc.PUSH1)},
 		witnesses:       []Witness{},
 	}
-	r := tx.RawTransaction()
+	r := tx.ToByteArray()
 	expected := "00" + // version
 		"04030201" + // nonce
 		"00e1f50500000000" + // system fee (1 GAS)

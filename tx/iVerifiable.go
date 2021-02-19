@@ -3,7 +3,7 @@ package tx
 import (
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/helper/io"
+	"github.com/joeqian10/neo3-gogogo/io"
 )
 
 type IVerifiable interface {
@@ -26,7 +26,7 @@ func GetHashData(verifiable IVerifiable) []byte {
 func GetHashDataWithMagic(verifiable IVerifiable, magic uint32) []byte {
 	buf := io.NewBufBinaryWriter()
 	buf.BinaryWriter.WriteLE(magic)
-	verifiable.Serialize(buf.BinaryWriter)
+	verifiable.SerializeUnsigned(buf.BinaryWriter)
 	if buf.Err != nil {
 		return nil
 	}

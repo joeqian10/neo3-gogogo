@@ -3,12 +3,8 @@ package tx
 import (
 	"bytes"
 	"fmt"
-	"sort"
-
 	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/helper/io"
-	"github.com/joeqian10/neo3-gogogo/keys"
-	"github.com/joeqian10/neo3-gogogo/sc"
+	"github.com/joeqian10/neo3-gogogo/io"
 )
 
 const (
@@ -92,13 +88,9 @@ func (tx *Transaction) FeePerByte() int64 {
 // GetHash is the getter of tx._hash
 func (tx *Transaction) GetHash() *helper.UInt256 {
 	if tx._hash == nil {
-		tx._hash = tx.CalculateHash()
+		tx._hash = CalculateHash(tx)
 	}
 	return tx._hash
-}
-
-func (tx *Transaction) CalculateHash() *helper.UInt256 {
-	return CalculateHash(tx)
 }
 
 // GetHashData returns unsigned tx data
@@ -160,7 +152,7 @@ func (tx *Transaction) SetSigners(value []Signer) {
 // GetSize is the getter of tx._size
 func (tx *Transaction) GetSize() int {
 	if tx._size == 0 {
-		tx._size = len(tx.RawTransaction())
+		tx._size = len(tx.ToByteArray())
 	}
 	return tx._size
 }
@@ -211,15 +203,6 @@ func (tx *Transaction) SetWitnesses(value []Witness) {
 
 // ToByteArray returns signed tx data
 func (tx *Transaction) ToByteArray() []byte {
-	buf := io.NewBufBinaryWriter()
-	tx.Serialize(buf.BinaryWriter)
-	if buf.Err != nil {
-		return nil
-	}
-	return buf.Bytes()
-}
-
-func (tx *Transaction) RawTransaction() []byte {
 	buf := io.NewBufBinaryWriter()
 	tx.Serialize(buf.BinaryWriter)
 	if buf.Err != nil {
@@ -363,25 +346,4 @@ func (tx *Transaction) GetScriptHashesForVerifying() []helper.UInt160 {
 		result[i] = *s.Account
 	}
 	return result
-}
-
-// todo,
-// AddSignature adds signature for Transaction
-func (tx *Transaction) AddSignature(pairs []keys.KeyPair, contract *sc.Contract) error {
-	scriptHash := contract.GetScriptHash()
-	for _, witness := range tx.GetWitnesses() {
-		// the transaction has been signed with this KeyPair
-		if witness.GetScriptHash() == scriptHash {
-			return nil
-		}
-	}
-
-	// create witness
-	witness, err := CreateContractWitness(tx.GetHashData(Neo3Magic), pairs, contract)
-	if err != nil {
-		return err
-	}
-	tx.witnesses = append(tx.witnesses, *witness)
-	sort.Sort(WitnessSlice(tx.witnesses))
-	return nil
 }

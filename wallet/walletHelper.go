@@ -231,7 +231,7 @@ func (w *WalletHelper) GetGasConsumed(script []byte) (int64, error) {
 	return gasConsumed, nil
 }
 
-// GetUnClaimedGas
+// GetUnClaimedGas gets the amount of unclaimed gas in the wallet
 func (w *WalletHelper) GetUnClaimedGas() (uint64, error) {
 	if w.wallet == nil {
 		return 0, fmt.Errorf("wallet is nil")

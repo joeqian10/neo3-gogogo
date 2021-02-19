@@ -2,7 +2,7 @@ package block
 
 import (
 	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/helper/io"
+	"github.com/joeqian10/neo3-gogogo/io"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"github.com/joeqian10/neo3-gogogo/sc"
 	"github.com/joeqian10/neo3-gogogo/tx"

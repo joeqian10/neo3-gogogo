@@ -10,9 +10,9 @@ import (
 	"testing"
 )
 
-func TestNewNep5Helper(t *testing.T) {
-	nep5helper := NewNep5Helper(helper.NewUInt160(), rpc.NewClient("http://seed1.ngd.network:20332"))
-	assert.NotNil(t, nep5helper)
+func TestNewNep17Helper(t *testing.T) {
+	nep17helper := NewNep17Helper(helper.NewUInt160(), rpc.NewClient("http://seed1.ngd.network:20332"))
+	assert.NotNil(t, nep17helper)
 }
 
 func TestNep17Helper_Symbol(t *testing.T) {

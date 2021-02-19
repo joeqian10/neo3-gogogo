@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/helper/io"
+	"github.com/joeqian10/neo3-gogogo/io"
 )
 
 func TestStateRootSerialize(t *testing.T) {
