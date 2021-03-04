@@ -25,7 +25,7 @@ type WalletHelper struct {
 var dummy = "dummy"
 
 func NewWalletHelperFromPrivateKey(rpc rpc.IRpcClient, priKey []byte) (*WalletHelper, error) {
-	dummyWallet, _ := NewNEP6Wallet("", &dummy)
+	dummyWallet, _ := NewNEP6Wallet("", &dummy, DefaultScryptParameters)
 	_ = dummyWallet.Unlock("")
 	_, err := dummyWallet.CreateAccountWithPrivateKey(priKey)
 	if err != nil {
@@ -38,7 +38,7 @@ func NewWalletHelperFromPrivateKey(rpc rpc.IRpcClient, priKey []byte) (*WalletHe
 }
 
 func NewWalletHelperFromContract(rpc rpc.IRpcClient, contract *sc.Contract, pair *keys.KeyPair) (*WalletHelper, error) {
-	dummyWallet, _ := NewNEP6Wallet("", &dummy)
+	dummyWallet, _ := NewNEP6Wallet("", &dummy, DefaultScryptParameters)
 	if pair != nil {
 		_ = dummyWallet.Unlock("")
 	}
@@ -54,7 +54,7 @@ func NewWalletHelperFromContract(rpc rpc.IRpcClient, contract *sc.Contract, pair
 
 // Create a WalletHelper using your own private key, password is "" by default
 func NewWalletHelperFromWIF(rpc rpc.IRpcClient, wif string) (*WalletHelper, error) {
-	dummyWallet, _ := NewNEP6Wallet("", &dummy)
+	dummyWallet, _ := NewNEP6Wallet("", &dummy, DefaultScryptParameters)
 	_ = dummyWallet.Unlock("")
 	_, err := dummyWallet.ImportFromWIF(wif)
 	if err != nil {
@@ -67,7 +67,7 @@ func NewWalletHelperFromWIF(rpc rpc.IRpcClient, wif string) (*WalletHelper, erro
 }
 
 func NewWalletHelperFromNEP2(rpc rpc.IRpcClient, nep2 string, passphrase string, N, R, P int) (*WalletHelper, error) {
-	dummyWallet, _ := NewNEP6Wallet("", &dummy)
+	dummyWallet, _ := NewNEP6Wallet("", &dummy, NewScryptParameters(N, R, P))
 	_, err := dummyWallet.ImportFromNEP2(nep2, passphrase, N, R, P)
 	if err != nil {
 		return nil, err
@@ -217,9 +217,6 @@ func (w *WalletHelper) ClaimGas(magic uint32) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	fmt.Println(crypto.Base64Encode(trx.ToByteArray()))
-	fmt.Println(helper.BytesToHex(trx.ToByteArray()))
 
 	// use RPC to send the tx
 	response := w.Client.SendRawTransaction(crypto.Base64Encode(trx.ToByteArray()))

@@ -45,7 +45,7 @@ func TestNewNEP6WalletFromFile(t *testing.T) {
 
 func TestNewNEP6Wallet(t *testing.T) {
 	s := "test"
-	wallet, err := NewNEP6Wallet("", &s)
+	wallet, err := NewNEP6Wallet("", &s, DefaultScryptParameters)
 	assert.NotNil(t, err)
 	assert.Equal(t, "test", wallet.GetName())
 	assert.Equal(t, "3.0", wallet.Version)

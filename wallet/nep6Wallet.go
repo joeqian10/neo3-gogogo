@@ -46,14 +46,14 @@ func (w *NEP6Wallet) GetVersion() string {
 }
 
 // NewNEP6Wallet creates a NEO wallet.
-func NewNEP6Wallet(path string, name *string) (*NEP6Wallet, error) {
+func NewNEP6Wallet(path string, name *string, scrypt *ScryptParameters) (*NEP6Wallet, error) {
 	file, err := os.OpenFile(path, os.O_RDONLY, os.ModeExclusive)
 	if err != nil {
 		return &NEP6Wallet{
 			Name:     name,
 			Version:  Neo3WalletVersion,
 			accounts: make(map[helper.UInt160]NEP6Account, 0),
-			Scrypt:   DefaultScryptParameters,
+			Scrypt:   scrypt,
 			Extra:    nil,
 		}, err
 	}
