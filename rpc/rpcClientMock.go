@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"github.com/stretchr/testify/mock"
 )
@@ -124,18 +123,18 @@ func (r *RpcClientMock) GetNep17Transfers(s string, t1 *int, t2 *int) GetNep17Tr
 }
 
 // smart contract
-func (r *RpcClientMock) InvokeContractVerify(s string, a []models.RpcContractParameter, signers models.RpcSigners) InvokeResultResponse {
+func (r *RpcClientMock) InvokeContractVerify(s string, a []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse {
 	args := r.Called(s, a, signers)
 	return args.Get(0).(InvokeResultResponse)
 }
 
-func (r *RpcClientMock) InvokeFunction(s1 string, s2 string, a ...InvokeFunctionStackArg) InvokeResultResponse {
-	args := r.Called(s1, s2, a)
+func (r *RpcClientMock) InvokeFunction(s1 string, s2 string, a []InvokeFunctionStackArg, signers []models.RpcSigner) InvokeResultResponse {
+	args := r.Called(s1, s2, a, signers)
 	return args.Get(0).(InvokeResultResponse)
 }
 
-func (r *RpcClientMock) InvokeScript(s string, v ...helper.UInt160) InvokeResultResponse {
-	args := r.Called(s)
+func (r *RpcClientMock) InvokeScript(s string, signers []models.RpcSigner) InvokeResultResponse {
+	args := r.Called(s, signers)
 	return args.Get(0).(InvokeResultResponse)
 }
 

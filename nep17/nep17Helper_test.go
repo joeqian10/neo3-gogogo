@@ -21,7 +21,7 @@ func TestNep17Helper_Symbol(t *testing.T) {
 		ScriptHash: helper.NewUInt160(),
 		Client:     clientMock,
 	}
-	clientMock.On("InvokeScript", mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -56,7 +56,7 @@ func TestNep17Helper_Decimals(t *testing.T) {
 		ScriptHash: helper.NewUInt160(),
 		Client:     clientMock,
 	}
-	clientMock.On("InvokeScript", mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -92,7 +92,7 @@ func TestNep17Helper_TotalSupply(t *testing.T) {
 		ScriptHash: helper.NewUInt160(),
 		Client:     clientMock,
 	}
-	clientMock.On("InvokeScript", mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -127,7 +127,7 @@ func TestNep17Helper_BalanceOf(t *testing.T) {
 		ScriptHash: helper.NewUInt160(),
 		Client:     clientMock,
 	}
-	clientMock.On("InvokeScript", mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,

@@ -50,7 +50,7 @@ func getSigners(sender *helper.UInt160, cosigners []tx.Signer) []tx.Signer {
 }
 
 func Sign(verifiable tx.IVerifiable, pair *keys.KeyPair) ([]byte, error) {
-	return SignWithMagic(verifiable, pair, tx.Neo3Magic)
+	return SignWithMagic(verifiable, pair, tx.Neo3Magic_MainNet)
 }
 
 func SignWithMagic(verifiable tx.IVerifiable, pair *keys.KeyPair, magic uint32) ([]byte, error) {

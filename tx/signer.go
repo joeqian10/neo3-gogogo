@@ -20,7 +20,7 @@ type Signer struct {
 func NewSigner(account *helper.UInt160, scopes WitnessScope) *Signer {
 	return &Signer{
 		Account: account,
-		Scopes: scopes,
+		Scopes:  scopes,
 	}
 }
 
@@ -41,7 +41,9 @@ func (c *Signer) Size() int {
 
 func (c *Signer) CompareTo(d *Signer) int {
 	r := c.Account.CompareTo(d.Account)
-	if r != 0 {return r}
+	if r != 0 {
+		return r
+	}
 	r = c.Scopes.CompareTo(d.Scopes)
 	return r
 }

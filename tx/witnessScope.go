@@ -29,3 +29,21 @@ func (w WitnessScope) CompareTo(other WitnessScope) int {
 	}
 	return -1
 }
+
+func (w WitnessScope) String() string {
+	b := byte(w)
+	switch b {
+	case 0x00:
+		return "None"
+	case 0x01:
+		return "CalledByEntry"
+	case 0x10:
+		return "CustomContracts"
+	case 0x20:
+		return "CustomGroups"
+	case 0x80:
+		return "Global"
+	default:
+		return ""
+	}
+}

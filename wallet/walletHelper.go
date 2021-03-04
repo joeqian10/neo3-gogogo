@@ -2,7 +2,6 @@ package wallet
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
@@ -20,6 +19,7 @@ import (
 type WalletHelper struct {
 	Client rpc.IRpcClient
 	wallet *NEP6Wallet
+	Magic uint32
 }
 
 var dummy = "dummy"
@@ -52,6 +52,7 @@ func NewWalletHelperFromContract(rpc rpc.IRpcClient, contract *sc.Contract, pair
 	}, err
 }
 
+// Create a WalletHelper using your own private key, password is "" by default
 func NewWalletHelperFromWIF(rpc rpc.IRpcClient, wif string) (*WalletHelper, error) {
 	dummyWallet, _ := NewNEP6Wallet("", &dummy)
 	_ = dummyWallet.Unlock("")
@@ -71,6 +72,10 @@ func NewWalletHelperFromNEP2(rpc rpc.IRpcClient, nep2 string, passphrase string,
 	if err != nil {
 		return nil, err
 	}
+	err = dummyWallet.Unlock(passphrase)
+	if err != nil {
+		return nil, err
+	}
 	return &WalletHelper{
 		Client: rpc,
 		wallet: dummyWallet,
@@ -84,20 +89,95 @@ func NewWalletHelperFromWallet(rpc rpc.IRpcClient, wlt *NEP6Wallet) *WalletHelpe
 	}
 }
 
-func (w *WalletHelper) CalculateNetworkFee(trx *tx.Transaction) (int64, error) {
+//func (w *WalletHelper) CalculateNetworkFee(trx *tx.Transaction) (uint64, error) {
+//	if trx == nil {
+//		return 0, fmt.Errorf("no transaction to calculate")
+//	}
+//	bs := trx.ToByteArray()
+//
+//	txStr := crypto.Base64Encode(bs)
+//	fmt.Println(txStr)
+//	fmt.Println(helper.BytesToHex(bs))
+//
+//	response := w.Client.CalculateNetworkFee(txStr)
+//	if response.HasError() {
+//		return 0, fmt.Errorf(response.Error.Message)
+//	}
+//	nf, err := strconv.ParseUint(response.Result.NetworkFee, 10, 64)
+//	if err != nil {
+//		return 0, err
+//	}
+//	return nf, nil
+//}
+
+func (w *WalletHelper) CalculateNetworkFee(trx *tx.Transaction) (uint64, error) {
 	if trx == nil {
 		return 0, fmt.Errorf("no transaction to calculate")
 	}
-	txStr := crypto.Base64Encode(trx.ToByteArray())
-	response := w.Client.CalculateNetworkFee(txStr)
-	if response.HasError() {
-		return 0, fmt.Errorf(response.Error.Message)
+	hashes := trx.GetScriptHashesForVerifying()
+
+	// base size for transaction: includes const_header + signers + attributes + script + hashes
+	size := trx.HeaderSize() +
+		tx.SignerSlice(trx.GetSigners()).GetVarSize() +
+		tx.TransactionAttributeSlice(trx.GetAttributes()).GetVarSize() +
+		sc.ByteSlice(trx.GetScript()).GetVarSize() +
+		helper.GetVarSize(len(hashes))
+
+	exec_fee_factor := int64(30)
+	nf := uint64(0)
+	for _, hash := range hashes {
+		var witness_script []byte
+		account := w.wallet.GetAccountByScriptHash(&hash)
+		if account != nil {
+			c := account.GetContract()
+			if c != nil {
+				witness_script = c.GetScript()
+			}
+		}
+
+		if witness_script == nil && trx.GetWitnesses() != nil {
+			// try to find the script in the witnesses
+			for _, witness := range trx.GetWitnesses() {
+				if witness.GetScriptHash().Equals(&hash) {
+					witness_script = witness.VerificationScript
+					break
+				}
+			}
+		}
+
+		if witness_script == nil {
+			// skip NativeContract case
+			continue
+		} else if sc.IsSignatureContract(witness_script) {
+			size += 67 + sc.ByteSlice(witness_script).GetVarSize()
+			nf += uint64(exec_fee_factor * (sc.OpCodePrices[sc.PUSHDATA1] + sc.OpCodePrices[sc.PUSHDATA1] + sc.OpCodePrices[sc.PUSHNULL] + tx.ECDsaVerifyPrice))
+		} else if b, m, n, _ := sc.IsMultiSigContract(witness_script); b {
+			size_inv := 66 * m
+			size += helper.GetVarSize(size_inv) + size_inv + sc.ByteSlice(witness_script).GetVarSize()
+
+			nf += uint64(exec_fee_factor * sc.OpCodePrices[sc.PUSHDATA1] * int64(m))
+			sb := sc.NewScriptBuilder()
+			sb.EmitPushInteger(m)
+			script, _ := sb.ToArray()
+			nf += uint64(exec_fee_factor * sc.OpCodePrices[sc.OpCode(script[0])])
+
+			nf += uint64(exec_fee_factor * sc.OpCodePrices[sc.PUSHDATA1] * int64(n))
+			sb = sc.NewScriptBuilder()
+			sb.EmitPushInteger(n)
+			script, _ = sb.ToArray()
+			nf += uint64(exec_fee_factor * sc.OpCodePrices[sc.OpCode(script[0])])
+
+			nf += uint64(exec_fee_factor * (sc.OpCodePrices[sc.PUSHNULL] + int64(tx.ECDsaVerifyPrice * n)))
+		} else {
+			// support more cotnract types in the future
+		}
 	}
-	return response.Result.NetworkFee, nil
+	nf += uint64(size * tx.FeePerByte)
+	return nf, nil
 }
 
 // ClaimGas for NEP6Account
-func (w *WalletHelper) ClaimGas() (string, error) {
+func (w *WalletHelper) ClaimGas(magic uint32) (string, error) {
 	if w.wallet == nil {
 		return "", fmt.Errorf("wallet is nil")
 	}
@@ -112,6 +192,7 @@ func (w *WalletHelper) ClaimGas() (string, error) {
 			{Type: sc.Hash160, Value: account.scriptHash},
 			{Type: sc.Hash160, Value: account.scriptHash},
 			{Type: sc.Integer, Value: neoBalance},
+			{Type: sc.String, Value: ""},
 		}...)
 		sb.Emit(sc.ASSERT)
 		cosigners = append(cosigners, tx.Signer{
@@ -131,9 +212,17 @@ func (w *WalletHelper) ClaimGas() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// sign the tx
+	trx, err = w.SignTransaction(trx, magic)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println(crypto.Base64Encode(trx.ToByteArray()))
+	fmt.Println(helper.BytesToHex(trx.ToByteArray()))
 
 	// use RPC to send the tx
-	response := w.Client.SendRawTransaction(hex.EncodeToString(trx.ToByteArray()))
+	response := w.Client.SendRawTransaction(crypto.Base64Encode(trx.ToByteArray()))
 	msg := response.ErrorResponse.Error.Message
 	if len(msg) != 0 {
 		return "", fmt.Errorf(msg)
@@ -169,7 +258,7 @@ func (w *WalletHelper) GetBalanceFromAccount(assetHash *helper.UInt160, account 
 	if err != nil {
 		return nil, err
 	}
-	response := w.Client.InvokeScript(helper.BytesToHex(script))
+	response := w.Client.InvokeScript(crypto.Base64Encode(script), nil)
 	stack, err := rpc.PopInvokeStack(response)
 	if err != nil {
 		return nil, err
@@ -219,8 +308,9 @@ func (w *WalletHelper) GetContractState(hash *helper.UInt160) (*models.RpcContra
 }
 
 // GetGasConsumed runs a script in ApplicationEngine in test mode and returns gas consumed
-func (w *WalletHelper) GetGasConsumed(script []byte) (int64, error) {
-	response := w.Client.InvokeScript(helper.BytesToHex(script))
+func (w *WalletHelper) GetGasConsumed(script []byte, signers []models.RpcSigner) (int64, error) {
+	fmt.Println(crypto.Base64Encode(script))
+	response := w.Client.InvokeScript(crypto.Base64Encode(script), signers)
 	if response.HasError() {
 		return 0, fmt.Errorf(response.Error.Message)
 	}
@@ -242,31 +332,11 @@ func (w *WalletHelper) GetUnClaimedGas() (uint64, error) {
 		if response.HasError() {
 			return 0, fmt.Errorf(response.Error.Message)
 		}
-		t +=  response.Result.Unclaimed
-
-		//scriptHash, err := helper.AddressToScriptHash(account.Address)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//sb := sc.NewScriptBuilder()
-		//sb.EmitDynamicCallParam(tx.NeoToken, "unclaimedGas", []sc.ContractParameter{
-		//	{Type: sc.Hash160, Value: scriptHash},
-		//	{Type: sc.Integer, Value: big.NewInt(int64(height))}}...)
-		//b, err := sb.ToArray()
-		//if err != nil {
-		//	return nil, err
-		//}
-		//script := hex.EncodeToString(b)
-		//response := w.Client.InvokeScript(script)
-		//stack, err := models.PopInvokeStack(response)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//p, err := stack.ToParameter()
-		//if err != nil {
-		//	return nil, err
-		//}
-		//r = r.Add(r, p.Value.(*big.Int))
+		u, err := strconv.ParseUint(response.Result.Unclaimed, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		t += u
 	}
 	return t, nil
 }
@@ -278,7 +348,6 @@ func (w *WalletHelper) MakeTransaction(script []byte, cosigners []tx.Signer, att
 			return nil, err
 		}
 		nonce := binary.LittleEndian.Uint32(rb)
-
 		trx := new(tx.Transaction)
 		// version
 		trx.SetVersion(0)
@@ -293,11 +362,12 @@ func (w *WalletHelper) MakeTransaction(script []byte, cosigners []tx.Signer, att
 		}
 		trx.SetValidUntilBlock(blockHeight + tx.MaxValidUntilBlockIncrement)
 		// signers
-		trx.SetSigners(getSigners(ab.Account, cosigners))
+		signers := getSigners(ab.Account, cosigners)
+		trx.SetSigners(signers)
 		// attributes
 		trx.SetAttributes(attributes)
 		// sysfee
-		gasConsumed, err := w.GetGasConsumed(script)
+		gasConsumed, err := w.GetGasConsumed(script, models.CreateRpcSigners(signers))
 		if err != nil {
 			return nil, err
 		}
@@ -308,7 +378,7 @@ func (w *WalletHelper) MakeTransaction(script []byte, cosigners []tx.Signer, att
 		if err != nil {
 			return nil, err
 		}
-		trx.SetNetworkFee(netFee)
+		trx.SetNetworkFee(int64(netFee))
 
 		if ab.Value.Int64() >= trx.GetSystemFee()+trx.GetNetworkFee() {
 			return trx, nil
@@ -317,7 +387,7 @@ func (w *WalletHelper) MakeTransaction(script []byte, cosigners []tx.Signer, att
 	return nil, fmt.Errorf("insufficient GAS")
 }
 
-func (w *WalletHelper) Sign(ctx *ContractParametersContext) (bool, error) {
+func (w *WalletHelper) Sign(ctx *ContractParametersContext, magic uint32) (bool, error) {
 	fSuccess := false
 	for _, scriptHash := range ctx.GetScriptHashes() {
 		account := w.wallet.GetAccountByScriptHash(&scriptHash)
@@ -340,7 +410,7 @@ func (w *WalletHelper) Sign(ctx *ContractParametersContext) (bool, error) {
 					if err != nil {
 						return false, err
 					}
-					signature, err := Sign(ctx.Verifiable, pair)
+					signature, err := SignWithMagic(ctx.Verifiable, pair, magic)
 					if err != nil {
 						return false, err
 					}
@@ -363,7 +433,7 @@ func (w *WalletHelper) Sign(ctx *ContractParametersContext) (bool, error) {
 				if err != nil {
 					return false, err
 				}
-				signature, err := Sign(ctx.Verifiable, pair)
+				signature, err := SignWithMagic(ctx.Verifiable, pair, magic)
 				if err != nil {
 					return false, err
 				}
@@ -396,12 +466,12 @@ func (w *WalletHelper) Sign(ctx *ContractParametersContext) (bool, error) {
 	return fSuccess, nil
 }
 
-func (w *WalletHelper) SignTransaction(trx *tx.Transaction) (*tx.Transaction, error) {
+func (w *WalletHelper) SignTransaction(trx *tx.Transaction, magic uint32) (*tx.Transaction, error) {
 	if w.wallet == nil {
 		return nil, fmt.Errorf("wallet is nil")
 	}
 	ctx := NewContractParametersContract(trx)
-	_, err := w.Sign(ctx)
+	_, err := w.Sign(ctx, magic)
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +487,7 @@ func (w *WalletHelper) SignTransaction(trx *tx.Transaction) (*tx.Transaction, er
 }
 
 // Transfer is used to transfer neo or gas or other nep17 asset, from NEP6Account
-func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amount *big.Int) (string, error) {
+func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amount *big.Int, magic uint32) (string, error) {
 	to, err := crypto.AddressToScriptHash(toAddress)
 	if err != nil {
 		return "", err
@@ -441,6 +511,7 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 			{Type: sc.Hash160, Value: used.Account},
 			{Type: sc.Hash160, Value: to},
 			{Type: sc.Integer, Value: used.Value},
+			{Type: sc.String, Value: ""}, // this field is used as a memo
 		}...)
 		sb.Emit(sc.ASSERT)
 	}
@@ -461,8 +532,17 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 	if err != nil {
 		return "", err
 	}
+	// sign the tx
+	trx, err = w.SignTransaction(trx, magic)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println(crypto.Base64Encode(trx.ToByteArray()))
+	fmt.Println(helper.BytesToHex(trx.ToByteArray()))
+	fmt.Println(trx.GetHash(magic).String())
 	// use RPC to send the tx
-	response := w.Client.SendRawTransaction(hex.EncodeToString(trx.ToByteArray()))
+	response := w.Client.SendRawTransaction(crypto.Base64Encode(trx.ToByteArray()))
 	msg := response.ErrorResponse.Error.Message
 	if len(msg) != 0 {
 		return "", fmt.Errorf(msg)

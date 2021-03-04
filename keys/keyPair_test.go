@@ -36,6 +36,17 @@ func TestNewKeyPairFromNEP2(t *testing.T) {
 	}
 }
 
+func TestNewKeyPairFromNEP2_2(t *testing.T) {
+	keyPair, err := NewKeyPairFromNEP2("6PYKfoRbX69ttWsoe1gM5GARbD1G6tBSurQ84AkjkaKR4TGwbRyZ3ZC5ie", "t", 16384, 8, 8)
+	assert.Nil(t, err)
+
+	publicKey := keyPair.PublicKey.String()
+
+	assert.Nil(t, err)
+	assert.Equal(t, "031f8ea9859b304a90128fcd85164dcf5de9abb7c950d761a25b43dbae453b0275", publicKey)
+
+}
+
 func TestNewKeyPairFromWIF(t *testing.T) {
 	for _, testCase := range KeyCases {
 		keyPair, err := NewKeyPairFromWIF(testCase.Wif)

@@ -260,8 +260,7 @@ func (sb *ScriptBuilder) EmitPushParameter(param ContractParameter) {
 		return
 	}
 	switch param.Type {
-	case Signature:
-	case ByteArray:
+	case Signature, ByteArray:
 		sb.EmitPushBytes(param.Value.([]byte))
 		break
 	case Boolean:

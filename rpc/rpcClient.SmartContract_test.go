@@ -36,19 +36,14 @@ func TestRpcClient_InvokeContractVerify(t *testing.T) {
 		Type:  "Boolean",
 		Value: "true",
 	}}
-	s := models.RpcSigners{
-		Signers:   []models.RpcSigner{models.RpcSigner{
+	signers :=  []models.RpcSigner{models.RpcSigner{
 			Account:          "0xf621168b1fce3a89c33a5f6bcf7e774b4657031c",
 			Scopes:           "CalledByEntry",
 			AllowedContracts: []string{},
 			AllowedGroups:    []string{},
-		}},
-		Witnesses: []models.RpcWitness{models.RpcWitness{
-			Invocation:   "DEADRhUarLK+/BBjhqaWY5ieento21zgkcsUMWNCBWGd+v8a35zatNRgFbUkni4dDNI/BGc3zOgPT6EwroUsgvR+",
-			Verification: "DCEC/fJ6LrjZsGnWGuWmTboTuJY3xULYx0xda6tJP+Y41o8LQZVEDXg=",
-		}},
-	}
-	response := rpc.InvokeContractVerify("0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", params, s)
+		}}
+
+	response := rpc.InvokeContractVerify("0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", params, signers)
 	r := response.Result
 	assert.Equal(t, "HALT", r.State)
 	assert.Equal(t, "8", r.Stack[0].Value)
@@ -75,7 +70,7 @@ func TestRpcClient_InvokeFunction(t *testing.T) {
 		}`))),
 	}, nil)
 
-	response := rpc.InvokeFunction("0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", "decimals")
+	response := rpc.InvokeFunction("0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", "decimals", nil, nil)
 	r := response.Result
 	assert.Equal(t, "HALT", r.State)
 	assert.Equal(t, "8", r.Stack[0].Value)
@@ -102,7 +97,7 @@ func TestRpcClient_InvokeScript(t *testing.T) {
 		}`))),
 	}, nil)
 
-	response := rpc.InvokeScript("")
+	response := rpc.InvokeScript("", nil)
 	r := response.Result
 	assert.Equal(t, "HALT", r.State)
 	assert.Equal(t, "8", r.Stack[0].Value)
@@ -116,7 +111,7 @@ func TestRpcClient_GetUnclaimedGas(t *testing.T) {
 			"jsonrpc": "2.0",
 			"id": 1,
 			"result": {
-				"unclaimed": 9693738,
+				"unclaimed": "9693738",
 				"address": "NNU67Fvdy3LEQTM374EJ9iMbCRxVExgM8Y"
 			}
 		}`))),
@@ -124,5 +119,5 @@ func TestRpcClient_GetUnclaimedGas(t *testing.T) {
 
 	response := rpc.GetUnclaimedGas("NNU67Fvdy3LEQTM374EJ9iMbCRxVExgM8Y")
 	r := response.Result
-	assert.Equal(t, uint64(9693738), r.Unclaimed)
+	assert.Equal(t, "9693738", r.Unclaimed)
 }

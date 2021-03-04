@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	Neo3Magic                   uint32 = 0x4F454E
+	Neo3Magic_MainNet           uint32 = 5195086
+	Neo3Magic_TestNet           uint32 = 1951352142
 	TransactionVersion          uint8  = 0 // neo-2.x
 	MaxTransactionSize                 = 102400
 	MaxValidUntilBlockIncrement uint32 = 5760 // 24 hours
@@ -16,8 +17,8 @@ const (
 	MaxSigners                         = 16   // Maximum number of cosigners that can be contained within a transaction
 )
 
-const NeoTokenId = "9bde8f209c88dd0e7ca3bf0af0f476cdd8207789"
-const GasTokenId = "8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b"
+const NeoTokenId = "0xf61eebf573ea36593fd43aa150c055ad7906ab83"
+const GasTokenId = "0x70e2301955bf1e74cbb31d18c2f96972abadb328"
 
 const GasFactor = 100000000
 const ExecFeeFactor = 30
@@ -27,7 +28,6 @@ const ECDsaVerifyPrice = 1 << 15
 var NeoToken, _ = helper.UInt160FromString(NeoTokenId)
 var GasToken, _ = helper.UInt160FromString(GasTokenId)
 
-// base class
 type Transaction struct {
 	version         uint8
 	nonce           uint32
@@ -85,10 +85,10 @@ func (tx *Transaction) FeePerByte() int64 {
 	return tx.netfee / int64(tx._size)
 }
 
-// GetHash is the getter of tx._hash
-func (tx *Transaction) GetHash() *helper.UInt256 {
+// GetHash is the getter of tx._hash, using default magic
+func (tx *Transaction) GetHash(magic uint32) *helper.UInt256 {
 	if tx._hash == nil {
-		tx._hash = CalculateHash(tx)
+		tx._hash = CalculateHashWithMagic(tx, magic)
 	}
 	return tx._hash
 }
@@ -238,7 +238,7 @@ func (tx *Transaction) DeserializeUnsigned(br *io.BinaryReader) {
 		br.Err = fmt.Errorf("format error: netfee < 0")
 		return
 	}
-	if tx.sysfee + tx.netfee < tx.sysfee {
+	if tx.sysfee+tx.netfee < tx.sysfee {
 		br.Err = fmt.Errorf("format error: overflow")
 		return
 	}
@@ -247,7 +247,7 @@ func (tx *Transaction) DeserializeUnsigned(br *io.BinaryReader) {
 	// signers
 	tx.signers = deserializeSigners(br, MaxTransactionAttributes)
 	// attributes
-	tx.attributes = deserializeAttributes(br, MaxTransactionAttributes - len(tx.signers))
+	tx.attributes = deserializeAttributes(br, MaxTransactionAttributes-len(tx.signers))
 	// script
 	tx.script = br.ReadVarBytesWithMaxLimit(65535)
 	if len(tx.script) == 0 {

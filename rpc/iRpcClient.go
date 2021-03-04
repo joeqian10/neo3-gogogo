@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 )
 
@@ -26,8 +25,8 @@ type IRpcClient interface {
 	GetConnectionCount() GetConnectionCountResponse
 	GetPeers() GetPeersResponse
 	GetVersion() GetVersionResponse
-	SendRawTransaction(txHex string) SendRawTransactionResponse
-	SubmitBlock(blockHex string) SubmitBlockResponse
+	SendRawTransaction(tx string) SendRawTransactionResponse
+	SubmitBlock(block string) SubmitBlockResponse
 
 	// plugins
 	GetApplicationLog(txId string) GetApplicationLogResponse
@@ -35,9 +34,9 @@ type IRpcClient interface {
 	GetNep17Transfers(address string, startTimestamp *int, endTimestamp *int) GetNep17TransfersResponse
 
 	// smart contract
-	InvokeContractVerify(scriptHash string, args []models.RpcContractParameter, signers models.RpcSigners) InvokeResultResponse
-	InvokeFunction(scriptHash string, function string, args ...InvokeFunctionStackArg) InvokeResultResponse
-	InvokeScript(script string, scriptHashesForVerifying ...helper.UInt160) InvokeResultResponse
+	InvokeContractVerify(scriptHash string, args []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse
+	InvokeFunction(scriptHash string, function string, args []InvokeFunctionStackArg, signers []models.RpcSigner) InvokeResultResponse
+	InvokeScript(script string, signers []models.RpcSigner) InvokeResultResponse
 	GetUnclaimedGas(address string) GetUnclaimedGasResponse
 
 	// state

@@ -31,7 +31,7 @@ func (n *Nep17Helper) Symbol() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	response := n.Client.InvokeScript(helper.BytesToHex(script))
+	response := n.Client.InvokeScript(helper.BytesToHex(script), nil)
 	stack, err := rpc.PopInvokeStack(response)
 	if err != nil {
 		return "", err
@@ -50,7 +50,7 @@ func (n *Nep17Helper) Decimals() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	response := n.Client.InvokeScript(helper.BytesToHex(script))
+	response := n.Client.InvokeScript(helper.BytesToHex(script), nil)
 	stack, err := rpc.PopInvokeStack(response)
 	if err != nil {
 		return 0, err
@@ -69,7 +69,7 @@ func (n *Nep17Helper) TotalSupply() (*big.Int, error) {
 	if err != nil {
 		return nil, err
 	}
-	response := n.Client.InvokeScript(helper.BytesToHex(script))
+	response := n.Client.InvokeScript(helper.BytesToHex(script), nil)
 	stack, err := rpc.PopInvokeStack(response)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (n *Nep17Helper) BalanceOf(account *helper.UInt160) (*big.Int, error) {
 	if err != nil {
 		return nil, err
 	}
-	response := n.Client.InvokeScript(helper.BytesToHex(script))
+	response := n.Client.InvokeScript(helper.BytesToHex(script), nil)
 	stack, err := rpc.PopInvokeStack(response)
 	if err != nil {
 		return nil, err

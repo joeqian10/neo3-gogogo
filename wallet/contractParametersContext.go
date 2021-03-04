@@ -234,11 +234,10 @@ func (c *ContractParametersContext) GetWitnesses() ([]tx.Witness, error) {
 		if err != nil {
 			return nil, err
 		}
-		var vs []byte
+		vs := make([]byte, 0)
 		if item.Script != nil {
 			vs = item.Script
 		}
-		vs = []byte{}
 		witnesses[i] = tx.Witness{
 			InvocationScript:   is,
 			VerificationScript: vs,

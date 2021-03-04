@@ -56,6 +56,35 @@ func TestNewWalletHelperFromWallet(t *testing.T) {
 	assert.NotNil(t, wh.wallet)
 }
 
+func TestWalletHelper_CalculateNetworkFee(t *testing.T) {
+	var clientMock = new(rpc.RpcClientMock)
+	clientMock.On("CalculateNetworkFee", mock.Anything).Return(rpc.CalculateNetworkFeeResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: models.RpcNetworkFee{NetworkFee: "2384840"},
+	})
+
+	_ = testWallet.Unlock("")
+	_, err := testWallet.CreateAccountWithPrivateKey(privateKey)
+	assert.Nil(t, err)
+	wh := NewWalletHelperFromWallet(clientMock, testWallet)
+
+	trx := tx.NewTransaction()
+	b, e := wh.CalculateNetworkFee(trx)
+	assert.Nil(t, e)
+	assert.Equal(t, int64(2384840), b)
+
+	resetTestWallet()
+}
+
 func TestWalletHelper_ClaimGas(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
 	clientMock.On("GetBlockCount", mock.Anything).Return(rpc.GetBlockCountResponse{
@@ -103,7 +132,7 @@ func TestWalletHelper_ClaimGas(t *testing.T) {
 				Message: "",
 			},
 		},
-		Result: models.RpcNetworkFee{NetworkFee: 2384840},
+		Result: models.RpcNetworkFee{NetworkFee: "2384840"},
 	})
 	clientMock.On("SendRawTransaction", mock.Anything).Return(rpc.SendRawTransactionResponse{
 		RpcResponse: rpc.RpcResponse{
@@ -124,38 +153,9 @@ func TestWalletHelper_ClaimGas(t *testing.T) {
 	_, err := testWallet.CreateAccountWithPrivateKey(privateKey)
 	assert.Nil(t, err)
 	wh := NewWalletHelperFromWallet(clientMock, testWallet)
-	h, e := wh.ClaimGas()
+	h, e := wh.ClaimGas(tx.Neo3Magic_MainNet)
 	assert.Nil(t, e)
 	assert.Equal(t, "0x992f941c9751aabc8bab0200503e07e38f38f0884cb8b11f6c6c72d8d2fb2948", h)
-
-	resetTestWallet()
-}
-
-func TestWalletHelper_CalculateNetworkFee(t *testing.T) {
-	var clientMock = new(rpc.RpcClientMock)
-	clientMock.On("CalculateNetworkFee", mock.Anything).Return(rpc.CalculateNetworkFeeResponse{
-		RpcResponse: rpc.RpcResponse{
-			JsonRpc: "2.0",
-			ID:      1,
-		},
-		ErrorResponse: rpc.ErrorResponse{
-			Error: rpc.RpcError{
-				Code:    0,
-				Message: "",
-			},
-		},
-		Result: models.RpcNetworkFee{NetworkFee: 2384840},
-	})
-
-	_ = testWallet.Unlock("")
-	_, err := testWallet.CreateAccountWithPrivateKey(privateKey)
-	assert.Nil(t, err)
-	wh := NewWalletHelperFromWallet(clientMock, testWallet)
-
-	trx := tx.NewTransaction()
-	b, e := wh.CalculateNetworkFee(trx)
-	assert.Nil(t, e)
-	assert.Equal(t, int64(2384840), b)
 
 	resetTestWallet()
 }
@@ -409,7 +409,7 @@ func TestWalletHelper_GetGasConsumed(t *testing.T) {
 	assert.Nil(t, err)
 	wh := NewWalletHelperFromWallet(clientMock, testWallet)
 
-	b, e := wh.GetGasConsumed([]byte{})
+	b, e := wh.GetGasConsumed([]byte{}, nil)
 	assert.Nil(t, e)
 	assert.Equal(t, int64(2007570), b)
 
@@ -430,7 +430,7 @@ func TestWalletHelper_GetUnClaimedGas(t *testing.T) {
 			},
 		},
 		Result: models.UnclaimedGas{
-			Unclaimed: 8913620128,
+			Unclaimed: "8913620128",
 			Address:   "NNU67Fvdy3LEQTM374EJ9iMbCRxVExgM8Y",
 		},
 	})
@@ -493,7 +493,7 @@ func TestWalletHelper_MakeTransaction(t *testing.T) {
 				Message: "",
 			},
 		},
-		Result: models.RpcNetworkFee{NetworkFee: 2384840},
+		Result: models.RpcNetworkFee{NetworkFee: "2384840"},
 	})
 	script := []byte{}
 	ab := []AccountAndBalance{
@@ -565,7 +565,7 @@ func TestWalletHelper_SignTransaction(t *testing.T) {
 				Message: "",
 			},
 		},
-		Result: models.RpcNetworkFee{NetworkFee: 2384840},
+		Result: models.RpcNetworkFee{NetworkFee: "2384840"},
 	})
 	script := []byte{}
 	ab := []AccountAndBalance{
@@ -581,7 +581,7 @@ func TestWalletHelper_SignTransaction(t *testing.T) {
 
 	trx, e := wh.MakeTransaction(script, nil, nil, ab)
 	assert.Nil(t, e)
-	trx, e = wh.SignTransaction(trx)
+	trx, e = wh.SignTransaction(trx, tx.Neo3Magic_MainNet)
 	assert.Nil(t, e)
 	assert.Equal(t, 1, len(trx.GetWitnesses()))
 
@@ -635,7 +635,7 @@ func TestWalletHelper_Transfer(t *testing.T) {
 				Message: "",
 			},
 		},
-		Result: models.RpcNetworkFee{NetworkFee: 2384840},
+		Result: models.RpcNetworkFee{NetworkFee: "2384840"},
 	})
 	clientMock.On("SendRawTransaction", mock.Anything).Return(rpc.SendRawTransactionResponse{
 		RpcResponse: rpc.RpcResponse{
@@ -658,7 +658,7 @@ func TestWalletHelper_Transfer(t *testing.T) {
 	wh := NewWalletHelperFromWallet(clientMock, testWallet)
 
 	to := "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ"
-	h, e := wh.Transfer(tx.GasToken, to, big.NewInt(10000))
+	h, e := wh.Transfer(tx.GasToken, to, big.NewInt(10000), tx.Neo3Magic_MainNet)
 	assert.Nil(t, e)
 	assert.Equal(t, "0x992f941c9751aabc8bab0200503e07e38f38f0884cb8b11f6c6c72d8d2fb2948", h)
 

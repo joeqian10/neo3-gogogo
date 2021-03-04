@@ -20,7 +20,7 @@ type IVerifiable interface {
 }
 
 func GetHashData(verifiable IVerifiable) []byte {
-	return GetHashDataWithMagic(verifiable, Neo3Magic)
+	return GetHashDataWithMagic(verifiable, Neo3Magic_MainNet)
 }
 
 func GetHashDataWithMagic(verifiable IVerifiable, magic uint32) []byte {

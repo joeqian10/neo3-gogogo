@@ -118,7 +118,7 @@ func (n *RpcClient) ImportPrivKey(wif string) ImportPrivKeyResponse {
 
 func (n *RpcClient) CalculateNetworkFee(tx string) CalculateNetworkFeeResponse {
 	response := CalculateNetworkFeeResponse{}
-	params := []interface{}{}
+	params := []interface{}{tx}
 	_ = n.makeRequest("calculatenetworkfee", params, &response)
 	return response
 }
