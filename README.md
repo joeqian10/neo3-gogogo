@@ -6,7 +6,10 @@ This is a light-weight golang SDK for Neo 3.0 network.
 
 ### 1.1 Version
 
-neo: v3.0.0-preview5
+Developed and tested based on the following versions:  
+NEO-CLI v3.0.0-preview5  
+NEO v3.0.0-CI01232  
+NEO-VM v3.0.0-CI00269
 
 ## 2. Getting Started
 
@@ -26,7 +29,7 @@ This module defines the blockhead and block struct along with their functions us
 
 ### 3.2 "blockchain" module
 
-This module defines the storage key/value struct in neo.
+This module defines the storage key/value struct in neo which will mainly be used in state services in this SDK.
 
 ### 3.3 "crypto" module
 
@@ -40,6 +43,7 @@ package sample
 import "crypto/elliptic"
 import "encoding/hex"
 import "github.com/joeqian10/neo3-gogogo/crypto"
+import "github.com/joeqian10/neo3-gogogo/helper"
 import "math/big"
 
 func SampleMethod() {
@@ -78,8 +82,8 @@ func SampleMethod() {
     ...
 
     // script hash/address conversion
-    scriptHash, err := crypto.AddressToScriptHash("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf")
-    address := ScriptHashToAddress(helper.UInt160FromBytes(Hash160([]byte{0x01})))
+    scriptHash, err := crypto.AddressToScriptHash("NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf", helper.DefaultAddressVersion)
+    address := crypto.ScriptHashToAddress(helper.UInt160FromBytes(Hash160([]byte{0x01})), helper.DefaultAddressVersion)
 
     ...
 }
@@ -99,19 +103,17 @@ import "github.com/joeqian10/neo3-gogogo/helper"
 
 func SampleMethod() {
     // UInt160
-    hexStr := "0x2d3b96ae1bcc5a585e075e3b81920210dec16302"
-    v1, err := helper.UInt160FromString(hexStr)
-    b1, err := hex.DecodeString(hexStr)
-    v2, err := helper.UInt160FromBytes(ReverseBytes(b))
+    v1, err := helper.UInt160FromString("0x2d3b96ae1bcc5a585e075e3b81920210dec16302")
+    b, err := hex.DecodeString("2d3b96ae1bcc5a585e075e3b81920210dec16302")
+    v2 := helper.UInt160FromBytes(ReverseBytes(b))
     s1 := v1.String()
     ba1 := v2.ToByteArray()
     // v1 and v2 are equal
 
     // UInt256
-    str := "f037308fa0ab18155bccfc08485468c112409ea5064595699e98c545f245f32d"
-    u1, err := helper.UInt256FromString(str)
-    b2, err := hex.DecodeString(hexStr)
-    u2, err := helper.UInt256FromBytes(ReverseBytes(b))
+    u1, err := helper.UInt256FromString("f037308fa0ab18155bccfc08485468c112409ea5064595699e98c545f245f32d")
+    b2, err := hex.DecodeString("f037308fa0ab18155bccfc08485468c112409ea5064595699e98c545f245f32d")
+    u2, err := helper.UInt256FromBytes(ReverseBytes(b2))
     s2 := u1.String()
     ba2 := u2.ToByteArray()
     // u1 and u2 are equal
@@ -203,7 +205,7 @@ func SampleMethod() {
     // create a KeyPair
     privateKey := make([]byte, 32)
     pair, err := keys.NewKeyPair(privateKey)
-    pair, err := keys.NewKeyPairFromNEP2("6PYX7SaH7EdDgeHo1V8yXfhrgrGXjHaMzsgWLMpaxLkDR9u6HHnEDMmjhh", "neo3-gogogo", 16384, 8, 8)
+    pair, err := keys.NewKeyPairFromNEP2("6PYN7P7VnqHXEtsmn98gU9Vi65zg1rhLVdk4m8Uj9LChnVyZ7Cdq3rBLJK", "neo3-gogogo", 16384, 8, 8)
     pair, err := keys.NewKeyPairFromWIF("L1caMUAsHr2dKwhqbMpYRcCzmzvZTfYZSCBefgARhz9iimAFRn1z")
 
     // export a KeyPair
@@ -230,18 +232,19 @@ This module provides structs and methods used to interact with the StateRoot in 
 ```golang
 package sample
 
+import "github.com/joeqian10/neo3-gogogo/crypto"
 import "github.com/joeqian10/neo3-gogogo/helper"
 import "github.com/joeqian10/neo3-gogogo/mpt"
 
 func SampleMethod() {
     // resolve proof
-    proofData := helper.HexToBytes("36a5f9b4f70c841154060b132ff1e253eecaa7db8a61737365740034c1e9f7413e8a5eb3c500ffd06acd41644d5d5a96000000000000060772000000000000000000000020dbe90d0674546fd0e6dc879013ab743b5f171cc1f4e97caab98be714bb7f125400208837fe543b1bfcd58d480ea9988cb7acf58c5f4cf0518a987f70924320ceab390020ff409ca133d8a3a5ea8b72d5b82214d6190d3dd44d19d67062681af2b4b8302000004b0128050f090b040f07000c0804010105040006000b0103020f0f010e0205030e0e0c0a0a070d0b080a06202da36d644929144a9869d0ffb581c645f4d29b7b38a068ca1cc3bbd34b0771e252000020a41c8cc1e18bcbe0f237fa00544455ab92d5a86bc8fa6cd0f0ba294e9f02202d002002ad9e7adebf3057801f6918a97efd49741949f8a538b58b4fae31700b976e7d000000000000000000000000002d010a0703070306050704000020afb2d68b4ae87095c68d113f42234c3e36e15597ec1c11ecce4261f3a9169b0a5200207c00cb1580a95b55ecf7e82829997ebf4176cf95df65712a0b14b37eb13c1c5f0000207e9c938de1d3f1f95753c0867e3326bdb16b2caccefb6f490810bf13ccc7440e000000000000000000000000005a0137040c010e090f070401030e080a050e0b030c0500000f0f0d00060a0c0d04010604040d050d050a090600000000000000000000000000062046a12d0bfc2f3f1d9e18a51f55d32ba4855578c1954d277180addb5b69210c970903070004c071b50400")
-    root, _ := helper.UInt256FromString("34db5a993a95e0db79efe8220bf142e5952056bb59834fe3b91fc1611ed4385e")
+    proofData := crypto.Base64Decode("Bfv///8XBiQBAQ8DRzb6Vkdw0r5nxMBp6Z5nvbyXiupMvffwm0v5GdB6jHvyAAQEBAQEBAQEA7l84HFtRI5V11s58vA+8CZ5GArFLkGUYLO98RLaMaYmA5MEnx0upnVI45XTpoUDRvwrlPD59uWy9aIrdS4T0D2cA6Rwv/l3GmrctRzL1me+iTUFdDgooaz+esFHFXJdDANfA2bdshZMp5ox2goVAOMjvoxNIWWOqjJoRPu6ZOw2kdj6A8xovEK1Mp6cAG9z/jfFDrSEM60kuo97MNaVOP/cDZ1wA1nf4WdI+jksYz0EJgzBukK8rEzz8jE2cb2Zx2fytVyQBANC7v2RaLMCRF1XgLpSri12L2IwL9Zcjz5LZiaB5nHKNgQpAQYPDw8PDw8DggFffnsVMyqAfZjg+4gu97N/gKpOsAK8Q27s56tijRlSAAMm26DYxOdf/IjEgkE/u/CoRL6dDnzvs1dxCg/00esMvgPGioeOqQCkDOTfliOnCxYjbY/0XvVUOXkceuDm1W0FzQQEBAQEBAQEBAQEBAQEBJIABAPH1PnX/P8NOgV4KHnogwD7xIsD8KvNhkTcDxgCo7Ec6gPQs1zD4igSJB4M9jTREq+7lQ5PbTH/6d138yUVvtM8bQP9Df1kh7asXrYjZolKhLcQ1NoClQgEzbcJfYkCHXv6DQQEBAOUw9zNl/7FJrWD7rCv0mbOoy6nLlHWiWuyGsA12ohRuAQEBAQEBAQEBAYCBAIAAgA=")
+    root, _ := helper.UInt256FromString("0x7bf925dbd33af0e00d392b92313da59369ed86c82494d0e02040b24faac0a3ca")
 
-    scriptHash, key, proofs, err := ResolveProof(proofdata)
+    id, key, proofs, err := mpt.ResolveProof(proofdata)
 
     // verify proof
-    value, err := VerifyProof(root.ToByteArray(), scriptHash, key, proofs)
+    value, err := mpt.VerifyProof(root.ToByteArray(), id, key, proofs)
 
     ...
 }
@@ -344,13 +347,10 @@ func SampleMethod() {
 
     // call a specific method from a specific contract without parameters
     scriptHash, _ := helper.UInt160FromString("b9d7ea3062e6aeeb3e8ad9548220c4ba1361d263")
-    sb.EmitDynamicCall(scriptHash.ToByteArray(), "name")
+    sb.EmitDynamicCall(scriptHash.ToByteArray(), "name", nil)
 
     // call a specific method from a specific contract with parameters
-    sb.EmitDynamicCallParam(scriptHash.ToByteArray(), "balanceOf", []ContractParameter{{
-        Type: Hash160,
-        Value: helper.NewUInt160(),
-    }}...)
+    sb.EmitDynamicCallParam(scriptHash.ToByteArray(), "balanceOf", All, []interface{}{ContractParameter {Type:  Hash160, Value: helper.NewUInt160()}})
 
     // create an array
     a := []interface{}{big.NewInt(1), big.NewInt(2), big.NewInt(3)}

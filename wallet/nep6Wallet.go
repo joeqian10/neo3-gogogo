@@ -19,6 +19,7 @@ const (
 
 // NEP6Wallet represents a NEO (NEP-2, NEP-6) compliant wallet.
 type NEP6Wallet struct {
+	protocolSettings *helper.ProtocolSettings
 	password *string
 	path     string
 	Name     *string           `json:"name"`
@@ -28,6 +29,38 @@ type NEP6Wallet struct {
 	Extra    interface{}       `json:"extra"`
 
 	accounts map[helper.UInt160]NEP6Account
+}
+
+// NewNEP6Wallet creates a NEO wallet.
+func NewNEP6Wallet(path string, settings *helper.ProtocolSettings, name *string, scrypt *ScryptParameters) (*NEP6Wallet, error) {
+	file, err := os.OpenFile(path, os.O_RDONLY, os.ModeExclusive)
+	if err != nil {
+		return &NEP6Wallet{
+			protocolSettings: settings,
+			path: path,
+			Name:     name,
+			Version:  Neo3WalletVersion,
+			accounts: make(map[helper.UInt160]NEP6Account, 0),
+			Scrypt:   scrypt,
+			Extra:    nil,
+		}, err
+	}
+	w := &NEP6Wallet{
+		protocolSettings: settings,
+		path: path,
+		Scrypt: &ScryptParameters{},
+		accounts: make(map[helper.UInt160]NEP6Account, 0),
+	}
+	if err := json.NewDecoder(file).Decode(w); err != nil {
+		return nil, err
+	}
+	if w.Accounts != nil {
+		w.accounts = make(map[helper.UInt160]NEP6Account, len(w.Accounts))
+		for _, account := range w.Accounts {
+			w.accounts[*account.GetScriptHash()] = account
+		}
+	}
+	return w, nil
 }
 
 func (w *NEP6Wallet) GetName() string {
@@ -43,45 +76,6 @@ func (w *NEP6Wallet) GetPath() string {
 
 func (w *NEP6Wallet) GetVersion() string {
 	return w.Version
-}
-
-// NewNEP6Wallet creates a NEO wallet.
-func NewNEP6Wallet(path string, name *string, scrypt *ScryptParameters) (*NEP6Wallet, error) {
-	file, err := os.OpenFile(path, os.O_RDONLY, os.ModeExclusive)
-	if err != nil {
-		return &NEP6Wallet{
-			Name:     name,
-			Version:  Neo3WalletVersion,
-			accounts: make(map[helper.UInt160]NEP6Account, 0),
-			Scrypt:   scrypt,
-			Extra:    nil,
-		}, err
-	}
-	w := &NEP6Wallet{}
-	if err := json.NewDecoder(file).Decode(w); err != nil {
-		return nil, err
-	}
-	return w, nil
-}
-
-// NewNEP6WalletFromFile creates a NEP6Wallet from the given wallet file path
-func NewNEP6WalletFromFile(path string) (*NEP6Wallet, error) {
-	file, err := os.OpenFile(path, os.O_RDONLY, os.ModeExclusive)
-	if err != nil {
-		return nil, err
-	}
-	w := &NEP6Wallet{}
-	w.Scrypt = &ScryptParameters{}
-	if err := json.NewDecoder(file).Decode(w); err != nil {
-		return nil, err
-	}
-	if w.Accounts != nil {
-		w.accounts = make(map[helper.UInt160]NEP6Account, len(w.Accounts))
-		for _, account := range w.Accounts {
-			w.accounts[*account.GetScriptHash()] = account
-		}
-	}
-	return w, nil
 }
 
 func (w *NEP6Wallet) addAccount(acc *NEP6Account, isImport bool) {
@@ -180,7 +174,7 @@ func (w *NEP6Wallet) CreateAccountWithScriptHash(scriptHash *helper.UInt160) (IA
 }
 
 func (w *NEP6Wallet) DecryptKey(nep2Key string) (*keys.KeyPair, error) {
-	priKey, err := GetPrivateKeyFromNEP2(nep2Key, *w.password, w.Scrypt.N, w.Scrypt.R, w.Scrypt.P)
+	priKey, err := GetPrivateKeyFromNEP2(nep2Key, *w.password, w.protocolSettings.AddressVersion, w.Scrypt.N, w.Scrypt.R, w.Scrypt.P)
 	if err != nil {
 		return nil, err
 	}
@@ -191,28 +185,17 @@ func (w *NEP6Wallet) DecryptKey(nep2Key string) (*keys.KeyPair, error) {
 	return pair, nil
 }
 
-func GetPrivateKeyFromNEP2(nep2 string, passphrase string, N, R, P int) ([]byte, error) {
-	pair, err := keys.NewKeyPairFromNEP2(nep2, passphrase, N, R, P)
-	if err != nil {
-		return nil, err
-	}
-	return pair.PrivateKey, nil
-}
-
-func GetPrivateKeyFromWIF(wif string) ([]byte, error) {
-	pair, err := keys.NewKeyPairFromWIF(wif)
-	if err != nil {
-		return nil, err
-	}
-	return pair.PrivateKey, nil
-}
-
 func (w *NEP6Wallet) DeleteAccount(scriptHash *helper.UInt160) bool {
 	if _, ok := w.accounts[*scriptHash]; ok {
 		delete(w.accounts, *scriptHash)
 		return true
 	}
 	return false
+}
+
+func (w *NEP6Wallet) GetAccountByPublicKey(pubKey *crypto.ECPoint) IAccount {
+	contract, _ := sc.CreateSignatureContract(pubKey)
+	return w.GetAccountByScriptHash(contract.GetScriptHash())
 }
 
 func (w *NEP6Wallet) GetAccountByScriptHash(scriptHash *helper.UInt160) IAccount {
@@ -222,15 +205,10 @@ func (w *NEP6Wallet) GetAccountByScriptHash(scriptHash *helper.UInt160) IAccount
 	return nil
 }
 
-func (w *NEP6Wallet) GetAccountByPublicKey(pubKey *crypto.ECPoint) IAccount {
-	contract, _ := sc.CreateSignatureContract(pubKey)
-	return w.GetAccountByScriptHash(contract.GetScriptHash())
-}
-
-func (w *NEP6Wallet) GetAccounts() []NEP6Account {
-	accounts := []NEP6Account{}
+func (w *NEP6Wallet) GetAccounts() []IAccount {
+	accounts :=  []IAccount{}
 	for _, v := range w.accounts {
-		accounts = append(accounts, v)
+		accounts = append(accounts, IAccount(&v))
 	}
 	return accounts
 }
@@ -260,7 +238,7 @@ func (w *NEP6Wallet) ImportFromWIF(wif string) (IAccount, error) {
 
 // Import account from Nep2Key
 func (w *NEP6Wallet) ImportFromNEP2(nep2, passphrase string, N, R, P int) (IAccount, error) {
-	pair, err := keys.NewKeyPairFromNEP2(nep2, passphrase, N, R, P)
+	pair, err := keys.NewKeyPairFromNEP2(nep2, passphrase, w.protocolSettings.AddressVersion, N, R, P)
 	if err != nil {
 		return nil, err
 	}

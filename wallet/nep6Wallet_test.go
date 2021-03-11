@@ -17,6 +17,7 @@ var testAccount1 = NewNEP6Account(testWallet, hash, nil)
 
 func resetTestWallet()  {
 	testWallet = &NEP6Wallet{
+		protocolSettings: &helper.DefaultProtocolSettings,
 		password: nil,
 		Name:     &dummy,
 		path:     "",
@@ -27,9 +28,10 @@ func resetTestWallet()  {
 	}
 }
 
-func TestNewNEP6WalletFromFile(t *testing.T) {
+// test wallet from a file
+func TestNewNEP6Wallet1(t *testing.T) {
 	path := "test.json"
-	wallet, err := NewNEP6WalletFromFile(path)
+	wallet, err := NewNEP6Wallet(path, &helper.DefaultProtocolSettings, nil, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, 1,  len(wallet.Accounts))
 
@@ -43,9 +45,10 @@ func TestNewNEP6WalletFromFile(t *testing.T) {
 	assert.Equal(t, string(data), jsonString)
 }
 
+// test wallet from params
 func TestNewNEP6Wallet(t *testing.T) {
 	s := "test"
-	wallet, err := NewNEP6Wallet("", &s, DefaultScryptParameters)
+	wallet, err := NewNEP6Wallet("", &helper.DefaultProtocolSettings, &s, DefaultScryptParameters)
 	assert.NotNil(t, err)
 	assert.Equal(t, "test", wallet.GetName())
 	assert.Equal(t, "3.0", wallet.Version)
@@ -53,9 +56,9 @@ func TestNewNEP6Wallet(t *testing.T) {
 }
 
 func TestGetPrivateKeyFromNEP2(t *testing.T) {
-	pk, err := GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", 2, 1, 1)
+	pk, err := GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", helper.DefaultAddressVersion,2, 1, 1)
 	assert.NotNil(t, err)
-	pk, err = GetPrivateKeyFromNEP2(nep2, password, 2, 1, 1)
+	pk, err = GetPrivateKeyFromNEP2(nep2, password,  helper.DefaultAddressVersion, 2, 1, 1)
 	assert.Equal(t, true, bytes.Equal(privateKey, pk))
 }
 
@@ -190,7 +193,7 @@ func TestNEP6Wallet_GetAccount(t *testing.T) {
 	acc := testWallet.GetAccountByScriptHash(testScriptHash)
 	c, err := sc.CreateSignatureContract(pair.PublicKey)
 	assert.Nil(t, err)
-	assert.Equal(t, c.GetAddress(), acc.GetAddress())
+	assert.Equal(t, crypto.ScriptHashToAddress(c.GetScriptHash(), helper.DefaultAddressVersion), acc.GetAddress())
 
 	resetTestWallet()
 }
@@ -207,7 +210,7 @@ func TestNEP6Wallet_GetAccounts(t *testing.T) {
 		privateKeys[i] = pk
 		p, _ := keys.NewKeyPair(pk)
 		c, _ := sc.CreateSignatureContract(p.PublicKey)
-		m[c.GetAddress()] = *p
+		m[crypto.ScriptHashToAddress(c.GetScriptHash(), helper.DefaultAddressVersion)] = *p
 		_, err = testWallet.CreateAccountWithPrivateKey(pk)
 		assert.Nil(t, err)
 	}
@@ -259,12 +262,12 @@ func TestNEP6Wallet_Lock(t *testing.T) {
 
 func TestNEP6Wallet_Save(t *testing.T) {
 	path := "test.json"
-	w, err := NewNEP6WalletFromFile(path)
+	w, err := NewNEP6Wallet(path, &helper.DefaultProtocolSettings, nil, nil)
 	assert.Nil(t, err)
 
 	err = w.Save("testWrite.json")
 	assert.Nil(t, err)
-	testWrite, err := NewNEP6WalletFromFile("testWrite.json")
+	testWrite, err := NewNEP6Wallet("testWrite.json", &helper.DefaultProtocolSettings, nil, nil)
 
 	assert.Nil(t, err)
 	assert.Equal(t, w.Name, testWrite.Name)

@@ -24,7 +24,7 @@ func TestNewKeyPair(t *testing.T) {
 
 func TestNewKeyPairFromNEP2(t *testing.T) {
 	for _, testCase := range KeyCases {
-		keyPair, err := NewKeyPairFromNEP2(testCase.Nep2key, testCase.Passphrase, N, R, P)
+		keyPair, err := NewKeyPairFromNEP2(testCase.Nep2key, testCase.Passphrase, helper.DefaultAddressVersion, N, R, P)
 		assert.Nil(t, err)
 
 		privateKey := keyPair.String()
@@ -34,17 +34,6 @@ func TestNewKeyPairFromNEP2(t *testing.T) {
 		assert.Equal(t, testCase.PrivateKey, privateKey)
 		assert.Equal(t, testCase.PublicKey, publicKey)
 	}
-}
-
-func TestNewKeyPairFromNEP2_2(t *testing.T) {
-	keyPair, err := NewKeyPairFromNEP2("6PYKfoRbX69ttWsoe1gM5GARbD1G6tBSurQ84AkjkaKR4TGwbRyZ3ZC5ie", "t", 16384, 8, 8)
-	assert.Nil(t, err)
-
-	publicKey := keyPair.PublicKey.String()
-
-	assert.Nil(t, err)
-	assert.Equal(t, "031f8ea9859b304a90128fcd85164dcf5de9abb7c950d761a25b43dbae453b0275", publicKey)
-
 }
 
 func TestNewKeyPairFromWIF(t *testing.T) {
@@ -96,7 +85,7 @@ func TestKeyPair_ExportWithPassword(t *testing.T) {
 		keyPair, err := NewKeyPair(helper.HexToBytes(testCase.PrivateKey))
 		assert.Nil(t, err)
 
-		nep2, err := keyPair.ExportWithPassword(testCase.Passphrase, N, R, P)
+		nep2, err := keyPair.ExportWithPassword(testCase.Passphrase, helper.DefaultAddressVersion, N, R, P)
 		assert.Nil(t, err)
 		assert.Equal(t, testCase.Nep2key, nep2)
 	}

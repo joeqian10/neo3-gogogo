@@ -7,6 +7,7 @@ import (
 )
 
 type IVerifiable interface {
+	GetHash() *helper.UInt256
 	GetSize() int
 
 	Deserialize(br *io.BinaryReader)
@@ -19,14 +20,10 @@ type IVerifiable interface {
 	GetScriptHashesForVerifying() []helper.UInt160
 }
 
-func GetHashData(verifiable IVerifiable) []byte {
-	return GetHashDataWithMagic(verifiable, Neo3Magic_MainNet)
-}
-
-func GetHashDataWithMagic(verifiable IVerifiable, magic uint32) []byte {
+func GetSignData(verifiable IVerifiable, magic uint32) []byte {
 	buf := io.NewBufBinaryWriter()
 	buf.BinaryWriter.WriteLE(magic)
-	verifiable.SerializeUnsigned(buf.BinaryWriter)
+	buf.BinaryWriter.WriteLE(verifiable.GetHash())
 	if buf.Err != nil {
 		return nil
 	}
@@ -34,9 +31,11 @@ func GetHashDataWithMagic(verifiable IVerifiable, magic uint32) []byte {
 }
 
 func CalculateHash(verifiable IVerifiable) *helper.UInt256 {
-	return helper.UInt256FromBytes(crypto.Hash256(GetHashData(verifiable)))
-}
+	buf := io.NewBufBinaryWriter()
+	verifiable.SerializeUnsigned(buf.BinaryWriter)
+	if buf.Err != nil {
+		return nil
+	}
 
-func CalculateHashWithMagic(verifiable IVerifiable, magic uint32) *helper.UInt256 {
-	return helper.UInt256FromBytes(crypto.Hash256(GetHashDataWithMagic(verifiable, magic)))
+	return helper.UInt256FromBytes(crypto.Sha256(buf.Bytes()))
 }

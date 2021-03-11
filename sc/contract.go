@@ -12,7 +12,6 @@ type Contract struct {
 	Script        []byte
 	ParameterList []ContractParameterType
 	scriptHash    *helper.UInt160
-	address       string
 }
 
 func CreateContract(parameterList []ContractParameterType, redeemScript []byte) *Contract {
@@ -22,12 +21,14 @@ func CreateContract(parameterList []ContractParameterType, redeemScript []byte) 
 	}
 }
 
-// GetAddress is the getter of _address
-func (c *Contract) GetAddress() string {
-	if c.address == "" {
-		c.address = crypto.ScriptHashToAddress(c.GetScriptHash())
+/// Construct special Contract with empty Script, will get the Script with scriptHash from blockchain when doing the Verify
+/// verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
+func CreateContractWithScriptHash(scriptHash *helper.UInt160, parameterList []ContractParameterType) *Contract {
+	return &Contract{
+		Script:        []byte{},
+		ParameterList: parameterList,
+		scriptHash:    scriptHash,
 	}
-	return c.address
 }
 
 // GetScriptHash is the getter of _scriptHash
@@ -42,8 +43,7 @@ func (c *Contract) GetScriptHash() *helper.UInt160 {
 func CreateSignatureRedeemScript(p *crypto.ECPoint) ([]byte, error) {
 	sb := NewScriptBuilder()
 	sb.EmitPushBytes(p.EncodePoint(true))
-	sb.Emit(PUSHNULL)
-	sb.EmitSysCall(VerifyWithECDsaSecp256r1.ToInteropMethodHash())
+	sb.EmitSysCall(Neo_Crypto_CheckSig.ToInteropMethodHash())
 	b, err := sb.ToArray()
 	if err != nil {
 		return nil, err
@@ -70,14 +70,15 @@ func CreateMultiSigRedeemScript(m int, ps []crypto.ECPoint) ([]byte, error) {
 	}
 	sb := NewScriptBuilder()
 	sb.EmitPushInteger(m)
+	// sort public keys
 	pubKeys := crypto.PublicKeySlice(ps)
 	sort.Sort(pubKeys)
+
 	for _, p := range pubKeys {
 		sb.EmitPushBytes(p.EncodePoint(true))
 	}
 	sb.EmitPushInteger(pubKeys.Len())
-	sb.Emit(PUSHNULL)
-	sb.EmitSysCall(CheckMultisigWithECDsaSecp256r1.ToInteropMethodHash())
+	sb.EmitSysCall(Neo_Crypto_CheckMultisig.ToInteropMethodHash())
 	b, err := sb.ToArray()
 	if err != nil {
 		return nil, err
@@ -85,7 +86,7 @@ func CreateMultiSigRedeemScript(m int, ps []crypto.ECPoint) ([]byte, error) {
 	return b, nil
 }
 
-// CreateMultiSigContract
+// Create Multi-Signature Contract
 func CreateMultiSigContract(m int, publicKeys []crypto.ECPoint) (*Contract, error) {
 	script, err := CreateMultiSigRedeemScript(m, publicKeys)
 	if err != nil {
@@ -101,70 +102,6 @@ func CreateMultiSigContract(m int, publicKeys []crypto.ECPoint) (*Contract, erro
 		ParameterList: parameters,
 	}, nil
 }
-
-//// create signature check script
-//func CreateSignatureRedeemScript(p *keys.PublicKey) ([]byte, error) {
-//	sb := NewScriptBuilder()
-//	sb.EmitPushBytes(p.EncodePoint(true))
-//	sb.Emit(PUSHNULL)
-//	sb.EmitSysCall(VerifyWithECDsaSecp256r1.ToInteropMethodHash())
-//	b, err := sb.ToArray()
-//	if err != nil {
-//		return nil, err
-//	}
-//	return b, nil
-//}
-//
-//// CreateSignatureContract
-//func CreateSignatureContract(publicKey *keys.PublicKey) (*Contract, error) {
-//	script, err := CreateSignatureRedeemScript(publicKey)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return &Contract{
-//		Script:        script,
-//		ParameterList: []ContractParameterType{Signature},
-//	}, nil
-//}
-//
-//// create multi-signature check script
-//func CreateMultiSigRedeemScript(m int, ps []keys.PublicKey) ([]byte, error) {
-//	if !(m >= 1 && m < len(ps) && len(ps) <= 1024) {
-//		return nil, fmt.Errorf("argument exception: %v,%v", m, len(ps))
-//	}
-//	sb := NewScriptBuilder()
-//	sb.EmitPushInteger(m)
-//	pubKeys := keys.PublicKeySlice(ps)
-//	sort.Sort(pubKeys)
-//	for _, p := range pubKeys {
-//		sb.EmitPushBytes(p.EncodePoint(true))
-//	}
-//	sb.EmitPushInteger(pubKeys.Len())
-//	sb.Emit(PUSHNULL)
-//	sb.EmitSysCall(CheckMultisigWithECDsaSecp256r1.ToInteropMethodHash())
-//	b, err := sb.ToArray()
-//	if err != nil {
-//		return nil, err
-//	}
-//	return b, nil
-//}
-//
-//// CreateMultiSigContract
-//func CreateMultiSigContract(m int, publicKeys []keys.PublicKey) (*Contract, error) {
-//	script, err := CreateMultiSigRedeemScript(m, publicKeys)
-//	if err != nil {
-//		return nil, err
-//	}
-//	parameters := make([]ContractParameterType, m)
-//	for i := 0; i < m; i++ {
-//		parameters[i] = Signature
-//	}
-//
-//	return &Contract{
-//		Script:        script,
-//		ParameterList: parameters,
-//	}, nil
-//}
 
 type ByteSlice []byte
 
@@ -196,14 +133,13 @@ func (bs ByteSlice) IsMultiSigContractWithPoints() (bool, int, []crypto.ECPoint)
 }
 
 func IsSignatureContract(script []byte) bool {
-	if len(script) != 41 {
+	if len(script) != 40 {
 		return false
 	}
 	if script[0] != byte(PUSHDATA1) ||
 		script[1] != 33 ||
-		script[35] != byte(PUSHNULL) ||
-		script[36] != byte(SYSCALL) ||
-		uint(binary.LittleEndian.Uint32(script[37:])) != VerifyWithECDsaSecp256r1.ToInteropMethodHash() {
+		script[35] != byte(SYSCALL) ||
+		uint(binary.LittleEndian.Uint32(script[36:])) != Neo_Crypto_CheckSig.ToInteropMethodHash() {
 		return false
 	}
 	return true
@@ -212,7 +148,7 @@ func IsSignatureContract(script []byte) bool {
 func IsMultiSigContract(script []byte) (bool, int, int, []crypto.ECPoint) {
 	var m, n int = 0, 0
 	var i int = 0
-	if len(script) < 43 {
+	if len(script) < 42 {
 		return false, m, n, nil
 	}
 	switch script[i] {
@@ -239,6 +175,7 @@ func IsMultiSigContract(script []byte) (bool, int, int, []crypto.ECPoint) {
 	if m < 1 || m > 1024 {
 		return false, 0, 0, nil
 	}
+
 	points := make([]crypto.ECPoint, 0)
 	for script[i] == byte(PUSHDATA1) {
 		if len(script) <= i+35 {
@@ -288,18 +225,14 @@ func IsMultiSigContract(script []byte) (bool, int, int, []crypto.ECPoint) {
 	default:
 		return false, 0, 0, nil
 	}
-	if len(script) != i+6 {
+	if len(script) != i+5 {
 		return false, 0, 0, nil
 	}
-	if script[i] != byte(PUSHNULL) {
-		return false, 0, 0, nil
-	}
-	i++
 	if script[i] != byte(SYSCALL) {
 		return false, 0, 0, nil
 	}
 	i++
-	if uint(binary.LittleEndian.Uint32(script[i:])) != CheckMultisigWithECDsaSecp256r1.ToInteropMethodHash() {
+	if uint(binary.LittleEndian.Uint32(script[i:])) != Neo_Crypto_CheckMultisig.ToInteropMethodHash() {
 		return false, 0, 0, nil
 	}
 	return true, m, n, points

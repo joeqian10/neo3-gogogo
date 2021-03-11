@@ -159,8 +159,8 @@ func (r *RpcClientMock) GetStateRoot(u uint32) GetStateRootResponse {
 	return args.Get(0).(GetStateRootResponse)
 }
 
-func (r *RpcClientMock) VerifyProof(s string, b []byte) VerifyProofResponse {
-	args := r.Called(s, b)
+func (r *RpcClientMock) VerifyProof(s string, p string) VerifyProofResponse {
+	args := r.Called(s, p)
 	return args.Get(0).(VerifyProofResponse)
 }
 

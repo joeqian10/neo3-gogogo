@@ -10,35 +10,40 @@ import (
 	"github.com/joeqian10/neo3-gogogo/tx"
 )
 
-type BlockHeader struct {
-	Version       uint32
-	PrevHash      *helper.UInt256
-	MerkleRoot    *helper.UInt256
-	Timestamp     uint32
-	Index         uint32
-	NextConsensus *helper.UInt160
+type Header struct {
+	version       uint32
+	prevHash      *helper.UInt256
+	merkleRoot    *helper.UInt256
+	timestamp     uint64
+	index         uint32
+	primaryIndex  byte
+	nextConsensus *helper.UInt160
 
-	Witness       *tx.Witness
+	Witness *tx.Witness
 
 	_hash *helper.UInt256
 	_size int
 }
 
-func NewBlockHeader() *BlockHeader {
-	return &BlockHeader{
-		Version:       0,
-		PrevHash:      helper.NewUInt256(),
-		MerkleRoot:    helper.NewUInt256(),
-		Timestamp:     0,
-		Index:         0,
-		NextConsensus: helper.NewUInt160(),
-		Witness:       nil,
+func NewBlockHeader() *Header {
+	return &Header{
+		version:       0,
+		prevHash:      helper.NewUInt256(),
+		merkleRoot:    helper.NewUInt256(),
+		timestamp:     0,
+		index:         0,
+		primaryIndex:  0,
+		nextConsensus: helper.NewUInt160(),
+		Witness:       &tx.Witness{
+			InvocationScript:   []byte{},
+			VerificationScript: []byte{},
+		},
 		_hash:         nil,
 		_size:         0,
 	}
 }
 
-func NewBlockHeaderFromRPC(header *models.RpcBlockHeader) (*BlockHeader, error) {
+func NewBlockHeaderFromRPC(header *models.RpcBlockHeader) (*Header, error) {
 	version := uint32(header.Version)
 	prevHash, err := helper.UInt256FromString(header.PreviousBlockHash)
 	if err != nil {
@@ -48,9 +53,10 @@ func NewBlockHeaderFromRPC(header *models.RpcBlockHeader) (*BlockHeader, error) 
 	if err != nil {
 		return nil, err
 	}
-	timeStamp := uint32(header.Time)
+	timeStamp := uint64(header.Time)
 	index := uint32(header.Index)
-	nextConsensus, err := crypto.AddressToScriptHash(header.NextConsensus)
+	primaryIndex := header.PrimaryIndex
+	nextConsensus, err := crypto.AddressToScriptHash(header.NextConsensus, helper.DefaultAddressVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -65,80 +71,156 @@ func NewBlockHeaderFromRPC(header *models.RpcBlockHeader) (*BlockHeader, error) 
 	if err != nil {
 		return nil, err
 	}
-	bh := BlockHeader{
-		Version:       version,
-		PrevHash:      prevHash,
-		MerkleRoot:    merkleRoot,
-		Timestamp:     timeStamp,
-		Index:         index,
-		NextConsensus: nextConsensus,
+	bh := Header{
+		version:       version,
+		prevHash:      prevHash,
+		merkleRoot:    merkleRoot,
+		timestamp:     timeStamp,
+		index:         index,
+		primaryIndex:  primaryIndex,
+		nextConsensus: nextConsensus,
 		Witness:       witness,
-		_hash:         hash,
+	}
+	fmt.Println(bh.GetHash().String())
+	if !bh.GetHash().Equals(hash) {
+		return nil, fmt.Errorf("wrong block hash")
 	}
 	return &bh, nil
 }
 
-func (bh *BlockHeader) Deserialize(br *io.BinaryReader) {
-	bh.DeserializeUnsigned(br)
+func (h *Header) GetVersion() uint32 {
+	return h.version
+}
+func (h *Header) SetVersion(value uint32) {
+	h.version = value
+	h._hash = nil
+}
+
+func (h *Header) GetPrevHash() *helper.UInt256 {
+	return h.prevHash
+}
+func (h *Header) SetPrevHash(value *helper.UInt256) {
+	h.prevHash = value
+	h._hash = nil
+}
+
+func (h *Header) GetMerkleRoot() *helper.UInt256 {
+	return h.merkleRoot
+}
+func (h *Header) SetMerkleRoot(value *helper.UInt256) {
+	h.merkleRoot = value
+	h._hash = nil
+}
+
+func (h *Header) GetTimeStamp() uint64 {
+	return h.timestamp
+}
+func (h *Header) SetTimeStamp(value uint64) {
+	h.timestamp = value
+	h._hash = nil
+}
+
+func (h *Header) GetIndex() uint32 {
+	return h.index
+}
+func (h *Header) SetIndex(value uint32) {
+	h.index = value
+	h._hash = nil
+}
+
+func (h *Header) GetPrimaryIndex() byte {
+	return h.primaryIndex
+}
+func (h *Header) SetPrimaryIndex(value byte) {
+	h.primaryIndex = value
+	h._hash = nil
+}
+
+func (h *Header) GetNextConsensus() *helper.UInt160 {
+	return h.nextConsensus
+}
+func (h *Header) SetNextConsensus(value *helper.UInt160) {
+	h.nextConsensus = value
+	h._hash = nil
+}
+
+func (h *Header) GetHash() *helper.UInt256 {
+	if h._hash == nil {
+		h._hash = tx.CalculateHash(h)
+	}
+	return h._hash
+}
+
+func (h *Header) GetSize() int {
+	return 4 + // version
+		32 + // prevHash
+		32 + // merkleRoot
+		8 + // timestamp
+		4 + // index
+		1 + // primaryIndex
+		20 + // nextConsensus
+		1 + h.Witness.Size()
+}
+
+func (h *Header) GetWitnesses() []tx.Witness {
+	return []tx.Witness{*h.Witness}
+}
+func (h *Header) SetWitnesses(value []tx.Witness)  {
+	if len(value) != 1 {
+		return
+	}
+	h.Witness = &value[0]
+}
+
+func (h *Header) GetScriptHashesForVerifying() []helper.UInt160 {
+	if h.prevHash.Equals(helper.UInt256Zero) {
+		return []helper.UInt160 {*h.Witness.GetScriptHash()}
+	}
+	// todo, get prev block header
+	return nil
+}
+
+func (h *Header) Deserialize(br *io.BinaryReader) {
+	h.DeserializeUnsigned(br)
 	var b byte
 	br.ReadLE(&b)
 	if b != byte(1) {
 		br.Err = fmt.Errorf("format error: padding must equal 1 got %d", b)
 	}
-	if bh.Witness == nil {
-		bh.Witness = &tx.Witness{}
+	if h.Witness == nil {
+		h.Witness = &tx.Witness{}
 	}
-	bh.Witness.Deserialize(br)
-	br.ReadLE(&b)
-	if b != byte(0) {
-		br.Err = fmt.Errorf("format error: check byte must equal 0 got %d", b)
-	}
+	h.Witness.Deserialize(br)
 }
 
 //DeserializeUnsigned deserialize blockheader without witness
-func (bh *BlockHeader) DeserializeUnsigned(br *io.BinaryReader) {
-	br.ReadLE(&bh.Version)
-	br.ReadLE(bh.PrevHash)
-	br.ReadLE(bh.MerkleRoot)
-	br.ReadLE(&bh.Timestamp)
-	br.ReadLE(&bh.Index)
-	br.ReadLE(bh.NextConsensus)
+func (h *Header) DeserializeUnsigned(br *io.BinaryReader) {
+	br.ReadLE(&h.version)
+	br.ReadLE(h.prevHash)
+	br.ReadLE(h.merkleRoot)
+	br.ReadLE(&h.timestamp)
+	br.ReadLE(&h.index)
+	h.primaryIndex = br.ReadByte()
+	br.ReadLE(h.nextConsensus)
 }
 
-func (bh *BlockHeader) Serialize(bw *io.BinaryWriter) {
-	bh.SerializeUnsigned(bw)
-	bw.WriteVarUInt(uint64(len([]tx.Witness{*bh.Witness})))
-	bh.Witness.Serialize(bw)
-	bw.WriteLE(byte(0))
+func (h *Header) Serialize(bw *io.BinaryWriter) {
+	h.SerializeUnsigned(bw)
+	bw.WriteVarUInt(uint64(len([]tx.Witness{*h.Witness})))
+	h.Witness.Serialize(bw)
 }
 
 //SerializeUnsigned serialize blockheader without witness
-func (bh *BlockHeader) SerializeUnsigned(bw *io.BinaryWriter) {
-	bw.WriteLE(bh.Version)
-	bw.WriteLE(bh.PrevHash)
-	bw.WriteLE(bh.MerkleRoot)
-	bw.WriteLE(bh.Timestamp)
-	bw.WriteLE(bh.Index)
-	bw.WriteLE(bh.NextConsensus)
+func (h *Header) SerializeUnsigned(bw *io.BinaryWriter) {
+	bw.WriteLE(h.version)
+	bw.WriteLE(h.prevHash)
+	bw.WriteLE(h.merkleRoot)
+	bw.WriteLE(h.timestamp)
+	bw.WriteLE(h.index)
+	bw.WriteLE(h.primaryIndex)
+	bw.WriteLE(h.nextConsensus)
 }
 
-func (bh *BlockHeader) GetHashData() []byte {
-	buf := io.NewBufBinaryWriter()
-	bh.SerializeUnsigned(buf.BinaryWriter)
-	if buf.Err != nil {
-		return nil
-	}
-	return buf.Bytes()
-}
-
-func (bh *BlockHeader) HashString() string {
-	hash := crypto.Hash256(bh.GetHashData())
-	bh._hash = helper.UInt256FromBytes(hash)
-	return hex.EncodeToString(helper.ReverseBytes(hash)) // reverse to big endian
-}
-
-func (bh *BlockHeader) Hash() *helper.UInt256 {
-	hash := crypto.Hash256(bh.GetHashData())
-	bh._hash = helper.UInt256FromBytes(hash)
-	return bh._hash
+func (h *Header) GetHashString() string {
+	return hex.EncodeToString(helper.ReverseBytes(h.GetHash().ToByteArray())) // reverse to big endian
 }

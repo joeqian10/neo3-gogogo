@@ -2,6 +2,7 @@ package keys
 
 import (
 	"github.com/joeqian10/neo3-gogogo/crypto"
+	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -20,7 +21,7 @@ func TestPublicKeyToAddress(t *testing.T) {
 	for _, testCase := range KeyCases {
 		pubKey, err := crypto.NewECPointFromString(testCase.PublicKey)
 		assert.Nil(t, err)
-		address := PublicKeyToAddress(pubKey)
+		address := PublicKeyToAddress(pubKey, helper.DefaultAddressVersion)
 		assert.Equal(t, testCase.Address, address)
 	}
 }

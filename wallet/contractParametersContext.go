@@ -23,6 +23,7 @@ func NewContextItem(contract *sc.Contract) *ContextItem {
 	return &ContextItem{
 		Script:     contract.Script,
 		Parameters: params,
+		Signatures: make(map[string][]byte, 0),
 	}
 }
 
@@ -42,14 +43,12 @@ func (s signatureHelperSlice) Less(i int, j int) bool {
 }
 
 func (s signatureHelperSlice) Swap(i, j int) {
-	t := s[i]
-	s[i] = s[j]
-	s[j] = t
+	s[i], s[j] = s[j], s[i]
 }
 
 type ContractParametersContext struct {
 	Verifiable   tx.IVerifiable // transaction ?
-	ContextItems map[helper.UInt160]ContextItem
+	ContextItems map[helper.UInt160]*ContextItem
 
 	scriptHashes []helper.UInt160
 }
@@ -57,7 +56,7 @@ type ContractParametersContext struct {
 func NewContractParametersContract(verifiable tx.IVerifiable) *ContractParametersContext {
 	return &ContractParametersContext{
 		Verifiable:   verifiable,
-		ContextItems: make(map[helper.UInt160]ContextItem, 0),
+		ContextItems: make(map[helper.UInt160]*ContextItem, 0),
 	}
 }
 
@@ -109,8 +108,10 @@ func (c *ContractParametersContext) AddItemWithParams(contract *sc.Contract, par
 
 func (c *ContractParametersContext) AddSignature(contract *sc.Contract, pubKey *crypto.ECPoint, signature []byte) (bool, error) {
 	bs := sc.ByteSlice(contract.Script)
-	b, _, points := bs.IsMultiSigContractWithPoints()
-	if b {
+	if b, _, points := bs.IsMultiSigContractWithPoints(); b {
+		if !pubKey.ExistsIn(points) {
+			return false, nil
+		}
 		item := c.createItem(contract)
 		if item == nil {
 			return false, nil
@@ -127,17 +128,11 @@ func (c *ContractParametersContext) AddSignature(contract *sc.Contract, pubKey *
 			return false, nil
 		}
 
-		if item.Signatures == nil {
-			item.Signatures = make(map[string][]byte, 0)
-		} else if _, ok := item.Signatures[pubKey.String()]; ok {
+		if _, ok := item.Signatures[pubKey.String()]; ok {
 			return false, nil
 		}
-
-		if pubKey.ExistsIn(points) {
-			return false, nil
-		}
-
 		item.Signatures[pubKey.String()] = signature
+
 		if len(item.Signatures) == len(contract.ParameterList) {
 			dic := map[string]int{}
 			for i, p := range points {
@@ -180,20 +175,29 @@ func (c *ContractParametersContext) AddSignature(contract *sc.Contract, pubKey *
 			// return now to prevent array index out of bounds exception
 			return false, nil
 		}
-		return c.AddItemWithIndex(contract, index, signature), nil
+		item := c.createItem(contract)
+		if item == nil {
+			return false, nil
+		}
+		if _, ok := item.Signatures[pubKey.String()]; ok {
+			return false, nil
+		}
+		item.Signatures[pubKey.String()] = signature
+		item.Parameters[index].Value = signature
+		return true, nil
 	}
 }
 
 func (c *ContractParametersContext) createItem(contract *sc.Contract) *ContextItem {
 	scriptHash := *contract.GetScriptHash()
 	if item, ok := c.ContextItems[scriptHash]; ok {
-		return &item
+		return item
 	}
 	if !contract.GetScriptHash().ExistsIn(c.scriptHashes) {
 		return nil
 	}
 	item := NewContextItem(contract)
-	c.ContextItems[scriptHash] = *item
+	c.ContextItems[scriptHash] = item
 	return item
 }
 
@@ -208,6 +212,13 @@ func (c *ContractParametersContext) GetParameter(scriptHash *helper.UInt160, ind
 func (c *ContractParametersContext) GetParameters(scriptHash *helper.UInt160) []sc.ContractParameter {
 	if item, ok := c.ContextItems[*scriptHash]; ok {
 		return item.Parameters
+	}
+	return nil
+}
+
+func (c *ContractParametersContext) GetSignatures(scriptHash *helper.UInt160) map[string][]byte {
+	if item, ok := c.ContextItems[*scriptHash]; ok {
+		return item.Signatures
 	}
 	return nil
 }

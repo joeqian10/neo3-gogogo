@@ -14,6 +14,6 @@ func PublicKeyToScriptHash(p *crypto.ECPoint) *helper.UInt160 {
 }
 
 // returns a base58-encoded NEO-specific address based on the key hash.
-func PublicKeyToAddress(p *crypto.ECPoint) string {
-	return crypto.ScriptHashToAddress(PublicKeyToScriptHash(p))
+func PublicKeyToAddress(p *crypto.ECPoint, version byte) string {
+	return crypto.ScriptHashToAddress(PublicKeyToScriptHash(p), version)
 }

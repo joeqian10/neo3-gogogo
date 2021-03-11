@@ -222,13 +222,3 @@ func XOR(a, b []byte) []byte {
 	}
 	return dst
 }
-
-// ToNibbles ..
-func ToNibbles(data []byte) []byte {
-	r := make([]byte, len(data)*2)
-	for i := 0; i < len(data); i++ {
-		r[i*2] = data[i] >> 4
-		r[i*2+1] = data[i] & 0x0f
-	}
-	return r
-}

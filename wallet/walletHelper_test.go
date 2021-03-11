@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"github.com/stretchr/testify/mock"
@@ -140,7 +141,7 @@ func TestWalletHelper_ClaimGas(t *testing.T) {
 	_, err := testWallet.CreateAccountWithPrivateKey(privateKey)
 	assert.Nil(t, err)
 	wh := NewWalletHelperFromWallet(clientMock, testWallet)
-	h, e := wh.ClaimGas(tx.Neo3Magic_MainNet)
+	h, e := wh.ClaimGas(helper.Neo3Magic_MainNet)
 	assert.Nil(t, e)
 	assert.Equal(t, "0x992f941c9751aabc8bab0200503e07e38f38f0884cb8b11f6c6c72d8d2fb2948", h)
 
@@ -483,7 +484,7 @@ func TestWalletHelper_MakeTransaction(t *testing.T) {
 
 	trx, e := wh.MakeTransaction(script, nil, nil, ab)
 	assert.Nil(t, e)
-	assert.Equal(t, int64(1142550), trx.GetNetworkFee())
+	assert.Equal(t, int64(1141550), trx.GetNetworkFee())
 
 	resetTestWallet()
 }
@@ -555,7 +556,7 @@ func TestWalletHelper_SignTransaction(t *testing.T) {
 
 	trx, e := wh.MakeTransaction(script, nil, nil, ab)
 	assert.Nil(t, e)
-	trx, e = wh.SignTransaction(trx, tx.Neo3Magic_MainNet)
+	trx, e = wh.SignTransaction(trx, helper.Neo3Magic_MainNet)
 	assert.Nil(t, e)
 	assert.Equal(t, 1, len(trx.GetWitnesses()))
 
@@ -632,7 +633,7 @@ func TestWalletHelper_Transfer(t *testing.T) {
 	wh := NewWalletHelperFromWallet(clientMock, testWallet)
 
 	to := "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ"
-	h, e := wh.Transfer(tx.GasToken, to, big.NewInt(10000), tx.Neo3Magic_MainNet)
+	h, e := wh.Transfer(tx.GasToken, to, big.NewInt(10000), helper.Neo3Magic_MainNet)
 	assert.Nil(t, e)
 	assert.Equal(t, "0x992f941c9751aabc8bab0200503e07e38f38f0884cb8b11f6c6c72d8d2fb2948", h)
 

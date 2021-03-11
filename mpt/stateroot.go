@@ -6,6 +6,8 @@ import (
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 )
 
+const CurrentVersion byte = 0x00
+
 //StateRoot truct of StateRoot message
 type StateRoot struct {
 	Version  byte              `json:"version"`

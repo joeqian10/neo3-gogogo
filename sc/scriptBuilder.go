@@ -21,6 +21,7 @@ func (sb *ScriptBuilder) addError(err error) {
 	}
 }
 
+// Initializes a new instance of the "ScriptBuilder" class.
 func NewScriptBuilder() ScriptBuilder {
 	return ScriptBuilder{
 		buff: new(bytes.Buffer),
@@ -28,7 +29,7 @@ func NewScriptBuilder() ScriptBuilder {
 	}
 }
 
-// ToArray converts ScriptBuilder to byte array, pop out all errors
+// Converts the value of this instance to a byte array, pops out all errors.
 func (sb *ScriptBuilder) ToArray() ([]byte, error) {
 	if len(sb.errs) == 0 {
 		return sb.buff.Bytes(), nil
@@ -41,6 +42,7 @@ func (sb *ScriptBuilder) ToArray() ([]byte, error) {
 	return sb.buff.Bytes(), fmt.Errorf(strings.Join(ss, "\n"))
 }
 
+// Emits an "Instruction" with the specified "OpCode" and operand.
 func (sb *ScriptBuilder) Emit(op OpCode, arg ...byte) {
 	err := sb.buff.WriteByte(byte(op))
 	sb.addError(err)
@@ -51,6 +53,7 @@ func (sb *ScriptBuilder) Emit(op OpCode, arg ...byte) {
 	}
 }
 
+// Emits a call "Instruction" with the specified offset.
 func (sb *ScriptBuilder) EmitCall(offset int) {
 	if offset < -128 || offset > 127 {
 		sb.Emit(CALL_L, helper.IntToBytes(offset)...)
@@ -59,6 +62,7 @@ func (sb *ScriptBuilder) EmitCall(offset int) {
 	}
 }
 
+// Emits a jump "Instruction" with the specified offset.
 func (sb *ScriptBuilder) EmitJump(op OpCode, offset int) {
 	if op < JMP || op > JMPLE_L {
 		sb.addError(fmt.Errorf("argument out of range: invalid OpCode"))
@@ -73,6 +77,7 @@ func (sb *ScriptBuilder) EmitJump(op OpCode, offset int) {
 	}
 }
 
+// Emits a push "Instruction" with the specified number.
 func (sb *ScriptBuilder) EmitPushBigInt(number *big.Int) {
 	if number.Cmp(big.NewInt(-1)) >= 0 && number.Cmp(big.NewInt(16)) <= 0 { // >=-1 || <=16
 		var b = byte(number.Int64())
@@ -98,7 +103,7 @@ func (sb *ScriptBuilder) EmitPushBigInt(number *big.Int) {
 	}
 }
 
-// new design, support all integer types
+// Emits a push "Instruction" with the specified integer type.
 func (sb *ScriptBuilder) EmitPushInteger(num interface{}) {
 	switch num.(type) {
 	case int8:
@@ -136,6 +141,7 @@ func (sb *ScriptBuilder) EmitPushInteger(num interface{}) {
 	}
 }
 
+// Emits a push "Instruction" with the specified boolean value.
 func (sb *ScriptBuilder) EmitPushBool(data bool) {
 	if data {
 		sb.Emit(PUSH1)
@@ -144,6 +150,7 @@ func (sb *ScriptBuilder) EmitPushBool(data bool) {
 	}
 }
 
+// Emits a push "Instruction" with the specified data.
 func (sb *ScriptBuilder) EmitPushBytes(data []byte) {
 	if data == nil {
 		sb.addError(fmt.Errorf("data is empty"))
@@ -165,18 +172,19 @@ func (sb *ScriptBuilder) EmitPushBytes(data []byte) {
 	}
 }
 
-// Convert the string to UTF8 format encoded byte array
+// Emits a push "Instruction" with the specified "string".
 func (sb *ScriptBuilder) EmitPushString(data string) {
 	sb.EmitPushBytes([]byte(data))
 }
 
-// EmitRaw pushes a raw byte array
+// Emits raw script.
 func (sb *ScriptBuilder) EmitRaw(arg []byte) {
 	if arg != nil {
 		sb.buff.Write(arg)
 	}
 }
 
+// Emits an "Instruction" with "OpCode.SYSCALL".
 func (sb *ScriptBuilder) EmitSysCall(api uint) {
 	sb.Emit(SYSCALL, helper.UInt32ToBytes(uint32(api))...)
 }
@@ -184,7 +192,7 @@ func (sb *ScriptBuilder) EmitSysCall(api uint) {
 // below methods are from the extension helper in VM.Helper.cs
 
 func (sb *ScriptBuilder) CreateArray(list []interface{}) {
-	if list == nil || len(list) == 0 {
+	if len(list) == 0 {
 		sb.Emit(NEWARRAY0)
 		return
 	}
@@ -216,36 +224,17 @@ func (sb *ScriptBuilder) EmitOpCodes(ops ...OpCode) {
 	}
 }
 
-func (sb *ScriptBuilder) EmitDynamicCall(scriptHash *helper.UInt160, operation string) {
-	sb.Emit(NEWARRAY0)
-	sb.EmitPushObject(All)
-	sb.EmitPushString(operation)
-	sb.EmitPushSerializable(scriptHash)
-	sb.EmitSysCall(Call.ToInteropMethodHash())
+// Emits an "Instruction" to call a contract.
+func (sb *ScriptBuilder) EmitDynamicCall(scriptHash *helper.UInt160, operation string, args []interface{}) {
+	sb.EmitDynamicCallObj(scriptHash, operation, All, args)
 }
 
-func (sb *ScriptBuilder) EmitDynamicCallParam(scriptHash *helper.UInt160, operation string, args ...ContractParameter) {
-	for i := len(args) - 1; i >= 0; i-- {
-		sb.EmitPushParameter(args[i])
-	}
-	sb.EmitPushInteger(len(args))
-	sb.Emit(PACK)
-	sb.EmitPushObject(All)
+func (sb *ScriptBuilder) EmitDynamicCallObj(scriptHash *helper.UInt160, operation string, flags CallFlags, args []interface{}) {
+	sb.CreateArray(args)
+	sb.EmitPushObject(flags)
 	sb.EmitPushString(operation)
 	sb.EmitPushSerializable(scriptHash)
-	sb.EmitSysCall(Call.ToInteropMethodHash())
-}
-
-func (sb *ScriptBuilder) EmitDynamicCallObj(scriptHash *helper.UInt160, operation string, objs []interface{}) {
-	for i := len(objs) - 1; i >= 0; i-- {
-		sb.EmitPushObject(objs[i])
-	}
-	sb.EmitPushInteger(len(objs))
-	sb.Emit(PACK)
-	sb.EmitPushObject(All)
-	sb.EmitPushString(operation)
-	sb.EmitPushSerializable(scriptHash)
-	sb.EmitSysCall(Call.ToInteropMethodHash())
+	sb.EmitSysCall(System_Contract_Call.ToInteropMethodHash())
 }
 
 func (sb *ScriptBuilder) EmitPushSerializable(data io.ISerializable) {
@@ -276,7 +265,7 @@ func (sb *ScriptBuilder) EmitPushParameter(param ContractParameter) {
 		sb.EmitPushSerializable(param.Value.(*helper.UInt256))
 		break
 	case PublicKey:
-		sb.EmitPushBytes(param.Value.([]byte)) // import cycle not allowed
+		sb.EmitPushBytes(param.Value.([]byte))
 		break
 	case String:
 		sb.EmitPushString(param.Value.(string))
@@ -340,10 +329,9 @@ func (sb *ScriptBuilder) EmitPushObject(obj interface{}) {
 	}
 }
 
-func (sb *ScriptBuilder) EmitSysCallWithParam(method uint, args ...interface{}) {
+func (sb *ScriptBuilder) EmitSysCallObj(method uint, args ...interface{}) {
 	if args != nil {
-		l := len(args)
-		for i := l - 1; i >= 0; i-- {
+		for i := len(args) - 1; i >= 0; i-- {
 			sb.EmitPushObject(args[i])
 		}
 	}
@@ -351,12 +339,8 @@ func (sb *ScriptBuilder) EmitSysCallWithParam(method uint, args ...interface{}) 
 }
 
 // Generate scripts to call a specific method from a specific contract.
-func MakeScript(scriptHash *helper.UInt160, operation string, objs []interface{}) ([]byte, error) {
+func MakeScript(scriptHash *helper.UInt160, operation string, args []interface{}) ([]byte, error) {
 	sb := NewScriptBuilder()
-	if objs != nil && len(objs) > 0 {
-		sb.EmitDynamicCallObj(scriptHash, operation, objs)
-	} else {
-		sb.EmitDynamicCall(scriptHash, operation)
-	}
+	sb.EmitDynamicCall(scriptHash, operation, args)
 	return sb.ToArray()
 }

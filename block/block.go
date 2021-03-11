@@ -5,20 +5,15 @@ import (
 	"github.com/joeqian10/neo3-gogogo/tx"
 )
 
-const (
-	MaxContentsPerBlock = 65535
-	MaxTransactionsPerBlock = MaxContentsPerBlock - 1
-)
-
 type Block struct {
-	BlockHeader
-	ConsensusData *ConsensusData
-	Tx []tx.Transaction
+	Header
+	Transactions []tx.Transaction
 }
 
-//func NewBlockFromRPC(rpcBlock *models.RpcBlock) (*Block, error) {
-//	var block = new &Block{
-//		BlockHeader: NewBlockHeaderFromRPC(&rpcBlock.RpcBlockHeader),
-//		Tx:          nil,
-//	}
-//}
+func (b *Block) GetSize() int {
+	sz := 0
+	for _, tx := range b.Transactions {
+		sz += tx.GetSize()
+	}
+	return b.Header.GetSize() + sz
+}

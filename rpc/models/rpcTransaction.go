@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/tx"
 )
 
@@ -31,7 +30,7 @@ type RpcTransactionAttribute struct {
 }
 
 type RpcSigner struct {
-	Account          string   `json:"account"`
+	Account          string   `json:"account"` // script hash
 	Scopes           string   `json:"scopes"`
 	AllowedContracts []string `json:"allowedContracts"`
 	AllowedGroups    []string `json:"allowedGroups"`
@@ -55,7 +54,7 @@ func CreateRpcSigner(signer tx.Signer) RpcSigner {
 		allowedGroups[i] = signer.AllowedGroups[i].String()
 	}
 	return RpcSigner{
-		Account:          crypto.ScriptHashToAddress(signer.Account), // bad design
+		Account:          signer.Account.String(),
 		Scopes:           signer.Scopes.String(),
 		AllowedContracts: allowedContracts,
 		AllowedGroups:    allowedGroups,

@@ -14,11 +14,12 @@ var privateKey = []byte{0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x
 						0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01}
 var pair, _ = keys.NewKeyPair(privateKey)
 var wif = pair.Export()
-var nep2, _ = pair.ExportWithPassword(password, 2, 1, 1)
+var nep2, _ = pair.ExportWithPassword(password, helper.DefaultAddressVersion, 2, 1, 1)
 var testContract, _ = sc.CreateSignatureContract(pair.PublicKey)
 var testScriptHash = testContract.GetScriptHash()
 
 var testWallet = &NEP6Wallet{
+	protocolSettings: &helper.DefaultProtocolSettings,
 	password: nil,
 	Name:     &dummy,
 	path:     "",

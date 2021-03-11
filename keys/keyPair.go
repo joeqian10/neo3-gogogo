@@ -62,7 +62,7 @@ func NewKeyPairFromWIF(wif string) (*KeyPair, error) {
 	return NewKeyPair(privateKey)
 }
 
-func NewKeyPairFromNEP2(nep2 string, passphrase string, N, R, P int) (*KeyPair, error) {
+func NewKeyPairFromNEP2(nep2 string, passphrase string, version byte, N, R, P int) (*KeyPair, error) {
 	if nep2 == "" {
 		return nil, fmt.Errorf("NEP2 string is empty")
 	}
@@ -96,7 +96,7 @@ func NewKeyPairFromNEP2(nep2 string, passphrase string, N, R, P int) (*KeyPair, 
 		return nil, err
 	}
 
-	address := PublicKeyToAddress(pair.PublicKey)
+	address := PublicKeyToAddress(pair.PublicKey, version)
 	hash := crypto.Hash256([]byte(address))[:4]
 	if !bytes.Equal(addressHash, hash) {
 		return nil, fmt.Errorf("format error: address hash not equal")
@@ -145,9 +145,9 @@ func (p *KeyPair) Export() string {
 }
 
 // export nep2 key string
-func (p *KeyPair) ExportWithPassword(password string, N, R, P int) (string, error) {
+func (p *KeyPair) ExportWithPassword(password string, version byte, N, R, P int) (string, error) {
 	s := ""
-	address := PublicKeyToAddress(p.PublicKey)
+	address := PublicKeyToAddress(p.PublicKey, version)
 	addressHash := crypto.Hash256([]byte(address))[:4]
 	// Normalize the passphrase according to the NFC standard.
 	phraseNorm := norm.NFC.Bytes([]byte(password))

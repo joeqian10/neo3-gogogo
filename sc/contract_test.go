@@ -20,34 +20,11 @@ func TestCreateContract(t *testing.T) {
 	assert.Equal(t, Signature, c.ParameterList[0])
 }
 
-func TestContract_GetAddress(t *testing.T) {
-	c, err := CreateSignatureContract(G)
-	assert.Nil(t, err)
-	expectedArray := make([]byte, 41)
-	expectedArray[0] = byte(PUSHDATA1)
-	expectedArray[1] = 0x21
-	tmp := G.EncodePoint(true)
-	assert.Equal(t, 33, len(tmp))
-
-	for i := 0; i < len(tmp); i++ {
-		expectedArray[i+2] = tmp[i]
-	}
-	expectedArray[35] = byte(PUSHNULL)
-	expectedArray[36] = byte(SYSCALL)
-	tmp = helper.UInt32ToBytes(uint32(VerifyWithECDsaSecp256r1.ToInteropMethodHash()))
-	assert.Equal(t, 4, len(tmp))
-
-	for i := 0; i < len(tmp); i++ {
-		expectedArray[i+37] = tmp[i]
-	}
-	assert.Equal(t, crypto.ScriptHashToAddress(crypto.BytesToScriptHash(expectedArray)), c.GetAddress())
-}
-
 func TestContract_GetScriptHash(t *testing.T) {
 	c, err := CreateSignatureContract(G)
 	assert.Nil(t, err)
 
-	expectedArray := make([]byte, 41)
+	expectedArray := make([]byte, 40)
 	expectedArray[0] = byte(PUSHDATA1)
 	expectedArray[1] = 0x21
 	tmp := G.EncodePoint(true)
@@ -56,13 +33,12 @@ func TestContract_GetScriptHash(t *testing.T) {
 	for i := 0; i < len(tmp); i++ {
 		expectedArray[i+2] = tmp[i]
 	}
-	expectedArray[35] = byte(PUSHNULL)
-	expectedArray[36] = byte(SYSCALL)
-	tmp = helper.UInt32ToBytes(uint32(VerifyWithECDsaSecp256r1.ToInteropMethodHash()))
+	expectedArray[35] = byte(SYSCALL)
+	tmp = helper.UInt32ToBytes(uint32(Neo_Crypto_CheckSig.ToInteropMethodHash()))
 	assert.Equal(t, 4, len(tmp))
 
 	for i := 0; i < len(tmp); i++ {
-		expectedArray[i+37] = tmp[i]
+		expectedArray[i+36] = tmp[i]
 	}
 	assert.Equal(t, (crypto.BytesToScriptHash(expectedArray)).String(), c.GetScriptHash().String())
 }

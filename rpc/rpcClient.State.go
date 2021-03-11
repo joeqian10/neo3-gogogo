@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/mpt"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 )
@@ -51,9 +50,9 @@ func (n *RpcClient) GetStateRoot(blockHeight uint32) GetStateRootResponse {
 	return response
 }
 
-func (n *RpcClient) VerifyProof(rootHash string, proofBytes []byte) VerifyProofResponse {
+func (n *RpcClient) VerifyProof(rootHash string, proofInBase64 string) VerifyProofResponse {
 	response := VerifyProofResponse{}
-	params := []interface{}{rootHash, helper.BytesToHex(proofBytes)}
+	params := []interface{}{rootHash, proofInBase64}
 	_ = n.makeRequest("verifyproof", params, &response)
 	return response
 }

@@ -26,7 +26,7 @@ func NewNep17Helper(scriptHash *helper.UInt160, client rpc.IRpcClient) *Nep17Hel
 
 func (n *Nep17Helper) Symbol() (string, error) {
 	sb := sc.NewScriptBuilder()
-	sb.EmitDynamicCall(n.ScriptHash, "symbol")
+	sb.EmitDynamicCall(n.ScriptHash, "symbol", nil)
 	script, err := sb.ToArray()
 	if err != nil {
 		return "", err
@@ -45,7 +45,7 @@ func (n *Nep17Helper) Symbol() (string, error) {
 
 func (n *Nep17Helper) Decimals() (int, error) {
 	sb := sc.NewScriptBuilder()
-	sb.EmitDynamicCall(n.ScriptHash, "decimals")
+	sb.EmitDynamicCall(n.ScriptHash, "decimals", nil)
 	script, err := sb.ToArray()
 	if err != nil {
 		return 0, err
@@ -64,7 +64,7 @@ func (n *Nep17Helper) Decimals() (int, error) {
 
 func (n *Nep17Helper) TotalSupply() (*big.Int, error) {
 	sb := sc.NewScriptBuilder()
-	sb.EmitDynamicCall(n.ScriptHash, "totalSupply")
+	sb.EmitDynamicCall(n.ScriptHash, "totalSupply", nil)
 	script, err := sb.ToArray()
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (n *Nep17Helper) BalanceOf(account *helper.UInt160) (*big.Int, error) {
 		Type:  sc.Hash160,
 		Value: account,
 	}
-	sb.EmitDynamicCallParam(n.ScriptHash, "balanceOf", param)
+	sb.EmitDynamicCall(n.ScriptHash, "balanceOf", []interface{}{param})
 	script, err := sb.ToArray()
 	if err != nil {
 		return nil, err

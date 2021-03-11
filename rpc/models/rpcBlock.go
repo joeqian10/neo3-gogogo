@@ -8,18 +8,21 @@ type RpcBlockHeader struct {
 	MerkleRoot        string       `json:"merkleroot"`
 	Time              int          `json:"time"`
 	Index             int          `json:"index"`
+	PrimaryIndex      byte          `json:"primary"`
 	NextConsensus     string       `json:"nextconsensus"` //address
 	Witnesses         []RpcWitness `json:"witnesses"`
-	Confirmations     int          `json:"confirmations"`
-	NextBlockHash     string       `json:"nextblockhash"`
-	CrossStatesRoot   string       `json:"crossstatesroot"`
-	ChainID           string       `json:"chainid"` //ulong = uint64
+
+	Confirmations int    `json:"confirmations"`
+	NextBlockHash string `json:"nextblockhash"`
+
+	CrossStatesRoot string `json:"crossstatesroot"`
+	ChainID         string `json:"chainid"` // cross chain purpose
 }
 
 type RpcBlock struct {
 	RpcBlockHeader
 	ConsensusData RpcConsensusData `json:"consensusdata"`
-	Tx []RpcTransaction `json:"tx"`
+	Tx            []RpcTransaction `json:"tx"`
 }
 
 type RpcConsensusData struct {

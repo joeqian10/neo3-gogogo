@@ -24,7 +24,10 @@ func ToArray(p ISerializable) ([]byte, error) {
 
 func AsSerializable(se ISerializable, data []byte) error {
 	buffer := bytes.NewBuffer(data)
-	reader := NewBinaryReaderFromIO(io.Reader(buffer))
-	se.Deserialize(reader)
-	return reader.Err
+	br := NewBinaryReaderFromIO(io.Reader(buffer))
+	se.Deserialize(br)
+	if br.Err != nil && br.Err != io.EOF {
+		return br.Err
+	}
+	return nil
 }

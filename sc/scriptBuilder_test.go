@@ -234,7 +234,8 @@ func TestScriptBuilder_EmitOpCodes(t *testing.T) {
 func TestScriptBuilder_EmitDynamicCall(t *testing.T) {
 	//format:(byte)0x10+(byte)OpCode.NEWARRAY+(string)operation+(Uint160)scriptHash+(uint)InteropService.System_Contract_Call
 	sb := NewScriptBuilder()
-	sb.EmitDynamicCall(helper.UInt160Zero, "AAAAA")
+	sb.EmitDynamicCall(helper.UInt160Zero, "AAAAA", nil)
+
 	tmp := make([]byte, 36)
 	tmp[0] = byte(NEWARRAY0)
 	tmp[1] = byte(PUSH15)
@@ -245,21 +246,19 @@ func TestScriptBuilder_EmitDynamicCall(t *testing.T) {
 	tmp[9] = byte(PUSHDATA1)
 	tmp[10] = 0x14                                     // scripthash.Length
 	copy(tmp[11:31], helper.UInt160Zero.ToByteArray()) // scripthash.data
-	api := Call.ToInteropMethodHash()
+	api := System_Contract_Call.ToInteropMethodHash()
 	tmp[31] = byte(SYSCALL)
 	copy(tmp[32:], helper.UInt32ToBytes(uint32(api)))
+
 	b, err := sb.ToArray()
 	assert.Nil(t, err)
 	assert.Equal(t, true, bytes.Equal(tmp, b))
 }
 
-func TestScriptBuilder_EmitDynamicCallParam(t *testing.T) {
-	//format:(ContractParameter[])ContractParameter+(byte)OpCode.PACK+(string)operation+(Uint160)scriptHash+(uint)InteropService.System_Contract_Call
+func TestScriptBuilder_EmitDynamicCall2(t *testing.T) {
 	sb := NewScriptBuilder()
-	sb.EmitDynamicCallParam(helper.UInt160Zero, "AAAAA", []ContractParameter{{
-		Type:  Integer,
-		Value: big.NewInt(0),
-	}}...)
+	sb.EmitDynamicCall(helper.UInt160Zero, "AAAAA", []interface{}{ContractParameter{Type:  Integer, Value: 0}})
+
 	tmp := make([]byte, 38)
 	tmp[0] = byte(PUSH0) // arg
 	tmp[1] = byte(PUSH1) // arg.Length
@@ -272,18 +271,19 @@ func TestScriptBuilder_EmitDynamicCallParam(t *testing.T) {
 	tmp[11] = byte(PUSHDATA1)
 	tmp[12] = 0x14                                     // scripthash.Length
 	copy(tmp[13:33], helper.UInt160Zero.ToByteArray()) // scripthash.data
-	api := Call.ToInteropMethodHash()
+	api := System_Contract_Call.ToInteropMethodHash()
 	tmp[33] = byte(SYSCALL)
 	copy(tmp[34:], helper.UInt32ToBytes(uint32(api)))
+
 	b, err := sb.ToArray()
 	assert.Nil(t, err)
 	assert.Equal(t, true, bytes.Equal(tmp, b))
 }
 
-func TestScriptBuilder_EmitDynamicCallObj(t *testing.T) {
-	//format:(ContractParameter[])ContractParameter+(byte)OpCode.PACK+(string)operation+(Uint160)scriptHash+(uint)InteropService.System_Contract_Call
+func TestScriptBuilder_EmitDynamicCall3(t *testing.T) {
 	sb := NewScriptBuilder()
-	sb.EmitDynamicCallObj(helper.UInt160Zero, "AAAAA", []interface{}{true})
+	sb.EmitDynamicCall(helper.UInt160Zero, "AAAAA", []interface{}{true})
+
 	tmp := make([]byte, 38)
 	tmp[0] = byte(PUSH1) // arg
 	tmp[1] = byte(PUSH1) // arg.Length
@@ -296,9 +296,10 @@ func TestScriptBuilder_EmitDynamicCallObj(t *testing.T) {
 	tmp[11] = byte(PUSHDATA1)
 	tmp[12] = 0x14                                     // scripthash.Length
 	copy(tmp[13:33], helper.UInt160Zero.ToByteArray()) // scripthash.data
-	api := Call.ToInteropMethodHash()
+	api := System_Contract_Call.ToInteropMethodHash()
 	tmp[33] = byte(SYSCALL)
 	copy(tmp[34:], helper.UInt32ToBytes(uint32(api)))
+
 	b, err := sb.ToArray()
 	assert.Nil(t, err)
 	assert.Equal(t, true, bytes.Equal(tmp, b))

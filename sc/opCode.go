@@ -6,13 +6,13 @@ type OpCode byte
 
 const (
 	// Constants
-	PUSHINT8   OpCode = 0x00 // Operand Size = 1
-	PUSHINT16  OpCode = 0x01 // Operand Size = 2
-	PUSHINT32  OpCode = 0x02 // Operand Size = 4
-	PUSHINT64  OpCode = 0x03 // Operand Size = 8
-	PUSHINT128 OpCode = 0x04 // Operand Size = 16
-	PUSHINT256 OpCode = 0x05 // Operand Size = 32
-	PUSHA      OpCode = 0x0A // Convert the next four bytes to an address, and push the address onto the stack.
+	PUSHINT8   OpCode = 0x00 // Operand Size = 1. Pushes a 1-byte signed integer onto the stack.
+	PUSHINT16  OpCode = 0x01 // Operand Size = 2. Pushes a 2-bytes signed integer onto the stack.
+	PUSHINT32  OpCode = 0x02 // Operand Size = 4. Pushes a 4-bytes signed integer onto the stack.
+	PUSHINT64  OpCode = 0x03 // Operand Size = 8. Pushes a 8-bytes signed integer onto the stack.
+	PUSHINT128 OpCode = 0x04 // Operand Size = 16. Pushes a 16-bytes signed integer onto the stack.
+	PUSHINT256 OpCode = 0x05 // Operand Size = 32. Pushes a 32-bytes signed integer onto the stack.
+	PUSHA      OpCode = 0x0A // Converts the 4-bytes offset to a "Pointer", and pushes it onto the stack.
 	PUSHNULL   OpCode = 0x0B // "null" is pushed onto the stack.
 	PUSHDATA1  OpCode = 0x0C // Operand SizePrefix = 1. The next byte contains the number of bytes to be pushed onto the stack.
 	PUSHDATA2  OpCode = 0x0D // Operand SizePrefix = 2. The next two bytes contains the number of bytes to be pushed onto the stack.
@@ -141,8 +141,8 @@ const (
 	STARG     OpCode = 0x87 // Operand Size = 1. Stores the value on top of the evaluation stack in the argument slot at a specified index. The index is represented as a 1-byte unsigned integer.
 
 	// Splice
-	NEWBUFFER OpCode = 0x88
-	MEMCPY    OpCode = 0x89
+	NEWBUFFER OpCode = 0x88 // Creates a new "Buffer" and pushes it onto the stack.
+	MEMCPY    OpCode = 0x89 // Copies a range of bytes from one "Buffer" to another.
 	CAT       OpCode = 0x8B // Concatenates two strings.
 	SUBSTR    OpCode = 0x8C // Returns a section of a string.
 	LEFT      OpCode = 0x8D // Keeps only characters left of the specified point in a string.
@@ -167,6 +167,8 @@ const (
 	MUL         OpCode = 0xA0 // a is multiplied by b.
 	DIV         OpCode = 0xA1 // a is divided by b.
 	MOD         OpCode = 0xA2 // Returns the remainder after dividing a by b.
+	POW         OpCode = 0xA3 // The result of raising value to the exponent power.
+	SQRT        OpCode = 0xA4 // Returns the square root of a specified number.
 	SHL         OpCode = 0xA8 // Shifts a left b bits preserving sign.
 	SHR         OpCode = 0xA9 // Shifts a right b bits preserving sign.
 	NOT         OpCode = 0xAA // If the input is 0 or 1 it is flipped. Otherwise the output will be 0.
@@ -202,12 +204,12 @@ const (
 	REVERSEITEMS OpCode = 0xD1 // An array is removed from the top of the main stack and its elements are reversed.
 	REMOVE       OpCode = 0xD2 // An input index n (or key) and an array (or map) are removed from the top of the main stack. Element array[n] (or map[n]) is removed.
 	CLEARITEMS   OpCode = 0xD3 // Remove all the items from the compound-type.
-	POPITEM		 OpCode = 0xD4 // Remove the last element from an array, and push it onto the stack.
+	POPITEM      OpCode = 0xD4 // Remove the last element from an array, and push it onto the stack.
 
 	// Types
-	ISNULL  OpCode = 0xD8 // Returns true if the input is null. Returns false otherwise.
-	ISTYPE  OpCode = 0xD9 // Operand Size = 1. Returns true if the top item is of the specified type.
-	CONVERT OpCode = 0xDB // Operand Size = 1. Converts the top item to the specified type.
+	ISNULL  OpCode = 0xD8 // Returns "true" if the input is "null"; "false" otherwise.
+	ISTYPE  OpCode = 0xD9 // Operand Size = 1. Returns "true" if the top item of the stack is of the specified type; "false" otherwise.
+	CONVERT OpCode = 0xDB // Operand Size = 1. Converts the top item of the stack to the specified type.
 )
 
 var OpCodePrices = map[OpCode]int64{
@@ -262,7 +264,7 @@ var OpCodePrices = map[OpCode]int64{
 	CALL:       1 << 9,
 	CALL_L:     1 << 9,
 	CALLA:      1 << 9,
-	CALLT:		1 << 15,
+	CALLT:      1 << 15,
 	ABORT:      0,
 	ASSERT:     1 << 0,
 	THROW:      1 << 9,
@@ -364,6 +366,8 @@ var OpCodePrices = map[OpCode]int64{
 	MUL:         1 << 3,
 	DIV:         1 << 3,
 	MOD:         1 << 3,
+	POW:         1 << 6,
+	SQRT:        1 << 11,
 	SHL:         1 << 3,
 	SHR:         1 << 3,
 	NOT:         1 << 2,
@@ -380,8 +384,8 @@ var OpCodePrices = map[OpCode]int64{
 	MAX:         1 << 3,
 	WITHIN:      1 << 3,
 
-	PACK:         1 << 9,
-	UNPACK:       1 << 9,
+	PACK:         1 << 11,
+	UNPACK:       1 << 11,
 	NEWARRAY0:    1 << 4,
 	NEWARRAY:     1 << 9,
 	NEWARRAY_T:   1 << 9,
@@ -398,9 +402,9 @@ var OpCodePrices = map[OpCode]int64{
 	REVERSEITEMS: 1 << 13,
 	REMOVE:       1 << 4,
 	CLEARITEMS:   1 << 4,
-	POPITEM:	  1 << 4,
+	POPITEM:      1 << 4,
 
-	ISNULL:       1 << 1,
-	ISTYPE:       1 << 1,
-	CONVERT:      1 << 11,
+	ISNULL:  1 << 1,
+	ISTYPE:  1 << 1,
+	CONVERT: 1 << 13,
 }

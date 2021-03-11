@@ -8,17 +8,15 @@ import (
 )
 
 const (
-	Neo3Magic_MainNet           uint32 = 5195086
-	Neo3Magic_TestNet           uint32 = 1951352142
-	TransactionVersion          uint8  = 0 // neo-2.x
+	TransactionVersion          uint8  = 0
 	MaxTransactionSize                 = 102400
 	MaxValidUntilBlockIncrement uint32 = 5760 // 24 hours
 	MaxTransactionAttributes           = 16   // Maximum number of attributes that can be contained within a transaction
 	MaxSigners                         = 16   // Maximum number of cosigners that can be contained within a transaction
 )
 
-const NeoTokenId = "0xf61eebf573ea36593fd43aa150c055ad7906ab83"
-const GasTokenId = "0x70e2301955bf1e74cbb31d18c2f96972abadb328"
+const NeoTokenId = "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5" //rc1
+const GasTokenId = "0xd2a4cff31913016155e38e474a2c06d08be276cf"
 
 const GasFactor = 100000000
 const ExecFeeFactor = 30
@@ -86,16 +84,11 @@ func (tx *Transaction) FeePerByte() int64 {
 }
 
 // GetHash is the getter of tx._hash, using default magic
-func (tx *Transaction) GetHash(magic uint32) *helper.UInt256 {
+func (tx *Transaction) GetHash() *helper.UInt256 {
 	if tx._hash == nil {
-		tx._hash = CalculateHashWithMagic(tx, magic)
+		tx._hash = CalculateHash(tx)
 	}
 	return tx._hash
-}
-
-// GetHashData returns unsigned tx data
-func (tx *Transaction) GetHashData(magic uint32) []byte {
-	return GetHashDataWithMagic(tx, magic)
 }
 
 // GetNetworkFee is the getter of tx.netfee

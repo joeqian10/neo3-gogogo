@@ -80,7 +80,7 @@ func TestRpcClient_VerifyProof(t *testing.T) {
 		}`))),
 	}, nil)
 
-	response := rpc.VerifyProof("", []byte{})
+	response := rpc.VerifyProof("", "")
 	r := response.Result
 	assert.Equal(t, "EQwhA6oFL7y45bM6TWYlNvhoRkHwQQnx1eac3abwhIkChqEQtBMHOzuw", r)
 }

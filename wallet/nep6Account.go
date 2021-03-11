@@ -11,19 +11,38 @@ import (
 // NEP6Account represents a NEO account. It holds the private and public key
 // along with some metadata.
 type NEP6Account struct {
+	protocolSettings *helper.ProtocolSettings
 	scriptHash *helper.UInt160
 	Address    string        `json:"address"`
 	Label      *string       `json:"label"`
 	IsDefault  bool          `json:"isdefault"`
 	Lock       bool          `json:"lock"`
 	Nep2Key    *string       `json:"key"`
-	Contract   *NEP6Contract `json:"contract"`
-	// below are exclusive fields
-	wallet *NEP6Wallet
-
 	nep2KeyNew *string
+	Contract   *NEP6Contract `json:"contract"`
+	wallet     *NEP6Wallet
 	key        *keys.KeyPair
 	Extra      interface{} `json:"extra"`
+}
+
+func NewNEP6Account(wallet *NEP6Wallet, scriptHash *helper.UInt160, nep2Key *string) *NEP6Account {
+	return &NEP6Account{
+		protocolSettings: wallet.protocolSettings,
+		scriptHash: scriptHash,
+		wallet:     wallet,
+		Nep2Key:    nep2Key,
+		Address:    crypto.ScriptHashToAddress(scriptHash, wallet.protocolSettings.AddressVersion), //
+	}
+}
+
+func NewNEP6AccountFromKeyPair(wallet *NEP6Wallet, scriptHash *helper.UInt160, pair *keys.KeyPair, password string) (*NEP6Account, error) {
+	nep2Key, err := pair.ExportWithPassword(password, wallet.protocolSettings.AddressVersion, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P)
+	if err != nil {
+		return nil, err
+	}
+	a := NewNEP6Account(wallet, scriptHash, &nep2Key)
+	a.key = pair
+	return a, nil
 }
 
 func (a *NEP6Account) Decrypted() bool {
@@ -103,7 +122,7 @@ func (a *NEP6Account) GetKeyFromPassword(password string) (*keys.KeyPair, error)
 		return nil, nil
 	}
 	if a.key == nil {
-		priKey, err := GetPrivateKeyFromNEP2(*a.Nep2Key, password, a.wallet.Scrypt.N, a.wallet.Scrypt.R, a.wallet.Scrypt.P)
+		priKey, err := GetPrivateKeyFromNEP2(*a.Nep2Key, password, a.protocolSettings.AddressVersion, a.wallet.Scrypt.N, a.wallet.Scrypt.R, a.wallet.Scrypt.P)
 		if err != nil {
 			return nil, err
 		}
@@ -113,25 +132,6 @@ func (a *NEP6Account) GetKeyFromPassword(password string) (*keys.KeyPair, error)
 		}
 	}
 	return a.key, nil
-}
-
-func NewNEP6Account(wallet *NEP6Wallet, scriptHash *helper.UInt160, nep2Key *string) *NEP6Account {
-	return &NEP6Account{
-		Address:    crypto.ScriptHashToAddress(scriptHash),
-		scriptHash: scriptHash,
-		wallet:     wallet,
-		Nep2Key:    nep2Key,
-	}
-}
-
-func NewNEP6AccountFromKeyPair(wallet *NEP6Wallet, scriptHash *helper.UInt160, pair *keys.KeyPair, password string) (*NEP6Account, error) {
-	nep2Key, err := pair.ExportWithPassword(password, wallet.Scrypt.N, wallet.Scrypt.R, wallet.Scrypt.P)
-	if err != nil {
-		return nil, err
-	}
-	a := NewNEP6Account(wallet, scriptHash, &nep2Key)
-	a.key = pair
-	return a, nil
 }
 
 // GenerateNEP6Account creates a new NEP6Account with a random generated PrivateKey.
@@ -157,7 +157,7 @@ func GenerateNEP6Account(password string) (*NEP6Account, error) {
 }
 
 func (a *NEP6Account) VerifyPassword(password string) bool {
-	_, err := GetPrivateKeyFromNEP2(*a.Nep2Key, password, a.wallet.Scrypt.N, a.wallet.Scrypt.R, a.wallet.Scrypt.P)
+	_, err := GetPrivateKeyFromNEP2(*a.Nep2Key, password, a.protocolSettings.AddressVersion, a.wallet.Scrypt.N, a.wallet.Scrypt.R, a.wallet.Scrypt.P)
 	if err != nil {
 		return false
 	}

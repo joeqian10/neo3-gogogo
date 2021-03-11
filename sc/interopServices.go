@@ -10,26 +10,25 @@ type InteropService string
 
 var (
 	// -----Contract-----
-	Call                  InteropService = "System.Contract.Call"
-	CallNative            InteropService = "System.Contract.CallNative"
-	IsStandard            InteropService = "System.Contract.IsStandard"
-	GetCallFlags          InteropService = "System.Contract.GetCallFlags"
-	CreateStandardAccount InteropService = "System.Contract.CreateStandardAccount" // Calculate corresponding account scripthash for given public key. Warning: check first that input public key is valid, before creating the script.
-	NativeOnPersist       InteropService = "System.Contract.NativeOnPersist"
-	NativePostPersist     InteropService = "System.Contract.NativePostPersist"
+	System_Contract_Call         InteropService = "System.Contract.Call"
+	System_Contract_CallNative   InteropService = "System.Contract.CallNative"
+	System_Contract_IsStandard   InteropService = "System.Contract.IsStandard"
+	System_Contract_GetCallFlags InteropService = "System.Contract.GetCallFlags"
+	/// Calculate corresponding account scripthash for given public key
+	/// Warning: check first that input public key is valid, before creating the script.
+	System_Contract_CreateStandardAccount InteropService = "System.Contract.CreateStandardAccount"
+	System_Contract_CreateMultisigAccount InteropService = "System.Contract.CreateMultisigAccount"
+	System_Contract_NativeOnPersist       InteropService = "System.Contract.NativeOnPersist"
+	System_Contract_NativePostPersist     InteropService = "System.Contract.NativePostPersist"
 
-	// -----Crypto-----
-	RIPEMD160                       InteropService = "Neo.Crypto.RIPEMD160"
-	SHA256                          InteropService = "Neo.Crypto.SHA256"
-	VerifyWithECDsaSecp256r1        InteropService = "Neo.Crypto.VerifyWithECDsaSecp256r1"
-	VerifyWithECDsaSecp256k1        InteropService = "Neo.Crypto.VerifyWithECDsaSecp256k1"
-	CheckMultisigWithECDsaSecp256r1 InteropService = "Neo.Crypto.CheckMultisigWithECDsaSecp256r1"
-	CheckMultisigWithECDsaSecp256k1 InteropService = "Neo.Crypto.CheckMultisigWithECDsaSecp256k1"
+	// -----Crypto-----todo
+	Neo_Crypto_CheckSig      InteropService = "Neo.Crypto.CheckSig"
+	Neo_Crypto_CheckMultisig InteropService = "Neo.Crypto.CheckMultisig"
 )
 
 // ToInteropMethodHash converts a method name to 32 bytes hash
 func (p InteropService) ToInteropMethodHash() uint {
-	temp:= crypto.Sha256([]byte(p))
+	temp := crypto.Sha256([]byte(p))
 	u := binary.LittleEndian.Uint32(temp)
 	return uint(u)
 }

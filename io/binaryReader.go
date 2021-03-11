@@ -53,6 +53,17 @@ func (br *BinaryReader) ReadByte() byte {
 	return b
 }
 
+func (br *BinaryReader) ReadAllBytes() []byte {
+	bs := []byte{}
+	var b byte
+	br.ReadLE(&b)
+	for br.Err != io.EOF {
+		bs = append(bs, b)
+		br.ReadLE(&b)
+	}
+	return bs
+}
+
 // ReadUInt64Bytes reads from the underlying io.Reader
 // into the interface v in little-endian format
 func (br *BinaryReader) ReadUInt64Bytes() []byte {

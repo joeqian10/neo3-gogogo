@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/keys"
 	"github.com/joeqian10/neo3-gogogo/sc"
@@ -12,19 +13,36 @@ type IWallet interface {
 	GetPath() string
 	GetVersion() string
 
-	ChangePassword(oldPassword string, newPassword string) bool
+	//ChangePassword(oldPassword string, newPassword string) bool
 	Contains(scriptHash *helper.UInt160) bool
 
-	CreateAccount() *IAccount
-	CreateAccountWithPrivateKey(privateKey []byte) IAccount
-	CreateAccountWithContract(contract *sc.Contract, key ...keys.KeyPair) IAccount
-	CreateAccountWithScriptHash(scriptHash *helper.UInt160) IAccount
-	DeleteAccount(scriptHash *helper.UInt160) bool
-	GetAccount(scriptHash *helper.UInt160) IAccount
-	GetAccounts() []IAccount
+	CreateAccount() (IAccount, error)
+	CreateAccountWithPrivateKey(privateKey []byte) (IAccount, error)
+	CreateAccountWithContract(contract *sc.Contract, key *keys.KeyPair) (IAccount, error)
+	CreateAccountWithScriptHash(scriptHash *helper.UInt160) (IAccount, error)
 
-	//MakeTransaction(script []byte, sender *helper.UInt160, cosigners []tx.Signer, attributes []tx.ITransactionAttribute) (*tx.Transaction, error)
-	//Sign(ctx ContractParametersContext) bool
+	DeleteAccount(scriptHash *helper.UInt160) bool
+
+	GetAccountByPublicKey(pubKey *crypto.ECPoint) IAccount
+	GetAccountByScriptHash(scriptHash *helper.UInt160) IAccount
+
+	GetAccounts() []IAccount
+}
+
+func GetPrivateKeyFromNEP2(nep2 string, passphrase string, version byte, N, R, P int) ([]byte, error) {
+	pair, err := keys.NewKeyPairFromNEP2(nep2, passphrase, version, N, R, P)
+	if err != nil {
+		return nil, err
+	}
+	return pair.PrivateKey, nil
+}
+
+func GetPrivateKeyFromWIF(wif string) ([]byte, error) {
+	pair, err := keys.NewKeyPairFromWIF(wif)
+	if err != nil {
+		return nil, err
+	}
+	return pair.PrivateKey, nil
 }
 
 func getSigners(sender *helper.UInt160, cosigners []tx.Signer) []tx.Signer {
@@ -49,10 +67,6 @@ func getSigners(sender *helper.UInt160, cosigners []tx.Signer) []tx.Signer {
 	return append([]tx.Signer{*signer}, cosigners...)
 }
 
-func Sign(verifiable tx.IVerifiable, pair *keys.KeyPair) ([]byte, error) {
-	return SignWithMagic(verifiable, pair, tx.Neo3Magic_MainNet)
-}
-
-func SignWithMagic(verifiable tx.IVerifiable, pair *keys.KeyPair, magic uint32) ([]byte, error) {
-	return pair.Sign(tx.GetHashDataWithMagic(verifiable, magic))
+func Sign(verifiable tx.IVerifiable, pair *keys.KeyPair, magic uint32) ([]byte, error) {
+	return pair.Sign(tx.GetSignData(verifiable, magic))
 }

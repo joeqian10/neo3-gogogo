@@ -18,7 +18,7 @@ type OracleResponseAttribute struct {
 func NewOracleResponseAttribute() (*OracleResponseAttribute, error) {
 	orcleContractHash, _ := helper.UInt160FromString("0x8dc0e742cbdfdeda51ff8a8b78d46829144c80ee")
 	sb := sc.NewScriptBuilder()
-	sb.EmitDynamicCall(orcleContractHash, "finish") // 0x8dc0e742cbdfdeda51ff8a8b78d46829144c80ee
+	sb.EmitDynamicCall(orcleContractHash, "finish", nil) // 0x8dc0e742cbdfdeda51ff8a8b78d46829144c80ee
 	b, err := sb.ToArray()
 	if err != nil {
 		return nil, err

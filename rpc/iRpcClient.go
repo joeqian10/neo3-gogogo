@@ -43,7 +43,7 @@ type IRpcClient interface {
 	GetProof(rootHash, contractScriptHash, storeKey string) GetProofResponse
 	GetStateHeight() GetStateHeightResponse
 	GetStateRoot(blockHeight uint32) GetStateRootResponse
-	VerifyProof(rootHash string, proofBytes []byte) VerifyProofResponse
+	VerifyProof(rootHash string, proofInBase64 string) VerifyProofResponse
 
 	// utilities
 	ListPlugins() ListPluginsResponse
