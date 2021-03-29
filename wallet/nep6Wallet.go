@@ -56,8 +56,10 @@ func NewNEP6Wallet(path string, settings *helper.ProtocolSettings, name *string,
 	}
 	if w.Accounts != nil {
 		w.accounts = make(map[helper.UInt160]NEP6Account, len(w.Accounts))
-		for _, account := range w.Accounts {
-			w.accounts[*account.GetScriptHash()] = account
+		for i, _ := range w.Accounts {
+			w.Accounts[i].wallet = w
+			w.Accounts[i].protocolSettings = settings
+			w.accounts[*w.Accounts[i].GetScriptHash()] = w.Accounts[i]
 		}
 	}
 	return w, nil
