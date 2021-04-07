@@ -27,7 +27,18 @@ type InvokeStack struct {
 // Convert converts interface{} "Value" to string or []InvokeStack depending on the "Type"
 func (s *InvokeStack) Convert() {
 	if s.Type != "Array" {
-		s.Value = s.Value.(string)
+		switch s.Type {
+		case "Boolean":
+			if b, ok := s.Value.(bool); ok {
+				s.Value = strconv.FormatBool(b)
+			}
+			break
+		case "Integer":
+			if num, ok := s.Value.(int); ok {
+				s.Value = strconv.Itoa(num)
+			}
+			break
+		}
 	} else {
 		vs := s.Value.([]interface{})
 		result := make([]InvokeStack, len(vs))

@@ -73,6 +73,155 @@ func TestWalletHelper_CalculateNetworkFee(t *testing.T) {
 	resetTestWallet()
 }
 
+func TestWalletHelper_CalculateNetworkFee2(t *testing.T) {
+	var clientMock = new(rpc.RpcClientMock)
+	clientMock.On("GetBlockCount", mock.Anything).Return(rpc.GetBlockCountResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: 6666666,
+	})
+	clientMock.On("GetContractState", mock.Anything).Return(rpc.GetContractStateResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: models.RpcContractState{
+			Id:            8,
+			UpdateCounter: 0,
+			Hash:          "0x99042d380f2b754175717bb932a911bc0bb0ad7d",
+			Nef: models.RpcNefFile{
+				Magic:    0x3346454E,
+				Compiler: "neon",
+				Tokens: []models.RpcMethodToken{
+					{
+						Hash:            "0x99042d380f2b754175717bb932a911bc0bb0ad7d",
+						Method:          "verify",
+						ParametersCount: 0,
+						HasReturnValue:  true,
+						CallFlags:       "AllowCall",
+					},
+				},
+				Script:   "DBQKo4e1Ppa3mJpjFDGgVt0fQKBC9kH4J+yMQDTkQFcBAAwFSGVsbG9Bm/ZnzkGSXegxcGhAVwQBEnAMF0ludm9rZSBTdHJvYWdlLlB1dCBmb3IgaBpQQXvjun0MByB0aW1lcy6Li9soQc/nR5YMBUhlbGxveFBBm/ZnzkHmPxiEDAJOb0Gb9mfOQZJd6DHYqnNrJiwMAk5vDAJOb0Gb9mfOQZJd6DFK2CYFEFBF2yERnlBBm/ZnzkHmPxiEIhMhDAJObxFQQZv2Z85B5j8YhAwCTm9Bm/ZnzkGSXegxcWlK2CYFEFBF2yEaUEF747p9chXDShAMBFB1dCDQShF40EoSDB0gaW50byBzdG9yYWdlIGNvbXBsZXRlbHkgZm9yINBKE2rQShQMBiB0aW1lc9DBShEyCJ1Ti1Ai+EXbKEHP50eWeBHADARXb3JkQZUBb2FpEcAMDkludm9rZVB1dENvdW50QZUBb2FAVwECNZL+//8Qs3BoJhYMEU5vIGF1dGhvcml6YXRpb24uOnh5UEExxjMdQFcBADVn/v//ELNwaCYWDBFObyBhdXRob3JpemF0aW9uLjohQcafHfBAVgEMFAqjh7U+lreYmmMUMaBW3R9AoEL2YEA=",
+				CheckSum: 73195690102,
+			},
+			Manifest: models.RpcContractManifest{
+				Name:               "testContract",
+				Groups:             []models.RpcContractGroup{},
+				SupportedStandards: []string{},
+				Abi: models.RpcContractAbi{
+					Methods: []models.RpcContractMethodDescriptor{
+						{
+							Name:       "verify",
+							Parameters: []models.RpcContractParameterDefinition{},
+							ReturnType: "Boolean",
+							Offset:     28,
+							Safe:       true,
+						},
+						{
+							Name: "update",
+							Parameters: []models.RpcContractParameterDefinition{
+								{
+									Name: "script",
+									Type: "ByteArray",
+								},
+								{
+									Name: "manifest",
+									Type: "String",
+								},
+							},
+							ReturnType: "Void",
+							Offset:     363,
+							Safe:       false,
+						},
+					},
+					Events: []models.RpcContractEventDescriptor{},
+				},
+				Permissions: []models.RpcContractPermission{
+					{
+						Contract: "*",
+						Methods:  []string{"*"},
+					},
+				},
+				Trusts: []string{},
+			},
+		},
+	})
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: models.InvokeResult{
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
+			State:       "HALT",
+			GasConsumed: "2007570",
+			Stack: []models.InvokeStack{{
+				Type:  "Integer",
+				Value: "8913620128",
+			}},
+		},
+	})
+	clientMock.On("InvokeFunction", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: models.InvokeResult{
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
+			State:       "HALT",
+			GasConsumed: "2007570",
+			Stack: []models.InvokeStack{{
+				Type:  "Boolean",
+				Value: true,
+			}},
+		},
+	})
+
+	_ = testWallet.Unlock("")
+	_, err := testWallet.CreateAccountWithPrivateKey(privateKey)
+	assert.Nil(t, err)
+	wh := NewWalletHelperFromWallet(clientMock, testWallet)
+
+	script := []byte{}
+	ab := []AccountAndBalance{
+		{
+			Account: helper.NewUInt160(),
+			Value:   big.NewInt(1000000000000), // 10000 gas
+		},
+	}
+	trx, err := wh.MakeTransaction(script, nil, nil, ab)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(2059570), trx.GetNetworkFee())
+
+	resetTestWallet()
+}
+
 func TestWalletHelper_ClaimGas(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
 	clientMock.On("GetBlockCount", mock.Anything).Return(rpc.GetBlockCountResponse{
@@ -100,7 +249,7 @@ func TestWalletHelper_ClaimGas(t *testing.T) {
 			},
 		},
 		Result: models.InvokeResult{
-			Script:      "0c146925aa554712439a9c613ba114efa3fac23ddbca11c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
 			State:       "HALT",
 			GasConsumed: "2007570",
 			Stack: []models.InvokeStack{{
@@ -162,7 +311,7 @@ func TestWalletHelper_GetAccountAndBalance(t *testing.T) {
 			},
 		},
 		Result: models.InvokeResult{
-			Script:      "0c146925aa554712439a9c613ba114efa3fac23ddbca11c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
 			State:       "HALT",
 			GasConsumed: "2007570",
 			Stack: []models.InvokeStack{{
@@ -200,7 +349,7 @@ func TestWalletHelper_GetBalanceFromAccount(t *testing.T) {
 			},
 		},
 		Result: models.InvokeResult{
-			Script:      "0c146925aa554712439a9c613ba114efa3fac23ddbca11c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
 			State:       "HALT",
 			GasConsumed: "2007570",
 			Stack: []models.InvokeStack{{
@@ -235,7 +384,7 @@ func TestWalletHelper_GetBalanceFromWallet(t *testing.T) {
 			},
 		},
 		Result: models.InvokeResult{
-			Script:      "0c146925aa554712439a9c613ba114efa3fac23ddbca11c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
 			State:       "HALT",
 			GasConsumed: "2007570",
 			Stack: []models.InvokeStack{{
@@ -322,11 +471,11 @@ func TestWalletHelper_GetContractState(t *testing.T) {
 				Abi: models.RpcContractAbi{
 					Methods: []models.RpcContractMethodDescriptor{
 						{
-							Name: "verify",
+							Name:       "verify",
 							Parameters: []models.RpcContractParameterDefinition{},
 							ReturnType: "Boolean",
-							Offset: 28,
-							Safe: true,
+							Offset:     28,
+							Safe:       true,
 						},
 						{
 							Name: "update",
@@ -341,8 +490,8 @@ func TestWalletHelper_GetContractState(t *testing.T) {
 								},
 							},
 							ReturnType: "Void",
-							Offset: 363,
-							Safe: false,
+							Offset:     363,
+							Safe:       false,
 						},
 					},
 					Events: []models.RpcContractEventDescriptor{},
@@ -350,7 +499,7 @@ func TestWalletHelper_GetContractState(t *testing.T) {
 				Permissions: []models.RpcContractPermission{
 					{
 						Contract: "*",
-						Methods: []string{"*"},
+						Methods:  []string{"*"},
 					},
 				},
 				Trusts: []string{},
@@ -383,7 +532,7 @@ func TestWalletHelper_GetGasConsumed(t *testing.T) {
 			},
 		},
 		Result: models.InvokeResult{
-			Script:      "0c146925aa554712439a9c613ba114efa3fac23ddbca11c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
 			State:       "HALT",
 			GasConsumed: "2007570",
 			Stack: []models.InvokeStack{{
@@ -461,7 +610,7 @@ func TestWalletHelper_MakeTransaction(t *testing.T) {
 			},
 		},
 		Result: models.InvokeResult{
-			Script:      "0c146925aa554712439a9c613ba114efa3fac23ddbca11c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
 			State:       "HALT",
 			GasConsumed: "2007570",
 			Stack: []models.InvokeStack{{
@@ -474,7 +623,7 @@ func TestWalletHelper_MakeTransaction(t *testing.T) {
 	ab := []AccountAndBalance{
 		{
 			Account: testScriptHash,
-			Value: big.NewInt(1000000000000), // 10000 gas
+			Value:   big.NewInt(1000000000000), // 10000 gas
 		},
 	}
 	_ = testWallet.Unlock("")
@@ -484,7 +633,7 @@ func TestWalletHelper_MakeTransaction(t *testing.T) {
 
 	trx, e := wh.MakeTransaction(script, nil, nil, ab)
 	assert.Nil(t, e)
-	assert.Equal(t, int64(1141550), trx.GetNetworkFee())
+	assert.Equal(t, int64(1141520), trx.GetNetworkFee())
 
 	resetTestWallet()
 }
@@ -520,7 +669,7 @@ func TestWalletHelper_SignTransaction(t *testing.T) {
 			},
 		},
 		Result: models.InvokeResult{
-			Script:      "0c146925aa554712439a9c613ba114efa3fac23ddbca11c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
 			State:       "HALT",
 			GasConsumed: "2007570",
 			Stack: []models.InvokeStack{{
@@ -546,7 +695,7 @@ func TestWalletHelper_SignTransaction(t *testing.T) {
 	ab := []AccountAndBalance{
 		{
 			Account: testScriptHash,
-			Value: big.NewInt(1000000000000), // 10000 gas
+			Value:   big.NewInt(1000000000000), // 10000 gas
 		},
 	}
 	_ = testWallet.Unlock("")
@@ -590,7 +739,7 @@ func TestWalletHelper_Transfer(t *testing.T) {
 			},
 		},
 		Result: models.InvokeResult{
-			Script:      "0c146925aa554712439a9c613ba114efa3fac23ddbca11c00c0962616c616e63654f660c143b7d3711c6f0ccf9b1dca903d1bfa1d896f1238c41627d5b52",
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
 			State:       "HALT",
 			GasConsumed: "2007570",
 			Stack: []models.InvokeStack{{
