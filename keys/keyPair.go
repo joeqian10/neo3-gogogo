@@ -219,3 +219,16 @@ func VerifySignature(message []byte, signature []byte, p *crypto.ECPoint) bool {
 	sBytes := new(big.Int).SetBytes(signature[32:64])
 	return ecdsa.Verify(publicKey, hash[:], rBytes, sBytes)
 }
+
+func VerifyMultiSig(message []byte, signatures [][]byte, pubKeys []crypto.ECPoint) bool {
+	m := len(signatures)
+	n := len(pubKeys)
+	if m==0 || n==0 || m>n {return false}
+	var success bool = true
+	for i, j := 0, 0; success && i < m && j < n; {
+		if VerifySignature(message, signatures[i], &pubKeys[j]) {i++}
+		j++
+		if m-i > n-j {success=false}
+	}
+	return success
+}

@@ -83,9 +83,9 @@ func CreateWitnessWithScriptHash(scriptHash *helper.UInt160, invocationScript []
 	return
 }
 
-// CreateContractWitness
+// create single signature witness
 func CreateContractWitness(msg []byte, pairs []keys.KeyPair, contract *sc.Contract) (*Witness, error) {
-	invocationScript, err := CreateSignatureInvocation(msg, pairs)
+	invocationScript, err := CreateInvocationScript(msg, pairs)
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +93,8 @@ func CreateContractWitness(msg []byte, pairs []keys.KeyPair, contract *sc.Contra
 	return CreateWitness(invocationScript, contract.Script)
 }
 
-// CreateSignatureInvocation pushes signature
-func CreateSignatureInvocation(msg []byte, pairs []keys.KeyPair) ([]byte, error) {
+// CreateInvocationScript pushes signature
+func CreateInvocationScript(msg []byte, pairs []keys.KeyPair) ([]byte, error) {
 	// invocationScript: push signature
 	sort.Sort(keys.KeyPairSlice(pairs)) // sort in ascending order
 
@@ -107,4 +107,107 @@ func CreateSignatureInvocation(msg []byte, pairs []keys.KeyPair) ([]byte, error)
 		builder.EmitPushBytes(signature)
 	}
 	return builder.ToArray()
+}
+
+func CreateSignatureWitness(msg []byte, pair *keys.KeyPair) (*Witness, error) {
+	// 	invocationScript: push signature
+	signature, err := pair.Sign(msg)
+
+	if err != nil {
+		return nil, err
+	}
+	sb := sc.NewScriptBuilder()
+	sb.EmitPushBytes(signature)
+	invocationScript, err := sb.ToArray() // length 66
+	if err != nil {
+		return nil, err
+	}
+
+	// verificationScript: SignatureRedeemScript
+	verificationScript, err := sc.CreateSignatureRedeemScript(pair.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+	return CreateWitness(invocationScript, verificationScript)
+}
+
+// create multi-signature witness
+func CreateMultiSignatureWitness(msg []byte, pairs []keys.KeyPair, least int, publicKeys []crypto.ECPoint) (*Witness, error) {
+	if len(pairs) < least {
+		return nil, fmt.Errorf("the multi-signature contract needs least %v signatures", least)
+	}
+	// invocationScript: push signature
+	keyPairs := keys.KeyPairSlice(pairs)
+	sort.Sort(keyPairs) // ascending
+
+	sb := sc.NewScriptBuilder()
+	for _, pair := range keyPairs {
+		signature, err := pair.Sign(msg)
+		if err != nil {
+			return nil, err
+		}
+		sb.EmitPushBytes(signature)
+	}
+	invocationScript, err := sb.ToArray()
+	if err != nil {
+		return nil, err
+	}
+
+	// verificationScript: CreateMultiSigRedeemScript
+	verificationScript, _ := sc.CreateMultiSigRedeemScript(least, publicKeys)
+	return CreateWitness(invocationScript, verificationScript)
+}
+
+func VerifySignatureWitness(msg []byte, witness *Witness) bool {
+	invocationScript := witness.InvocationScript
+	if len(invocationScript) != 66 {
+		return false
+	}
+	if invocationScript[0] != 0x0c || invocationScript[1] != 0x40 {
+		return false
+	}
+	signature := invocationScript[2:] // length 64
+
+	verificationScript := witness.VerificationScript
+	if len(verificationScript) != 40 {
+		return false
+	}
+	data := verificationScript[:35] // length 35
+	publicKey, _ := crypto.NewECPointFromBytes(data[2:]) // length 33
+	return keys.VerifySignature(msg, signature, publicKey)
+}
+
+func VerifyMultiSignatureWitness(msg []byte, witness *Witness) bool {
+	invocationScript := witness.InvocationScript
+	lenInvoScript := len(invocationScript)
+	if lenInvoScript%66 != 0 {
+		return false
+	}
+	m := lenInvoScript / 66 // m signatures
+
+	verificationScript := witness.VerificationScript
+	least := verificationScript[0] - byte(sc.PUSH1) + 1 // least required signatures, limited to 16 here
+
+	if m < int(least) {
+		return false
+	} // not enough signatures
+	var signatures = make([][]byte, m)
+	for i := 0; i < m; i++ {
+		signatures[i] = invocationScript[i*66+2 : i*66+66] // signature length is 64
+	}
+
+	lenVeriScript := len(verificationScript)
+	n := verificationScript[lenVeriScript-6] - byte(sc.PUSH1) + 1 // public keys, limited to 16 here
+
+	if m > int(n) {
+		return false
+	} // too many signatures
+
+	var pubKeys = make([]crypto.ECPoint, n)
+	for i := 0; i < int(n); i++ {
+		data := verificationScript[i*35+1 : i*35+36] // length 35
+		publicKey, _ := crypto.NewECPointFromBytes(data[2:]) // length 33
+		pubKeys[i] = *publicKey
+	}
+	return keys.VerifyMultiSig(msg, signatures, pubKeys)
 }
