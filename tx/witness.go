@@ -19,17 +19,14 @@ func (ws WitnessSlice) Len() int           { return len(ws) }
 func (ws WitnessSlice) Less(i, j int) bool { return ws[i]._scriptHash.Less(ws[j]._scriptHash) }
 func (ws WitnessSlice) Swap(i, j int)      { ws[i], ws[j] = ws[j], ws[i] }
 
-/// <summary>
-/// This is designed to allow a MultiSig 21/11 (committee)
-/// Invocation = 11 * (64 + 2) = 726
-/// </summary>
+
+// MaxInvocationScript This is designed to allow a MultiSig 21/11 (committee)
+// Invocation = 11 * (64 + 2) = 726
 const MaxInvocationScript = 1024
-/// <summary>
-/// Verification = m + (PUSH_PubKey * 21) + length + null + syscall = 1 + ((2 + 33) * 21) + 2 + 1 + 5 = 744
-/// </summary>
+
+// MaxVerificationScript Verification = m + (PUSH_PubKey * 21) + length + null + syscall = 1 + ((2 + 33) * 21) + 2 + 1 + 5 = 744
 const MaxVerificationScript = 1024
 
-// Witness
 type Witness struct {
 	InvocationScript   []byte         // signature
 	VerificationScript []byte         // pub key
@@ -67,7 +64,7 @@ func (w *Witness) MarshalJSON() ([]byte, error) {
 	return json.Marshal(data)
 }
 
-// Create Witness with invocationScript and verificationScript
+// CreateWitness with invocationScript and verificationScript
 func CreateWitness(invocationScript []byte, verificationScript []byte) (*Witness, error) {
 	if len(verificationScript) == 0 {
 		return nil, fmt.Errorf("verificationScript should not be empty")

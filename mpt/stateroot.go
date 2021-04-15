@@ -1,12 +1,11 @@
 package mpt
 
 import (
+	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/io"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 )
-
-const CurrentVersion byte = 0x00
 
 //StateRoot truct of StateRoot message
 type StateRoot struct {
@@ -22,15 +21,25 @@ func (sr *StateRoot) Deserialize(br *io.BinaryReader) {
 	if l != 1 {
 		return
 	}
-	sr.Witness.Invocation = helper.BytesToHex(br.ReadVarBytes())
-	sr.Witness.Verification = helper.BytesToHex(br.ReadVarBytes())
+	sr.Witness.Invocation = crypto.Base64Encode(br.ReadVarBytes())
+	sr.Witness.Verification = crypto.Base64Encode(br.ReadVarBytes())
 }
 
 func (sr *StateRoot) Serialize(bw *io.BinaryWriter) {
 	sr.SerializeUnsigned(bw)
 	bw.WriteVarUInt(1)
-	bw.WriteVarBytes(helper.HexToBytes(sr.Witness.Invocation))
-	bw.WriteVarBytes(helper.HexToBytes(sr.Witness.Verification))
+	is, err := crypto.Base64Decode(sr.Witness.Invocation)
+	if err != nil {
+		bw.Err = err
+		return
+	}
+	vs, err := crypto.Base64Decode(sr.Witness.Verification)
+	if err != nil {
+		bw.Err = err
+		return
+	}
+	bw.WriteVarBytes(is)
+	bw.WriteVarBytes(vs)
 }
 
 func (sr *StateRoot) DeserializeUnsigned(br *io.BinaryReader) {
@@ -39,7 +48,7 @@ func (sr *StateRoot) DeserializeUnsigned(br *io.BinaryReader) {
 	var rootHash, stateRoot helper.UInt256
 	br.ReadLE(&rootHash)
 	br.ReadLE(&stateRoot)
-	sr.RootHash = rootHash.String()
+	sr.RootHash = "0x" + rootHash.String()
 }
 
 func (sr *StateRoot) SerializeUnsigned(bw *io.BinaryWriter) {
