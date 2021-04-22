@@ -43,7 +43,7 @@ func (c *Contract) GetScriptHash() *helper.UInt160 {
 func CreateSignatureRedeemScript(p *crypto.ECPoint) ([]byte, error) {
 	sb := NewScriptBuilder()
 	sb.EmitPushBytes(p.EncodePoint(true))
-	sb.EmitSysCall(Neo_Crypto_CheckSig.ToInteropMethodHash())
+	sb.EmitSysCall(System_Crypto_CheckSig.ToInteropMethodHash())
 	b, err := sb.ToArray()
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func CreateMultiSigRedeemScript(m int, ps []crypto.ECPoint) ([]byte, error) {
 		sb.EmitPushBytes(p.EncodePoint(true))
 	}
 	sb.EmitPushInteger(pubKeys.Len())
-	sb.EmitSysCall(Neo_Crypto_CheckMultisig.ToInteropMethodHash())
+	sb.EmitSysCall(System_Crypto_CheckMultisig.ToInteropMethodHash())
 	b, err := sb.ToArray()
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func IsSignatureContract(script []byte) bool {
 	if script[0] != byte(PUSHDATA1) ||
 		script[1] != 33 ||
 		script[35] != byte(SYSCALL) ||
-		uint(binary.LittleEndian.Uint32(script[36:])) != Neo_Crypto_CheckSig.ToInteropMethodHash() {
+		uint(binary.LittleEndian.Uint32(script[36:])) != System_Crypto_CheckSig.ToInteropMethodHash() {
 		return false
 	}
 	return true
@@ -232,7 +232,7 @@ func IsMultiSigContract(script []byte) (bool, int, int, []crypto.ECPoint) {
 		return false, 0, 0, nil
 	}
 	i++
-	if uint(binary.LittleEndian.Uint32(script[i:])) != Neo_Crypto_CheckMultisig.ToInteropMethodHash() {
+	if uint(binary.LittleEndian.Uint32(script[i:])) != System_Crypto_CheckMultisig.ToInteropMethodHash() {
 		return false, 0, 0, nil
 	}
 	return true, m, n, points

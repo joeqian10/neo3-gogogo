@@ -34,7 +34,7 @@ func TestContract_GetScriptHash(t *testing.T) {
 		expectedArray[i+2] = tmp[i]
 	}
 	expectedArray[35] = byte(SYSCALL)
-	tmp = helper.UInt32ToBytes(uint32(Neo_Crypto_CheckSig.ToInteropMethodHash()))
+	tmp = helper.UInt32ToBytes(uint32(System_Crypto_CheckSig.ToInteropMethodHash()))
 	assert.Equal(t, 4, len(tmp))
 
 	for i := 0; i < len(tmp); i++ {

@@ -21,9 +21,9 @@ var (
 	System_Contract_NativeOnPersist       InteropService = "System.Contract.NativeOnPersist"
 	System_Contract_NativePostPersist     InteropService = "System.Contract.NativePostPersist"
 
-	// -----Crypto-----todo
-	Neo_Crypto_CheckSig      InteropService = "Neo.Crypto.CheckSig"
-	Neo_Crypto_CheckMultisig InteropService = "Neo.Crypto.CheckMultisig"
+	// -----Crypto-----
+	System_Crypto_CheckSig      InteropService = "System.Crypto.CheckSig"
+	System_Crypto_CheckMultisig InteropService = "System.Crypto.CheckMultisig"
 )
 
 // ToInteropMethodHash converts a method name to 32 bytes hash
