@@ -340,7 +340,6 @@ func (w *WalletHelper) GetContractState(hash *helper.UInt160) (*models.RpcContra
 
 // GetGasConsumed runs a script in ApplicationEngine in test mode and returns gas consumed
 func (w *WalletHelper) GetGasConsumed(script []byte, signers []models.RpcSigner) (int64, error) {
-	fmt.Println(crypto.Base64Encode(script))
 	response := w.Client.InvokeScript(crypto.Base64Encode(script), signers)
 	if response.HasError() {
 		return 0, fmt.Errorf(response.GetErrorInfo())
@@ -448,7 +447,11 @@ func (w *WalletHelper) Sign(ctx *ContractParametersContext, magic uint32) (bool,
 					if err != nil {
 						return false, err
 					}
-					addSigSuccess, err := ctx.AddSignature(msc.ToContract(), pair.PublicKey, signature)
+					ctr, err := account.GetContract().ToContract()
+					if err != nil {
+						return false, err
+					}
+					addSigSuccess, err := ctx.AddSignature(ctr, pair.PublicKey, signature)
 					if err != nil {
 						return false, err
 					}
@@ -471,7 +474,11 @@ func (w *WalletHelper) Sign(ctx *ContractParametersContext, magic uint32) (bool,
 				if err != nil {
 					return false, err
 				}
-				addSigSuccess, err := ctx.AddSignature(account.GetContract().ToContract(), pair.PublicKey, signature)
+				ctr, err := account.GetContract().ToContract()
+				if err != nil {
+					return false, err
+				}
+				addSigSuccess, err := ctx.AddSignature(ctr, pair.PublicKey, signature)
 				if err != nil {
 					return false, err
 				}

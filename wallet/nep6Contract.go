@@ -55,11 +55,22 @@ func (c *NEP6Contract) GetScriptHash() *helper.UInt160 {
 	return helper.UInt160FromBytes(crypto.Hash160(c.GetScript()))
 }
 
-func (c *NEP6Contract) ToContract() *sc.Contract {
+func (c *NEP6Contract) ToContract() (*sc.Contract, error) {
+	paramList := []sc.ContractParameterType{}
+	if len(c.Parameters) != 0 {
+		var err error
+		paramList = make([]sc.ContractParameterType, len(c.Parameters))
+		for i:=0; i < len(c.Parameters); i++ {
+			paramList[i], err = sc.ToContractParameterType(c.Parameters[i].Type)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 	return &sc.Contract{
 		Script:        c.GetScript(),
-		ParameterList: c.parameterList,
-	}
+		ParameterList: paramList,
+	}, nil
 }
 
 //// Contract represents a subset of the smart contract to embed in the
