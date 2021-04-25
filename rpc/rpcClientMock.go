@@ -123,12 +123,7 @@ func (r *RpcClientMock) GetNep17Transfers(s string, t1 *int, t2 *int) GetNep17Tr
 }
 
 // smart contract
-func (r *RpcClientMock) InvokeContractVerify(s string, a []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse {
-	args := r.Called(s, a, signers)
-	return args.Get(0).(InvokeResultResponse)
-}
-
-func (r *RpcClientMock) InvokeFunction(s1 string, s2 string, a []InvokeFunctionStackArg, signers []models.RpcSigner) InvokeResultResponse {
+func (r *RpcClientMock) InvokeFunction(s1 string, s2 string, a []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse {
 	args := r.Called(s1, s2, a, signers)
 	return args.Get(0).(InvokeResultResponse)
 }
@@ -234,4 +229,9 @@ func (r *RpcClientMock) SendMany(s string, o []models.RpcTransferOut, rs ...mode
 func (r *RpcClientMock) SendToAddress(s1, s2, s3 string) SendToAddressResponse {
 	args := r.Called(s1, s2, s3)
 	return args.Get(0).(SendToAddressResponse)
+}
+
+func (r *RpcClientMock) InvokeContractVerify(s string, a []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse {
+	args := r.Called(s, a, signers)
+	return args.Get(0).(InvokeResultResponse)
 }

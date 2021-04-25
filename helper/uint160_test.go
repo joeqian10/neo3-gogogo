@@ -2,6 +2,7 @@ package helper
 
 import (
 	"github.com/joeqian10/neo3-gogogo/io"
+	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -43,6 +44,21 @@ func TestUInt160_Equals(t *testing.T) {
 	assert.Equal(t, true, UInt160Zero.Equals(UInt160Zero))
 	assert.Equal(t, false, u.Equals(UInt160Zero))
 	assert.Equal(t, false, u.Equals(nil))
+}
+
+func TestUInt160_Equals2(t *testing.T)  {
+	tmp := make([]byte, UINT160SIZE)
+	u := UInt160FromBytes(tmp)
+	assert.Equal(t, true, u.Equals(UInt160Zero))
+	tmp1 := make([]byte, UINT160SIZE)
+	tmp1[UINT160SIZE-1] = 0x01
+	u1 := UInt160FromBytes(tmp1)
+
+	if *u == *UInt160Zero && *u1 != *UInt160Zero { // value equals
+		log.Println("can use ==")
+	} else {
+		log.Println("can not use ==")
+	}
 }
 
 func TestUInt160_Less(t *testing.T) {

@@ -34,8 +34,7 @@ type IRpcClient interface {
 	GetNep17Transfers(address string, startTimestamp *int, endTimestamp *int) GetNep17TransfersResponse
 
 	// smart contract
-	InvokeContractVerify(scriptHash string, args []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse
-	InvokeFunction(scriptHash string, function string, args []InvokeFunctionStackArg, signers []models.RpcSigner) InvokeResultResponse
+	InvokeFunction(scriptHash string, function string, args []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse
 	InvokeScript(script string, signers []models.RpcSigner) InvokeResultResponse
 	GetUnclaimedGas(address string) GetUnclaimedGasResponse
 
@@ -62,4 +61,5 @@ type IRpcClient interface {
 	SendFrom(assetId string, from string, to string, amount string) SendFromResponse
 	SendMany(fromAddress string, outputs []models.RpcTransferOut, signers ...models.RpcSigner) SendManyResponse
 	SendToAddress(assetId string, to string, amount string) SendToAddressResponse
+	InvokeContractVerify(scriptHash string, args []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse
 }

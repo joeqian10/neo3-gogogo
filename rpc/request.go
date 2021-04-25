@@ -15,12 +15,3 @@ func NewRequest(method string, params []interface{}) RpcRequest {
 		ID:      1,
 	}
 }
-
-type InvokeFunctionStackArg struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
-}
-
-func NewInvokeFunctionStackArg(t string, v string) InvokeFunctionStackArg {
-	return InvokeFunctionStackArg{Type: t, Value: v}
-}

@@ -164,7 +164,7 @@ func (w *WalletHelper) CalculateNetworkFee(trx *tx.Transaction) (uint64, error) 
 				Account:          hash.String(),
 				Scopes:           tx.CalledByEntry.String(), // CalledByEntry not sure
 			}
-			res := w.Client.InvokeFunction(hash.String(), "verify", []rpc.InvokeFunctionStackArg{}, []models.RpcSigner{rpcSigner})
+			res := w.Client.InvokeFunction(hash.String(), "verify", []models.RpcContractParameter{}, []models.RpcSigner{rpcSigner})
 			if res.HasError() {
 				return 0, fmt.Errorf(res.GetErrorInfo())
 			}

@@ -65,7 +65,7 @@ func (c *ContractParametersContext) GetCompleted() bool {
 		return false
 	}
 	for k, v := range c.ContextItems {
-		if k == *helper.UInt160Zero {
+		if k.Equals(helper.UInt160Zero) {
 			return false
 		}
 		for _, param := range v.Parameters {

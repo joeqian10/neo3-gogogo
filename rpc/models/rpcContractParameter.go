@@ -5,4 +5,6 @@ type RpcContractParameter struct {
 	Value string `json:"value"`
 }
 
-//todo, conversion
+func NewRpcContractParameter(t string, v string) RpcContractParameter {
+	return RpcContractParameter{Type: t, Value: v}
+}

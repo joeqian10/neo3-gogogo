@@ -163,3 +163,10 @@ func (n *RpcClient) SendToAddress(assetId string, to string, amount string) Send
 	_ = n.makeRequest("sendtoaddress", params, &response)
 	return response
 }
+
+func (n *RpcClient) InvokeContractVerify(scriptHash string, args []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse {
+	response := InvokeResultResponse{}
+	params := []interface{}{scriptHash, args, signers}
+	_ = n.makeRequest("invokecontractverify", params, &response)
+	return response
+}
