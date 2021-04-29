@@ -72,7 +72,7 @@ func (mp *RpcContractParameterDefinition) ToContractParameterType() (sc.Contract
 	if mp == nil {
 		return 0, fmt.Errorf("MethodParameter is nil")
 	}
-	return sc.ToContractParameterType(mp.Type)
+	return sc.NewContractParameterTypeFromString(mp.Type)
 }
 
 type RpcContractPermission struct {

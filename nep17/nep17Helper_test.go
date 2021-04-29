@@ -38,7 +38,7 @@ func TestNep17Helper_Symbol(t *testing.T) {
 			GasConsumed: "1007390",
 			Stack: []models.InvokeStack{
 				{
-					Type:  "String",
+					Type:  "ByteString",
 					Value: "bmVv",
 				},
 			},

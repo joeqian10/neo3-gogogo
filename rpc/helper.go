@@ -6,12 +6,15 @@ import (
 )
 
 func PopInvokeStack(response InvokeResultResponse) (*models.InvokeStack, error) {
-	msg := response.ErrorResponse.Error.Message
-	if len(msg) != 0 {
-		return nil, fmt.Errorf(msg)
+	if response.HasError() {
+		return nil, fmt.Errorf(response.GetErrorInfo())
 	}
 	if response.Result.State == "FAULT" {
-		return nil, fmt.Errorf("engine faulted")
+		msg := "engine faulted"
+		if len(response.Result.Exception) != 0 {
+			msg += ", exception: " + response.Result.Exception
+		}
+		return nil, fmt.Errorf(msg)
 	}
 	if len(response.Result.Stack) == 0 {
 		return nil, fmt.Errorf("no stack result returned")

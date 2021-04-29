@@ -1,7 +1,7 @@
 package mpt
 
 import (
-	"encoding/json"
+	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"github.com/stretchr/testify/assert"
 	"testing"
 
@@ -10,11 +10,17 @@ import (
 )
 
 func TestStateRoot_Serialize(t *testing.T) {
-	var sr StateRoot
-	data := []byte(`{"version":0,"index":1000,"roothash":"0x53360e02b03f548c6fc2f74f760d82a6749df6a844fd117ad7b62504390c8f8c","witness":{"invocation":"DEBnIRHFS8tG/6pw4cqZQbOQZri6rboaQPUJTCVS2ZD/HwOZG2m9IG3NJ8E/gTV++o7G1r35l+p5aQcAbqwoP1wTDECeyQcx2M1DP/irLP7sQy/tNRyina2rdK6ATV/QY+Ib4tJ3sYpXaiPx4iGo+AgqUeTRDmD8anfUNtYzjYgos6x9DEDS+medyKx59813WgtCusxLIK0tx50H36tbMGmTUQxR5nHzrpG8nzQ8HKNKRNMgQNBoT4U3pcHMpwJY9bXUge4R","verification":"EwwhAnIujtkuXxpCUIyfti3TyTtoOhUd/wjLU4lwdHzBhsu6DCECkeyvwoMh29AA30IiQMankxndS3LESLsUGkLoTzfm/doMIQOyS9DtdzAVHs/Ne1yheExdO8NYTw1NkKyi1i4gd5tG1wwhA/sZ1ZOuaNWI9PnKa/3WYbE9xjnVVYWhVYYXFD38xLJWFEF7zmyl"}}`)
-	err := json.Unmarshal(data, &sr)
-	assert.Nil(t, err)
-	assert.Equal(t, "0x53360e02b03f548c6fc2f74f760d82a6749df6a844fd117ad7b62504390c8f8c", sr.RootHash)
+	sr := StateRoot{
+		Version:   0,
+		Index:     1000,
+		RootHash:  "0x53360e02b03f548c6fc2f74f760d82a6749df6a844fd117ad7b62504390c8f8c",
+		Witnesses: []models.RpcWitness{
+			{
+				Invocation: "DEBnIRHFS8tG/6pw4cqZQbOQZri6rboaQPUJTCVS2ZD/HwOZG2m9IG3NJ8E/gTV++o7G1r35l+p5aQcAbqwoP1wTDECeyQcx2M1DP/irLP7sQy/tNRyina2rdK6ATV/QY+Ib4tJ3sYpXaiPx4iGo+AgqUeTRDmD8anfUNtYzjYgos6x9DEDS+medyKx59813WgtCusxLIK0tx50H36tbMGmTUQxR5nHzrpG8nzQ8HKNKRNMgQNBoT4U3pcHMpwJY9bXUge4R",
+				Verification: "EwwhAnIujtkuXxpCUIyfti3TyTtoOhUd/wjLU4lwdHzBhsu6DCECkeyvwoMh29AA30IiQMankxndS3LESLsUGkLoTzfm/doMIQOyS9DtdzAVHs/Ne1yheExdO8NYTw1NkKyi1i4gd5tG1wwhA/sZ1ZOuaNWI9PnKa/3WYbE9xjnVVYWhVYYXFD38xLJWFEF7zmyl",
+			},
+		},
+	}
 
 	bbw := io.NewBufBinaryWriter()
 	sr.Serialize(bbw.BinaryWriter)
@@ -30,4 +36,13 @@ func TestStateRoot_Deserialize(t *testing.T) {
 	sr.Deserialize(br)
 	assert.Nil(t, br.Err)
 	assert.Equal(t, "0x53360e02b03f548c6fc2f74f760d82a6749df6a844fd117ad7b62504390c8f8c", sr.RootHash)
+}
+
+func TestStateRoot_Deserialize2(t *testing.T) {
+	bs := helper.HexToBytes("00e91a0200a92b147d34654f7b3d5727e991f33cbe5dd46577b7a4a486cb3286feca4b411601420c406822bcf16af3ad3527bd80af22551b67f5a5dc3e8a2581311f2de2a8decbdc1b5382ceee43aaf7d3a9cf5371692b016ed69a00a942ee98c51c7bdd57ffa080bb2a110c210214f402dac85ad3b100644abe975158ed6017f1c8a66133f5c8ccd2b5822f15bb11419ed0dc3a")
+	br := io.NewBinaryReaderFromBuf(bs)
+	sr := new(StateRoot)
+	sr.Deserialize(br)
+	assert.Nil(t, br.Err)
+	assert.Equal(t, "0x16414bcafe8632cb86a4a4b77765d45dbe3cf391e927573d7b4f65347d142ba9", sr.RootHash)
 }

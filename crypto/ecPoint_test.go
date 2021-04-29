@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"github.com/joeqian10/neo3-gogogo/io"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"math/big"
 	"testing"
 )
@@ -86,6 +87,13 @@ func TestNewECPointFromBytes(t *testing.T) {
 	//assert.Equal(t, true, b)
 	//assert.Equal(t, *expectedX6, *p6.X)
 	//assert.Equal(t, *expectedY6, *p6.Y)
+}
+
+func TestNewECPointFromString2(t *testing.T) {
+	s := "028172918540b2b512eae1872a2a2e3a28d989c60d95dab8829ada7d7dd706d658"
+	p, err := NewECPointFromString(s)
+	assert.Nil(t, err)
+	log.Println(hex.EncodeToString(p.EncodePoint(false)))
 }
 
 func TestNewECPointFromString(t *testing.T) {

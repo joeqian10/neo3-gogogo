@@ -61,7 +61,7 @@ func (c *NEP6Contract) ToContract() (*sc.Contract, error) {
 		var err error
 		paramList = make([]sc.ContractParameterType, len(c.Parameters))
 		for i:=0; i < len(c.Parameters); i++ {
-			paramList[i], err = sc.ToContractParameterType(c.Parameters[i].Type)
+			paramList[i], err = sc.NewContractParameterTypeFromString(c.Parameters[i].Type)
 			if err != nil {
 				return nil, err
 			}

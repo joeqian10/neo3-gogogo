@@ -40,7 +40,7 @@ func (n *Nep17Helper) Symbol() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return  p.Value.(string), nil
+	return  string(p.Value.([]byte)), nil
 }
 
 func (n *Nep17Helper) Decimals() (int, error) {

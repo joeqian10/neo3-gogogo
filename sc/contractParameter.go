@@ -32,6 +32,40 @@ type ContractParameter struct {
 	Value interface{}
 }
 
+func NewContractParameterTypeFromString(s string) (ContractParameterType, error) {
+	t := strings.ToLower(s)
+	switch t {
+	case "any":
+		return Any, nil
+	case "boolean":
+		return Boolean, nil
+	case "integer":
+		return Integer, nil
+	case "bytearray":
+		return ByteArray, nil
+	case "string":
+		return String, nil
+	case "hash160":
+		return Hash160, nil
+	case "hash256":
+		return Hash256, nil
+	case "publickey":
+		return PublicKey, nil
+	case "signature":
+		return Signature, nil
+	case "array":
+		return Array, nil
+	case "map":
+		return Map, nil
+	case "interopinterface":
+		return InteropInterface, nil
+	case "void":
+		return Void, nil
+	default:
+		return Void, fmt.Errorf("not supported string")
+	}
+}
+
 func (cpt ContractParameterType) String() string {
 	var s string
 	switch byte(cpt) {
@@ -65,38 +99,4 @@ func (cpt ContractParameterType) String() string {
 		s = ""
 	}
 	return s
-}
-
-func ToContractParameterType(s string) (ContractParameterType, error) {
-	t := strings.ToLower(s)
-	switch t {
-	case "any":
-		return Any, nil
-	case "boolean":
-		return Boolean, nil
-	case "integer":
-		return Integer, nil
-	case "bytearray":
-		return ByteArray, nil
-	case "string":
-		return String, nil
-	case "hash160":
-		return Hash160, nil
-	case "hash256":
-		return Hash256, nil
-	case "publickey":
-		return PublicKey, nil
-	case "signature":
-		return Signature, nil
-	case "array":
-		return Array, nil
-	case "map":
-		return Map, nil
-	case "interopinterface":
-		return InteropInterface, nil
-	case "void":
-		return Void, nil
-	default:
-		return Any, fmt.Errorf("not supported string")
-	}
 }
