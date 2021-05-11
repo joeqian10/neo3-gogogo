@@ -3,6 +3,7 @@ package crypto
 import (
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"testing"
 )
 
@@ -11,6 +12,12 @@ func TestAddressToScriptHash(t *testing.T) {
 	assert.Nil(t, err)
 	u := helper.UInt160FromBytes(Hash160([]byte{0x01}))
 	assert.Equal(t, u.String(), r.String())
+}
+
+func TestAddressToScriptHash2(t *testing.T) {
+	r, err := AddressToScriptHash("NbG6HCirXABhtAakkJPsFhzsVFVgC3xuCT", helper.DefaultAddressVersion)
+	assert.Nil(t, err)
+	log.Println(r.String())
 }
 
 func TestScriptHashToAddress(t *testing.T) {

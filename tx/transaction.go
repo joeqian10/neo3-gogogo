@@ -15,7 +15,7 @@ const (
 	MaxSigners                         = 16   // Maximum number of cosigners that can be contained within a transaction
 )
 
-const NeoTokenId = "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5" //rc1
+const NeoTokenId = "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5"
 const GasTokenId = "0xd2a4cff31913016155e38e474a2c06d08be276cf"
 
 const GasFactor = 100000000

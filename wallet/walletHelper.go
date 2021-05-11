@@ -345,7 +345,7 @@ func (w *WalletHelper) GetGasConsumed(script []byte, signers []models.RpcSigner)
 		return 0, fmt.Errorf(response.GetErrorInfo())
 	}
 	if response.Result.State == "FAULT" {
-		return 0, fmt.Errorf("engine faulted")
+		return 0, fmt.Errorf("engine faulted: %s", response.Result.Exception)
 	}
 	gasConsumed, err := strconv.ParseInt(response.Result.GasConsumed, 10, 64)
 	if err != nil {
