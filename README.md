@@ -48,8 +48,6 @@ var client := rpc.NewClient(testNetEndPoint)
 
 Eventually, you will need a wallet to sign transactions which will be sent to Neo Blockchain. You can either create a new wallet or import existing one. Please check wallet model for more detail.  
 
-You will need a wallet to sign certain transactions which will be sent to Neo blockchain. 
-
 ````Go
 //Open your wallet with privateKey
 privateKey := []byte{} // add your private key here
