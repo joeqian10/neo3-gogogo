@@ -102,3 +102,15 @@ func TestVerifyMultiSignatureWitness(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, true, b)
 }
+
+func TestVerifyMultiSignatureWitness2(t *testing.T) {
+	msg := helper.HexToBytes("3a454f0062365ed35c4ba19853e2aba246c8b42609da75503b8139f3b96dc9af359b1488")
+	inv, err := crypto.Base64Decode("DEDZ6kN4T3okrkTcD+jmOyuvghXhr7U7r6Ttkgyrd1o5mxw1jKtAlj/6ZTrC42E/zERrNbjHp+G2v6njnrSJ7osBDEBPjxq+5rsquclbpIogtlFnc/tDQGC3QeWI443/4sgrJ7ssZoXHZxqNVm/q1lEshG7S3qv6tpDumxMnOSAQ8F4QDEACncLL35Wo+kURJiUv4rqzbUeuwciLI+8+rdvbR3sPOmeYh2hviF2FKpwaxgpaJ+rZxwTrew1IWJLsnKKQ1l8I")
+	assert.Nil(t, err)
+	ver, err := crypto.Base64Decode("EwwhAxPsv6UkXoRiWuh70MHrB5dHOlH2oXJ89glc1+9SaX0GDCEDVTSosWpgZS1C4uMwXFoy6EnvOlRxn1CahCfJwrDYsesMIQLoSLZZEYoSlcy7zwoCIkrGjb25fvDOrKF9Rcmvbv+HZAwhA/7G8sahf7WFskw8v+nWpjyHRUDFC0RdOk0I9WWyhPGaFEGe0Nw6")
+	assert.Nil(t, err)
+	witness, err := CreateWitness(inv, ver)
+	assert.Nil(t, err)
+	b := VerifyMultiSignatureWitness(msg, witness)
+	assert.Equal(t, true, b)
+}

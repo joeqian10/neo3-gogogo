@@ -9,10 +9,10 @@ type StorageItem struct {
 
 //Deserialize deserialize from byte array
 func (si *StorageItem) Deserialize(reader *io.BinaryReader) {
-	si.Value = reader.ReadVarBytes()
+	si.Value = reader.ReadAllBytes()
 }
 
 //Serialize serialize to byte array
 func (si *StorageItem) Serialize(writer *io.BinaryWriter) {
-	writer.WriteVarBytes(si.Value)
+	writer.WriteLE(si.Value)
 }
