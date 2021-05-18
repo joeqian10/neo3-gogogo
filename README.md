@@ -8,19 +8,59 @@ types, build smart contract script, make and send transactions, interact with Ne
 ### 1.1 Version
 
 Developed and tested based on the following versions:  
-Neo CLI v3.0.0-rc2  
-NEO v3.0.0-rc2  
-NEO-VM v3.0.0-rc2
+
++ Neo CLI v3.0.0-rc2  
+
++ NEO v3.0.0-rc2  
+
++ NEO-VM v3.0.0-rc2
 
 ## 2. Quickstart
 
+Make sure you have Go installed on your computer before you move forward. 
+
 ### 2.1 Installation
 
-Simply add this SDK to GOPATH:
+First, simply add this SDK to GOPATH:
 
 ```bash
 go get github.com/joeqian10/neo3-gogogo
 ```
+
+Secondly, in your Go project, import the necessary modules from neo3-gogogo, for instance:
+
+```go
+import (
+	"github.com/joeqian10/neo3-gogogo/rpc"
+	"github.com/joeqian10/neo3-gogogo/wallet"
+)
+
+// The avaliable modules are: 
+// helper, block, blockchain, crypto, mpt, nep17, sc, tx, wallet
+```
+
+Then, create a RPC client to connect to a specific network via a URL which is used to send your transactions. The URL will be different based on the network you are connecting to. 
+
+```go
+var testNetEndPoint := "http://seed1t.neo.org:20332"
+var client := rpc.NewClient(testNetEndPoint)
+```
+
+Eventually, you will need a wallet to sign transactions which will be sent to Neo Blockchain. You can either create a new wallet or import existing one. Please check wallet module for more details.  
+
+```Go
+//Open your wallet with privateKey
+privateKey := []byte{} // add your private key here
+walletHelper, err := wallet.NewWalletHelperFromPrivateKey(client, privateKey)
+```
+
+Now, you are all set to explore more features with Neo go SDK, including:
+
++ wallet manangement 
++ query blockchain info via rpc calls
++ sending assets like NEO, GAS and NEP17 tokens
++ invoking smart contracts
++ making and sending transactions
 
 ### 2.2 Demos
 
