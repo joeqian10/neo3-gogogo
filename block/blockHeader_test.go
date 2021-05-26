@@ -114,8 +114,8 @@ func TestNewBlockHeaderFromRPC(t *testing.T) {
 		PrimaryIndex:      0x00,
 		NextConsensus:     "NNU67Fvdy3LEQTM374EJ9iMbCRxVExgM8Y",
 		Witnesses: []models.RpcWitness{{
-			Invocation:   "",
-			Verification: "11",
+			Invocation:   "DEB9U2OHJaj1fYGFA+yQbVEQA7oncKTpcTdxeA/r8+GP2zSYyfuM5jOwz4ggVmUEApevohEm3pMXQEWX2iJRoPWXDED87joySzn/NE8wBclEiJhPTqriDAQB7B9Vqz1XYlRpgk8hcQoO4dFDagV+wVgS/ihj5vyPUeOAIEJ5OL52o6RMDECtqJv94+JKu59rmwB8Oiagf8hkNrgxcLCVuwfbW4IGjTd5/fhUItyu7davOcFQKKr0SJayMQMwD38yqS4BBhWRDEC2z1+QgD6L/denhGfo0FpGvpcTEHFiGjJlXqGdC1Sm73KXLmiA4jnEmkvZQhfBVji6NMyI57Fm2LwziEQpGh4HDECifyH8SPERHo+Z+P3/dgzuBc16inO8aF9eOPexkJ9RkHH+A5sYOtzROiTcZ4LQVdthpYxl191ccl70L5rDNDC2",
+			Verification: "FQwhAwCbdUDhDyVi5f2PrJ6uwlFmpYsm5BI0j/WoaSe/rCKiDCEDAgXpzvrqWh38WAryDI1aokaLsBSPGl5GBfxiLIDmBLoMIQIUuvDO6jpm8X5+HoOeol/YvtbNgua7bmglAYkGX0T/AQwhAj6bMuqJuU0GbmSbEk/VDjlu6RNp6OKmrhsRwXDQIiVtDCEDQI3NQWOW9keDrFh+oeFZPFfZ/qiAyKahkg6SollHeAYMIQKng0vpsy4pgdFXy1u9OstCz9EepcOxAiTXpE6YxZEPGwwhAroscPWZbzV6QxmHBYWfriz+oT4RcpYoAHcrPViKnUq9F0Ge0Nw6",
 		}},
 		Confirmations: 5276880,
 		NextBlockHash: "0xd782db8a38b0eea0d7394e0f007c61c71798867578c77c387c08113903946cc9",
@@ -123,5 +123,5 @@ func TestNewBlockHeaderFromRPC(t *testing.T) {
 
 	header, err := NewBlockHeaderFromRPC(&rpcHeader)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(header.Witness.VerificationScript))
+	assert.Equal(t, 252, len(header.Witness.VerificationScript))
 }

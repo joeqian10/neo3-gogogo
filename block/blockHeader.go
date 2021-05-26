@@ -61,10 +61,18 @@ func NewBlockHeaderFromRPC(header *models.RpcBlockHeader) (*Header, error) {
 		return nil, err
 	}
 	var witness *tx.Witness
-	if header.Witnesses != nil && len(header.Witnesses) != 0 {
+	if len(header.Witnesses) != 0 {
+		inv, err := crypto.Base64Decode(header.Witnesses[0].Invocation)
+		if err != nil {
+			return nil, err
+		}
+		ver, err := crypto.Base64Decode(header.Witnesses[0].Verification)
+		if err != nil {
+			return nil, err
+		}
 		witness = &tx.Witness{
-			InvocationScript:   helper.HexToBytes(header.Witnesses[0].Invocation),
-			VerificationScript: helper.HexToBytes(header.Witnesses[0].Verification),
+			InvocationScript:   inv,
+			VerificationScript: ver,
 		}
 	}
 	hash, err := helper.UInt256FromString(header.Hash)
