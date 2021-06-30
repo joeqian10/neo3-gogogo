@@ -15,6 +15,7 @@ type Header struct {
 	prevHash      *helper.UInt256
 	merkleRoot    *helper.UInt256
 	timestamp     uint64
+	nonce         uint64
 	index         uint32
 	primaryIndex  byte
 	nextConsensus *helper.UInt160
@@ -31,15 +32,16 @@ func NewBlockHeader() *Header {
 		prevHash:      helper.NewUInt256(),
 		merkleRoot:    helper.NewUInt256(),
 		timestamp:     0,
+		nonce:         0,
 		index:         0,
 		primaryIndex:  0,
 		nextConsensus: helper.NewUInt160(),
-		Witness:       &tx.Witness{
+		Witness: &tx.Witness{
 			InvocationScript:   []byte{},
 			VerificationScript: []byte{},
 		},
-		_hash:         nil,
-		_size:         0,
+		_hash: nil,
+		_size: 0,
 	}
 }
 
@@ -54,6 +56,7 @@ func NewBlockHeaderFromRPC(header *models.RpcBlockHeader) (*Header, error) {
 		return nil, err
 	}
 	timeStamp := uint64(header.Time)
+	nonce := header.Nonce
 	index := uint32(header.Index)
 	primaryIndex := header.PrimaryIndex
 	nextConsensus, err := crypto.AddressToScriptHash(header.NextConsensus, helper.DefaultAddressVersion)
@@ -84,12 +87,13 @@ func NewBlockHeaderFromRPC(header *models.RpcBlockHeader) (*Header, error) {
 		prevHash:      prevHash,
 		merkleRoot:    merkleRoot,
 		timestamp:     timeStamp,
+		nonce:         nonce,
 		index:         index,
 		primaryIndex:  primaryIndex,
 		nextConsensus: nextConsensus,
 		Witness:       witness,
 	}
-	fmt.Println(bh.GetHash().String())
+	//fmt.Println(bh.GetHash().String()) // for test
 	if !bh.GetHash().Equals(hash) {
 		return nil, fmt.Errorf("wrong block hash")
 	}
@@ -128,6 +132,14 @@ func (h *Header) SetTimeStamp(value uint64) {
 	h._hash = nil
 }
 
+func (h *Header) GetNonce() uint64 {
+	return h.nonce
+}
+func (h *Header) SetNonce(value uint64) {
+	h.nonce = value
+	h._hash = nil
+}
+
 func (h *Header) GetIndex() uint32 {
 	return h.index
 }
@@ -161,19 +173,20 @@ func (h *Header) GetHash() *helper.UInt256 {
 
 func (h *Header) GetSize() int {
 	return 4 + // version
-		32 + // prevHash
-		32 + // merkleRoot
-		8 + // timestamp
-		4 + // index
-		1 + // primaryIndex
-		20 + // nextConsensus
+		32 +   // prevHash
+		32 +   // merkleRoot
+		8 +    // timestamp
+		8 +    // nonce
+		4 +    // index
+		1 +    // primaryIndex
+		20 +   // nextConsensus
 		1 + h.Witness.Size()
 }
 
 func (h *Header) GetWitnesses() []tx.Witness {
 	return []tx.Witness{*h.Witness}
 }
-func (h *Header) SetWitnesses(value []tx.Witness)  {
+func (h *Header) SetWitnesses(value []tx.Witness) {
 	if len(value) != 1 {
 		return
 	}
@@ -182,7 +195,7 @@ func (h *Header) SetWitnesses(value []tx.Witness)  {
 
 func (h *Header) GetScriptHashesForVerifying() []helper.UInt160 {
 	if h.prevHash.Equals(helper.UInt256Zero) {
-		return []helper.UInt160 {*h.Witness.GetScriptHash()}
+		return []helper.UInt160{*h.Witness.GetScriptHash()}
 	}
 	// todo, get prev block header
 	return nil
@@ -207,6 +220,7 @@ func (h *Header) DeserializeUnsigned(br *io.BinaryReader) {
 	br.ReadLE(h.prevHash)
 	br.ReadLE(h.merkleRoot)
 	br.ReadLE(&h.timestamp)
+	br.ReadLE(&h.nonce)
 	br.ReadLE(&h.index)
 	h.primaryIndex = br.ReadByte()
 	br.ReadLE(h.nextConsensus)
@@ -224,6 +238,7 @@ func (h *Header) SerializeUnsigned(bw *io.BinaryWriter) {
 	bw.WriteLE(h.prevHash)
 	bw.WriteLE(h.merkleRoot)
 	bw.WriteLE(h.timestamp)
+	bw.WriteLE(h.nonce)
 	bw.WriteLE(h.index)
 	bw.WriteLE(h.primaryIndex)
 	bw.WriteLE(h.nextConsensus)

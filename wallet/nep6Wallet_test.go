@@ -6,6 +6,7 @@ import (
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/sc"
 	"io/ioutil"
+	"log"
 	"testing"
 
 	"github.com/joeqian10/neo3-gogogo/keys"
@@ -60,6 +61,12 @@ func TestGetPrivateKeyFromNEP2(t *testing.T) {
 	assert.NotNil(t, err)
 	pk, err = GetPrivateKeyFromNEP2(nep2, password,  helper.DefaultAddressVersion, 2, 1, 1)
 	assert.Equal(t, true, bytes.Equal(privateKey, pk))
+}
+
+func TestGetPrivateKeyFromNEP22(t *testing.T) {
+	priKey, err := GetPrivateKeyFromNEP2("6PYW3MNVdLsYt1SyMarsvU7pyBdokvSBsNMkhZ1tXW2Um3y9fRHdCNe7Bq", "qianzhuo", helper.DefaultAddressVersion, 16384, 8, 8)
+	assert.Nil(t, err)
+	log.Println(helper.BytesToHex(priKey))
 }
 
 func TestGetPrivateKeyFromWIF(t *testing.T) {

@@ -19,6 +19,7 @@ func SetupBlockHeaderWithValues() *Header {
 		prevHash:      helper.NewUInt256(),
 		merkleRoot:    mr,
 		timestamp:     4244941696,
+		nonce:         0,
 		index:         0,
 		nextConsensus: helper.NewUInt160(),
 		Witness: &tx.Witness{
@@ -34,11 +35,12 @@ func TestBlockHeader_Deserialize(t *testing.T) {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // PrevHash
 		214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, // MerkleRoot
 		128, 171, 4, 253, 0, 0, 0, 0, // Timestamp
+		0, 0, 0, 0, 0, 0, 0, 0, // Nonce
 		0, 0, 0, 0, // Index
-		0, // PrimaryIndex
+		0,                                                          // PrimaryIndex
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // NextConsensus
 		1, 0, 1, 17, // Witness
-		}
+	}
 
 	br := io.NewBinaryReaderFromBuf(rawBlock)
 	bh := NewBlockHeader()
@@ -54,10 +56,11 @@ func TestBlockHeader_DeserializeUnsigned(t *testing.T) {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // PrevHash
 		214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, // MerkleRoot
 		128, 171, 4, 253, // Timestamp
+		0, 0, 0, 0, 0, 0, 0, 0, // Nonce
 		0, 0, 0, 0, // Index
-		0, // PrimaryIndex
+		0,                                                          // PrimaryIndex
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // NextConsensus
-    }
+	}
 
 	br := io.NewBinaryReaderFromBuf(rawBlock)
 	bh := NewBlockHeader()
@@ -74,11 +77,12 @@ func TestBlockHeader_Serialize(t *testing.T) {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // PrevHash
 		214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, // MerkleRoot
 		128, 171, 4, 253, 0, 0, 0, 0, // Timestamp
+		0, 0, 0, 0, 0, 0, 0, 0, // Nonce
 		0, 0, 0, 0, // Index
-		0, // PrimaryIndex
+		0,                                                          // PrimaryIndex
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // NextConsensus
 		1, 0, 1, 17, // Witness
-		}
+	}
 
 	assert.Nil(t, buf.Err)
 	assert.Equal(t, helper.BytesToHex(requiredData), helper.BytesToHex(buf.Bytes()))
@@ -92,6 +96,7 @@ func TestBlockHeader_SerializeUnsigned(t *testing.T) {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // PrevHash
 		214, 87, 42, 69, 155, 149, 217, 19, 107, 122, 113, 60, 84, 133, 202, 112, 159, 158, 250, 79, 8, 241, 194, 93, 215, 146, 103, 45, 43, 215, 91, 251, // MerkleRoot
 		128, 171, 4, 253, 0, 0, 0, 0, // Timestamp
+		0, 0, 0, 0, 0, 0, 0, 0, // Nonce
 		0, 0, 0, 0, // Index
 		0, // PrimaryIndex
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} // NextConsensus
@@ -104,12 +109,13 @@ func TestNewBlockHeaderFromRPC(t *testing.T) {
 	//consensusData := binary.BigEndian.Uint64(helper.HexToBytes("000000007c2bac1d"))
 	//assert.Equal(t, uint64(2083236893), consensusData)
 	rpcHeader := models.RpcBlockHeader{
-		Hash:              "0x1a3bdcad1cdaa90ecf731a412a89cb60ec49cbf3c605317f3f6911cd5def5761",
+		Hash:              "0x159359b9a57c1d94f946dfb510409ac4a32008c31f6742b21d3d8e165cdd660d",
 		Size:              401,
 		Version:           0,
 		PreviousBlockHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
 		MerkleRoot:        "0x803ff4abe3ea6533bcc0be574efa02f83ae8fdc651c879056b0d9be336c01bf4",
 		Time:              1468595301,
+		Nonce:             0,
 		Index:             0,
 		PrimaryIndex:      0x00,
 		NextConsensus:     "NNU67Fvdy3LEQTM374EJ9iMbCRxVExgM8Y",
