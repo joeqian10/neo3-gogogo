@@ -109,5 +109,7 @@ func TestBigIntToNeoBytes(t *testing.T) {
 }
 
 func TestBigIntFromNeoBytes(t *testing.T) {
-	// todo
+	bs := []byte{0x38, 0xff}
+	b := BigIntFromNeoBytes(bs)
+	assert.Equal(t, 0, big.NewInt(-200).Cmp(b))
 }

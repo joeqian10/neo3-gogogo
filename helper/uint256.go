@@ -30,7 +30,7 @@ func UInt256FromBytes(b []byte) *UInt256 {
 	if b == nil {
 		r = make([]byte, UINT256SIZE)
 	} else if len(b) < UINT256SIZE {
-		r = PadRight(b, UINT256SIZE)
+		r = PadRight(b, UINT256SIZE, false)
 	} else {
 		r = b[:UINT256SIZE]
 	}

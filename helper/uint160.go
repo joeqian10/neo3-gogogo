@@ -31,7 +31,7 @@ func UInt160FromBytes(b []byte) *UInt160 {
 	if b == nil {
 		r = make([]byte, UINT160SIZE)
 	} else if len(b) < UINT160SIZE {
-		r = PadRight(b, UINT160SIZE)
+		r = PadRight(b, UINT160SIZE, false)
 	} else {
 		r = b[:UINT160SIZE]
 	}

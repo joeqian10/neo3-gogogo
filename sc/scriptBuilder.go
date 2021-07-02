@@ -91,19 +91,19 @@ func (sb *ScriptBuilder) EmitPushBigInt(number *big.Int) {
 	} else if len(data) == 2 {
 		sb.Emit(PUSHINT16, data...)
 	} else if len(data) <= 4 {
-		sb.Emit(PUSHINT32, helper.PadRight(data, 4)...)
+		sb.Emit(PUSHINT32, helper.PadRight(data, 4, number.Sign() < 0)...)
 	} else if len(data) <= 8 {
-		sb.Emit(PUSHINT64, helper.PadRight(data, 8)...)
+		sb.Emit(PUSHINT64, helper.PadRight(data, 8, number.Sign() < 0)...)
 	} else if len(data) <= 16 {
-		sb.Emit(PUSHINT128, helper.PadRight(data, 16)...)
+		sb.Emit(PUSHINT128, helper.PadRight(data, 16, number.Sign() < 0)...)
 	} else if len(data) <= 32 {
-		sb.Emit(PUSHINT256, helper.PadRight(data, 32)...)
+		sb.Emit(PUSHINT256, helper.PadRight(data, 32, number.Sign() < 0)...)
 	} else {
 		sb.addError(fmt.Errorf("argument out of range: number"))
 	}
 }
 
-// Emits a push "Instruction" with the specified integer type.
+// EmitPushInteger emits a push "Instruction" with the specified integer type.
 func (sb *ScriptBuilder) EmitPushInteger(num interface{}) {
 	switch num.(type) {
 	case int8:
@@ -313,8 +313,8 @@ func (sb *ScriptBuilder) EmitPushObject(obj interface{}) {
 		sb.EmitPushSerializable(obj.(io.ISerializable))
 		break
 	case int8, uint8, int16, uint16,
-	     int32, uint32, int64, uint64,
-	     int, uint:
+		int32, uint32, int64, uint64,
+		int, uint:
 		sb.EmitPushInteger(obj)
 		break
 	case ContractParameter:

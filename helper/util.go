@@ -86,22 +86,27 @@ func Int64ToBytes(n int64) []byte {
 }
 
 func BytesToUInt64(bs []byte) uint64 {
-	bs = PadRight(bs, 8)
+	bs = PadRight(bs, 8, false)
 	return binary.LittleEndian.Uint64(bs)
 }
 
 func BytesToUInt32(bs []byte) uint32 {
-	bs = PadRight(bs, 4)
+	bs = PadRight(bs, 4, false)
 	return binary.LittleEndian.Uint32(bs)
 }
 
-func PadRight(data []byte, length int) []byte {
+func PadRight(data []byte, length int, negative bool) []byte {
 	if len(data) >= length {
 		return data[:length] // return the most left bytes of length
 	}
-	newData := data
-	for len(newData) < length {
-		newData = append(newData, byte(0))
+	newData := make([]byte, length)
+	for i := 0; i < len(data); i++ {
+		newData[i] = data[i]
+	}
+	if negative {
+		for i := len(data); i < length; i++ {
+			newData[i] = 0xff
+		}
 	}
 	return newData
 }
