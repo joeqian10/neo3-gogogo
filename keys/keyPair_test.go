@@ -133,3 +133,10 @@ func TestVerifySignature2(t *testing.T) {
 	actual := VerifySignature(sample, signedData, wrongPubKey)
 	assert.Equal(t, false, actual)
 }
+
+func TestNewKeyPairFromNEP22(t *testing.T) {
+	nep2Key := "6PYURwh7xSUBA6yEbBsnYCGESd7UNHi3iWHsDweCxwzEH8xPBSphb1z7ss"
+	pwd := "poly"
+	_, err := NewKeyPairFromNEP2(nep2Key, pwd, helper.DefaultAddressVersion, N, R, P)
+	assert.Nil(t, err)
+}

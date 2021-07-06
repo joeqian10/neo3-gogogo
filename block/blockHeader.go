@@ -87,7 +87,7 @@ func NewBlockHeaderFromRPC(header *models.RpcBlockHeader) (*Header, error) {
 		prevHash:      prevHash,
 		merkleRoot:    merkleRoot,
 		timestamp:     timeStamp,
-		nonce:         nonce,
+		nonce:         helper.BytesToUInt64(helper.ReverseBytes(helper.HexToBytes(nonce))), // big endian to little endian
 		index:         index,
 		primaryIndex:  primaryIndex,
 		nextConsensus: nextConsensus,
@@ -95,7 +95,7 @@ func NewBlockHeaderFromRPC(header *models.RpcBlockHeader) (*Header, error) {
 	}
 	//fmt.Println(bh.GetHash().String()) // for test
 	if !bh.GetHash().Equals(hash) {
-		return nil, fmt.Errorf("wrong block hash")
+		return nil, fmt.Errorf("wrong block hash, expected: %s, got: %s", hash.String(), bh.GetHashString())
 	}
 	return &bh, nil
 }

@@ -115,7 +115,7 @@ func TestNewBlockHeaderFromRPC(t *testing.T) {
 		PreviousBlockHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
 		MerkleRoot:        "0x803ff4abe3ea6533bcc0be574efa02f83ae8fdc651c879056b0d9be336c01bf4",
 		Time:              1468595301,
-		Nonce:             0,
+		Nonce:             "00",
 		Index:             0,
 		PrimaryIndex:      0x00,
 		NextConsensus:     "NNU67Fvdy3LEQTM374EJ9iMbCRxVExgM8Y",
@@ -131,3 +131,11 @@ func TestNewBlockHeaderFromRPC(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 252, len(header.Witness.VerificationScript))
 }
+
+//func TestNewBlockHeaderFromRPC2(t *testing.T) {
+//	cli := rpc.NewClient("http://seed1t.neo.org:21332")
+//	res := cli.GetBlockHeader("1")
+//	h, err := NewBlockHeaderFromRPC(&res.Result)
+//	assert.Nil(t, err)
+//	log.Println(h.GetHash().String())
+//}

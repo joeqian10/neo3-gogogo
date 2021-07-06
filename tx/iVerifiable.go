@@ -36,6 +36,5 @@ func CalculateHash(verifiable IVerifiable) *helper.UInt256 {
 	if buf.Err != nil {
 		return nil
 	}
-
 	return helper.UInt256FromBytes(crypto.Sha256(buf.Bytes()))
 }

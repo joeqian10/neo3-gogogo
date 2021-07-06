@@ -7,7 +7,7 @@ type RpcBlockHeader struct {
 	PreviousBlockHash string       `json:"previousblockhash"`
 	MerkleRoot        string       `json:"merkleroot"`
 	Time              int          `json:"time"`
-	Nonce             uint64       `json:"nonce"`
+	Nonce             string       `json:"nonce"`
 	Index             int          `json:"index"`
 	PrimaryIndex      byte         `json:"primary"`
 	NextConsensus     string       `json:"nextconsensus"` //address
