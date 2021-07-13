@@ -3,6 +3,7 @@ package wallet
 import (
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/sc"
+	"math/big"
 	"testing"
 
 	"github.com/joeqian10/neo3-gogogo/keys"
@@ -62,6 +63,31 @@ func TestNEP6Account_GetKeyFromPassword(t *testing.T) {
 	k, err := account.GetKeyFromPassword(password)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, k.CompareTo(pair))
+}
+
+func TestAccountAndBalanceSlice_RemoveAt(t *testing.T) {
+	a1, _ := helper.UInt160FromString("0000000000000000000000000000000000000001")
+	a2, _ := helper.UInt160FromString("0000000000000000000000000000000000000002")
+	a3, _ := helper.UInt160FromString("0000000000000000000000000000000000000003")
+	us := []AccountAndBalance{
+		{
+			Account: a1,
+			Value: big.NewInt(1),
+		},
+		{
+			Account: a2,
+			Value: big.NewInt(2),
+		},
+		{
+			Account: a3,
+			Value: big.NewInt(3),
+		},
+	}
+	bs := AccountAndBalanceSlice(us)
+	x := bs.RemoveAt(0)
+	assert.Equal(t, 2, len(x))
+	y := bs.RemoveAt(2)
+	assert.Equal(t, 2, len(y))
 }
 
 func TestNEP6Account_VerifyPassword(t *testing.T) {

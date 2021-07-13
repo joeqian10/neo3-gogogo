@@ -205,7 +205,7 @@ func findPayingAccounts(orderedAccounts []AccountAndBalance, amount *big.Int) []
 			if orderedAccounts[i].Value.Cmp(amount) < 0 {
 				continue
 			}
-			if orderedAccounts[i].Value.Cmp(amount) < 0 {
+			if orderedAccounts[i].Value.Cmp(amount) == 0 {
 				result = append(result, orderedAccounts[i])
 				orderedAccounts = AccountAndBalanceSlice(orderedAccounts).RemoveAt(i)
 			} else {
