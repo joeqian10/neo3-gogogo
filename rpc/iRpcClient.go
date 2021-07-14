@@ -20,6 +20,7 @@ type IRpcClient interface {
 	GetTransactionHeight(hash string) GetTransactionHeightResponse
 	GetNextBlockValidators() GetNextBlockValidatorsResponse
 	GetCommittee() GetCommitteeResponse
+	GetNativeContracts() GetNativeContractsResponse
 
 	// node
 	GetConnectionCount() GetConnectionCountResponse

@@ -80,6 +80,11 @@ func (r *RpcClientMock) GetCommittee() GetCommitteeResponse {
 	return args.Get(0).(GetCommitteeResponse)
 }
 
+func (r *RpcClientMock) GetNativeContracts() GetNativeContractsResponse {
+	args := r.Called()
+	return args.Get(0).(GetNativeContractsResponse)
+}
+
 // node
 func (r *RpcClientMock) GetConnectionCount() GetConnectionCountResponse {
 	args := r.Called()

@@ -382,3 +382,350 @@ func TestRpcClient_GetCommittee(t *testing.T) {
 	assert.Equal(t, 21, len(r))
 	assert.Equal(t, "020f2887f41474cfeb11fd262e982051c1541418137c02a0f4961af911045de639", r[0])
 }
+
+func TestRpcClient_GetNativeContracts(t *testing.T) {
+	var client = new(HttpClientMock)
+	var rpc = RpcClient{Endpoint: new(url.URL), httpClient: client}
+	client.On("Do", mock.Anything).Return(&http.Response{
+		Body: ioutil.NopCloser(bytes.NewReader([]byte(`{
+		  "jsonrpc": "2.0",
+		  "id": 1,
+		  "result": [
+			{
+			  "id": -1,
+			  "hash": "0xfffdc93764dbaddd97c48f252a53ea4643faa3fd",
+			  "nef": {
+				"magic": 860243278,
+				"compiler": "neo-core-v3.0",
+				"tokens": [],
+				"script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0A=",
+				"checksum": 1110259869
+			  },
+			  "manifest": {
+				"name": "ContractManagement",
+				"groups": [],
+				"supportedstandards": [],
+				"abi": {
+				  "methods": [
+					{
+					  "name": "deploy",
+					  "parameters": [
+						{
+						  "name": "nefFile",
+						  "type": "ByteArray"
+						},
+						{
+						  "name": "manifest",
+						  "type": "ByteArray"
+						}
+					  ],
+					  "returntype": "Array",
+					  "offset": 0,
+					  "safe": false
+					},
+					{
+					  "name": "deploy",
+					  "parameters": [
+						{
+						  "name": "nefFile",
+						  "type": "ByteArray"
+						},
+						{
+						  "name": "manifest",
+						  "type": "ByteArray"
+						},
+						{
+						  "name": "data",
+						  "type": "Any"
+						}
+					  ],
+					  "returntype": "Array",
+					  "offset": 7,
+					  "safe": false
+					},
+					{
+					  "name": "destroy",
+					  "parameters": [],
+					  "returntype": "Void",
+					  "offset": 14,
+					  "safe": false
+					},
+					{
+					  "name": "getContract",
+					  "parameters": [
+						{
+						  "name": "hash",
+						  "type": "Hash160"
+						}
+					  ],
+					  "returntype": "Array",
+					  "offset": 21,
+					  "safe": true
+					},
+					{
+					  "name": "getMinimumDeploymentFee",
+					  "parameters": [],
+					  "returntype": "Integer",
+					  "offset": 28,
+					  "safe": true
+					},
+					{
+					  "name": "setMinimumDeploymentFee",
+					  "parameters": [
+						{
+						  "name": "value",
+						  "type": "Integer"
+						}
+					  ],
+					  "returntype": "Void",
+					  "offset": 35,
+					  "safe": false
+					},
+					{
+					  "name": "update",
+					  "parameters": [
+						{
+						  "name": "nefFile",
+						  "type": "ByteArray"
+						},
+						{
+						  "name": "manifest",
+						  "type": "ByteArray"
+						}
+					  ],
+					  "returntype": "Void",
+					  "offset": 42,
+					  "safe": false
+					},
+					{
+					  "name": "update",
+					  "parameters": [
+						{
+						  "name": "nefFile",
+						  "type": "ByteArray"
+						},
+						{
+						  "name": "manifest",
+						  "type": "ByteArray"
+						},
+						{
+						  "name": "data",
+						  "type": "Any"
+						}
+					  ],
+					  "returntype": "Void",
+					  "offset": 49,
+					  "safe": false
+					}
+				  ],
+				  "events": [
+					{
+					  "name": "Deploy",
+					  "parameters": [
+						{
+						  "name": "Hash",
+						  "type": "Hash160"
+						}
+					  ]
+					},
+					{
+					  "name": "Update",
+					  "parameters": [
+						{
+						  "name": "Hash",
+						  "type": "Hash160"
+						}
+					  ]
+					},
+					{
+					  "name": "Destroy",
+					  "parameters": [
+						{
+						  "name": "Hash",
+						  "type": "Hash160"
+						}
+					  ]
+					}
+				  ]
+				},
+				"permissions": [
+				  {
+					"contract": "*",
+					"methods": "*"
+				  }
+				],
+				"trusts": [],
+				"extra": null
+			  },
+			  "updatehistory": [
+				0
+			  ]
+			},
+			{
+			  "id": -2,
+			  "hash": "0xacce6fd80d44e1796aa0c2c625e9e4e0ce39efc0",
+			  "nef": {
+				"magic": 860243278,
+				"compiler": "neo-core-v3.0",
+				"tokens": [],
+				"script": "EEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQBBBGvd7Z0AQQRr3e2dAEEEa93tnQA==",
+				"checksum": 2135988409
+			  },
+			  "manifest": {
+				"name": "StdLib",
+				"groups": [],
+				"supportedstandards": [],
+				"abi": {
+				  "methods": [
+					{
+					  "name": "atoi",
+					  "parameters": [
+						{
+						  "name": "value",
+						  "type": "String"
+						},
+						{
+						  "name": "base",
+						  "type": "Integer"
+						}
+					  ],
+					  "returntype": "Integer",
+					  "offset": 0,
+					  "safe": true
+					},
+					{
+					  "name": "base58Decode",
+					  "parameters": [
+						{
+						  "name": "s",
+						  "type": "String"
+						}
+					  ],
+					  "returntype": "ByteArray",
+					  "offset": 7,
+					  "safe": true
+					},
+					{
+					  "name": "base58Encode",
+					  "parameters": [
+						{
+						  "name": "data",
+						  "type": "ByteArray"
+						}
+					  ],
+					  "returntype": "String",
+					  "offset": 14,
+					  "safe": true
+					},
+					{
+					  "name": "base64Decode",
+					  "parameters": [
+						{
+						  "name": "s",
+						  "type": "String"
+						}
+					  ],
+					  "returntype": "ByteArray",
+					  "offset": 21,
+					  "safe": true
+					},
+					{
+					  "name": "base64Encode",
+					  "parameters": [
+						{
+						  "name": "data",
+						  "type": "ByteArray"
+						}
+					  ],
+					  "returntype": "String",
+					  "offset": 28,
+					  "safe": true
+					},
+					{
+					  "name": "deserialize",
+					  "parameters": [
+						{
+						  "name": "data",
+						  "type": "ByteArray"
+						}
+					  ],
+					  "returntype": "Any",
+					  "offset": 35,
+					  "safe": true
+					},
+					{
+					  "name": "itoa",
+					  "parameters": [
+						{
+						  "name": "value",
+						  "type": "Integer"
+						},
+						{
+						  "name": "base",
+						  "type": "Integer"
+						}
+					  ],
+					  "returntype": "String",
+					  "offset": 42,
+					  "safe": true
+					},
+					{
+					  "name": "jsonDeserialize",
+					  "parameters": [
+						{
+						  "name": "json",
+						  "type": "ByteArray"
+						}
+					  ],
+					  "returntype": "Any",
+					  "offset": 49,
+					  "safe": true
+					},
+					{
+					  "name": "jsonSerialize",
+					  "parameters": [
+						{
+						  "name": "item",
+						  "type": "Any"
+						}
+					  ],
+					  "returntype": "ByteArray",
+					  "offset": 56,
+					  "safe": true
+					},
+					{
+					  "name": "serialize",
+					  "parameters": [
+						{
+						  "name": "item",
+						  "type": "Any"
+						}
+					  ],
+					  "returntype": "ByteArray",
+					  "offset": 63,
+					  "safe": true
+					}
+				  ],
+				  "events": []
+				},
+				"permissions": [
+				  {
+					"contract": "*",
+					"methods": "*"
+				  }
+				],
+				"trusts": [],
+				"extra": null
+			  },
+			  "updatehistory": [
+				0
+			  ]
+			}
+		  ]
+		}`))),
+	}, nil)
+
+	response := rpc.GetNativeContracts()
+	r := response.Result
+	assert.Equal(t, 2, len(r))
+}

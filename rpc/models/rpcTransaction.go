@@ -5,23 +5,21 @@ import (
 )
 
 type RpcTransaction struct {
-	Hash    string `json:"hash"`
-	Size    int    `json:"size"`
-	Version int    `json:"version"`
-	Nonce   int    `json:"nonce"`
-	// address
+	Hash            string                    `json:"hash"`
+	Size            int                       `json:"size"`
+	Version         int                       `json:"version"`
+	Nonce           int                       `json:"nonce"`
 	Sender          string                    `json:"sender"`
-	SysFee          string                    `json:"sys_fee"`
-	NetFee          string                    `json:"net_fee"`
-	ValidUntilBlock int                       `json:"valid_until_block"`
-	Attributes      []RpcTransactionAttribute `json:"attributes"`
+	SysFee          string                    `json:"sysfee"`
+	NetFee          string                    `json:"netfee"`
+	ValidUntilBlock int                       `json:"validuntilblock"`
 	Signers         []RpcSigner               `json:"signers"`
+	Attributes      []RpcTransactionAttribute `json:"attributes"`
 	Script          string                    `json:"script"`
 	Witnesses       []RpcWitness              `json:"witnesses"`
 	BlockHash       string                    `json:"blockhash"`
 	Confirmations   int                       `json:"confirmations"`
 	Blocktime       int                       `json:"blocktime"`
-	VMState         string                    `json:"vmState"`
 }
 
 type RpcTransactionAttribute struct {
@@ -32,8 +30,8 @@ type RpcTransactionAttribute struct {
 type RpcSigner struct {
 	Account          string   `json:"account"` // script hash
 	Scopes           string   `json:"scopes"`
-	AllowedContracts []string `json:"allowedContracts"`
-	AllowedGroups    []string `json:"allowedGroups"`
+	AllowedContracts []string `json:"allowedcontracts"`
+	AllowedGroups    []string `json:"allowedgroups"`
 }
 
 func CreateRpcSigners(signers []tx.Signer) []RpcSigner {

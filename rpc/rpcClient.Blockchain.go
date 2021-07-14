@@ -83,6 +83,12 @@ type GetCommitteeResponse struct {
 	Result []string `json:"result"`
 }
 
+type GetNativeContractsResponse struct {
+	RpcResponse
+	ErrorResponse
+	Result []models.RpcNativeContract `json:"result"`
+}
+
 func (n *RpcClient) GetBestBlockHash() GetBestBlockHashResponse {
 	response := GetBestBlockHashResponse{}
 	params := []interface{}{}
@@ -172,5 +178,12 @@ func (n *RpcClient) GetCommittee() GetCommitteeResponse {
 	response := GetCommitteeResponse{}
 	params := []interface{}{}
 	_ = n.makeRequest("getcommittee", params, &response)
+	return response
+}
+
+func (n *RpcClient) GetNativeContracts() GetNativeContractsResponse {
+	response := GetNativeContractsResponse{}
+	params := []interface{}{}
+	_ = n.makeRequest("getnativecontracts", params, &response)
 	return response
 }

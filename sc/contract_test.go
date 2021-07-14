@@ -5,6 +5,7 @@ import (
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"testing"
 )
 
@@ -91,4 +92,24 @@ func TestByteSlice_IsMultiSigContract(t *testing.T) {
 	assert.Equal(t, false, b3)
 	assert.Equal(t, 0, m3)
 	assert.Nil(t, p)
+}
+
+func TestCreateMultiSigRedeemScript(t *testing.T) {
+	pubKeyStrs := []string{
+		"02cb6c347c568adc3cb749c84bbc7af26ea2d2347a1e8ab7ff33a505e36cfd3038",
+		"029e1bcfaeb3a8463eb69bca9bc718b0001c4c5ff3074e4d53ff4e26e89da0b020",
+		"02c9b2ae96f937dcea7d010286db14d8b052043e1b09614a4d4eadca74f57160d6",
+		"032017f4b14afeb47e49f3bd32a9b84366cb3212b4d8de46934858c896ca6e299e",
+	}
+	pubKeys := make([]crypto.ECPoint, 4)
+	for i, v := range pubKeyStrs {
+		pk, err := crypto.NewECPointFromString(v)
+		assert.Nil(t, err)
+		pubKeys[i] = *pk
+	}
+	script, err := CreateMultiSigRedeemScript(3, pubKeys)
+	assert.Nil(t, err)
+	log.Println(helper.BytesToHex(script))
+	sh := helper.UInt160FromBytes(crypto.Hash160(script))
+	log.Println(sh.String())
 }
