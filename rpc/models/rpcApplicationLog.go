@@ -2,13 +2,13 @@ package models
 
 type RpcApplicationLog struct {
 	TxId       string         `json:"txid"`
-	BlockHash  string         `json:"blockhash"`
 	Executions []RpcExecution `json:"executions"`
 }
 
 type RpcExecution struct {
 	Trigger       string            `json:"trigger"`
 	VMState       string            `json:"vmstate"`
+	Exception	  string			`json:"exception"`
 	GasConsumed   string            `json:"gasconsumed"`
 	Stack         []InvokeStack     `json:"stack"`
 	Notifications []RpcNotification `json:"notifications"`
