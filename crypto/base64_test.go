@@ -28,3 +28,11 @@ func TestBase64Decode2(t *testing.T) {
 	ss := helper.BytesToHex(decoded)
 	log.Println(ss)
 }
+
+func TestBase64Decode3(t *testing.T) {
+	s := "VHJhbnNhY3Rpb24gaGFzIGJlZW4gZXhlY3V0ZWQ="
+	decoded, err := Base64Decode(s)
+	assert.Nil(t, err)
+	ss := string(decoded)
+	assert.Equal(t, "Transaction has been executed", ss)
+}

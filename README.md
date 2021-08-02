@@ -7,13 +7,7 @@ types, build smart contract script, make and send transactions, interact with Ne
 
 ### 1.1 Version
 
-Developed and tested based on the following versions:  
-
-+ Neo CLI v3.0.0-rc2  
-
-+ NEO v3.0.0-rc2  
-
-+ NEO-VM v3.0.0-rc2
+Compatible with Neo N3
 
 ## 2. Quickstart
 
@@ -54,7 +48,7 @@ privateKey := []byte{} // add your private key here
 walletHelper, err := wallet.NewWalletHelperFromPrivateKey(client, privateKey)
 ```
 
-Now, you are all set to explore more features with Neo go SDK, including:
+Now, you are all set to explore more features with neo3-gogogo, including:
 
 + wallet manangement 
 + query blockchain info via rpc calls

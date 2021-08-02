@@ -1,13 +1,13 @@
 package helper
 
 const (
-	Neo3Magic_MainNet     uint32 = 5195086 // 0x4F454Eu
-	Neo3Magic_TestNet     uint32 = 1951352142
-	DefaultAddressVersion byte   = 0x35
+	Neo3Magic_MainNet     uint32 = 860833102 // NEO3
+	Neo3Magic_TestNet     uint32 = 877933390 // N3T4
+	DefaultAddressVersion byte   = 0x35      // 53
 )
 
 type ProtocolSettings struct {
-	Magic uint32
+	Magic          uint32
 	AddressVersion byte
 }
 
