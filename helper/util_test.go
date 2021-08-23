@@ -1,7 +1,9 @@
 package helper
 
 import (
+	"bytes"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"math/big"
 	"testing"
 )
@@ -66,6 +68,26 @@ func TestUInt32ToBytes(t *testing.T) {
 	b := UInt32ToBytes(u)
 	assert.Equal(t, []byte{0xef, 0xbe, 0xad, 0xde}, b)
 }
+
+func TestUInt32ToBytes2(t *testing.T) {
+	b := UInt32ToBytes(Neo3Magic_MainNet)
+	s := string(b)
+	log.Println(s)
+	b2 := []byte(s)
+	assert.Equal(t, 0, bytes.Compare(b, b2))
+}
+
+//func TestCompareTo(t *testing.T) {
+//	fileName := "Neo3GenesisHeader"
+//	err := ioutil.WriteFile(fileName, []byte("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000088ea19ef550100001dac2b7c0000000000000000006b123dd8bec718648852bbc78595e3536a058f9f01000111"), 0644)
+//	assert.Nil(t, err)
+//	rawHex, err := ioutil.ReadFile(fileName)
+//	assert.Nil(t, err)
+//	raw, err := hex.DecodeString(strings.TrimSpace(string(rawHex)))
+//	assert.Nil(t, err)
+//
+//	log.Println(BytesToHex(raw))
+//}
 
 func TestUInt64ToBytes(t *testing.T) {
 	var u uint64 = 0xfeedabeedeadbeef

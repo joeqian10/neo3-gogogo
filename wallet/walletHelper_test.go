@@ -788,3 +788,34 @@ func TestWalletHelper_Transfer(t *testing.T) {
 
 	resetTestWallet()
 }
+
+func TestFindPayingAccounts(t *testing.T) {
+	orderedBalances := []AccountAndBalance{
+		{helper.UInt160FromBytes([]byte{0x01}), big.NewInt(1)},
+		{helper.UInt160FromBytes([]byte{0x02}), big.NewInt(2)},
+		{helper.UInt160FromBytes([]byte{0x03}), big.NewInt(3)},
+		{helper.UInt160FromBytes([]byte{0x04}), big.NewInt(4)},
+		{helper.UInt160FromBytes([]byte{0x05}), big.NewInt(5)},
+	}
+
+	pay := FindPayingAccounts(orderedBalances, big.NewInt(12))
+
+	assert.Equal(t, 3, len(pay))
+}
+
+func TestFindRemainingAccountAndBalance(t *testing.T) {
+	orderedBalances := []AccountAndBalance{
+		{helper.UInt160FromBytes([]byte{0x01}), big.NewInt(1)},
+		{helper.UInt160FromBytes([]byte{0x02}), big.NewInt(2)},
+		{helper.UInt160FromBytes([]byte{0x03}), big.NewInt(3)},
+		{helper.UInt160FromBytes([]byte{0x04}), big.NewInt(4)},
+		{helper.UInt160FromBytes([]byte{0x05}), big.NewInt(5)},
+	}
+
+	pay := FindPayingAccounts(orderedBalances, big.NewInt(12))
+
+	assert.Equal(t, 3, len(pay))
+
+	remaining := FindRemainingAccountAndBalance(pay, orderedBalances)
+	assert.Equal(t, 2, len(remaining))
+}

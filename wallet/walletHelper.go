@@ -539,7 +539,7 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 		return "", err
 	}
 	sort.Sort(AccountAndBalanceSlice(balances))
-	balancesUsed := findPayingAccounts(balances, amount)
+	balancesUsed := FindPayingAccounts(balances, amount)
 	// add cosigner
 	cosigners := make([]tx.Signer, 0)
 	sb := sc.NewScriptBuilder()
@@ -562,7 +562,7 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 	}
 	balancesGas := make([]AccountAndBalance, 0)
 	if assetHash.Equals(tx.GasToken) {
-		balancesGas = balances
+		balancesGas = FindRemainingAccountAndBalance(balancesUsed, balances)
 	} else {
 		balancesGas, err = w.GetAccountAndBalance(tx.GasToken)
 		if err != nil {
@@ -589,4 +589,28 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 		return "", fmt.Errorf(msg)
 	}
 	return response.Result.Hash, nil
+}
+
+func FindRemainingAccountAndBalance(used, all []AccountAndBalance) []AccountAndBalance {
+	usedMap := make(map[string]AccountAndBalance, len(used))
+	for _, u := range used {
+		usedMap[u.Account.String()] = u
+	}
+
+	remaining := make([]AccountAndBalance, 0, len(all))
+	for _, a := range all {
+		if _, ok := usedMap[a.Account.String()]; ok {
+			u := usedMap[a.Account.String()]
+			if u.Value.Cmp(a.Value) < 0 {
+				aab := AccountAndBalance{
+					Account: a.Account,
+					Value:   big.NewInt(0).Sub(a.Value, u.Value),
+				}
+				remaining = append(remaining, aab)
+			}
+		} else {
+			remaining = append(remaining, a)
+		}
+	}
+	return remaining
 }

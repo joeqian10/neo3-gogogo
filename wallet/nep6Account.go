@@ -192,7 +192,7 @@ func (us AccountAndBalanceSlice) RemoveAt(index int) []AccountAndBalance {
 	return tmp
 }
 
-func findPayingAccounts(orderedAccounts []AccountAndBalance, amount *big.Int) []AccountAndBalance {
+func FindPayingAccounts(orderedAccounts []AccountAndBalance, amount *big.Int) []AccountAndBalance {
 	result := make([]AccountAndBalance, 0)
 	sum := big.NewInt(0)
 	for _, ab := range orderedAccounts {
@@ -228,24 +228,26 @@ func findPayingAccounts(orderedAccounts []AccountAndBalance, amount *big.Int) []
 				orderedAccounts = AccountAndBalanceSlice(orderedAccounts).RemoveAt(i)
 				i--
 			}
-			for i = 0; i < len(orderedAccounts); i++ {
-				if orderedAccounts[i].Value.Cmp(amount) < 0 {
-					continue
-				}
-				if orderedAccounts[i].Value.Cmp(amount) < 0 {
-					result = append(result, orderedAccounts[i])
-					orderedAccounts = AccountAndBalanceSlice(orderedAccounts).RemoveAt(i)
-				} else {
-					result = append(result, AccountAndBalance{
-						Account: orderedAccounts[i].Account,
-						Value:   amount,
-					})
-					orderedAccounts[i] = AccountAndBalance{
-						Account: orderedAccounts[i].Account,
-						Value:   new(big.Int).Sub(orderedAccounts[i].Value, amount),
+			if amount.Cmp(big.NewInt(0)) > 0 {
+				for i = 0; i < len(orderedAccounts); i++ {
+					if orderedAccounts[i].Value.Cmp(amount) < 0 {
+						continue
 					}
+					if orderedAccounts[i].Value.Cmp(amount) == 0 {
+						result = append(result, orderedAccounts[i])
+						orderedAccounts = AccountAndBalanceSlice(orderedAccounts).RemoveAt(i)
+					} else {
+						result = append(result, AccountAndBalance{
+							Account: orderedAccounts[i].Account,
+							Value:   amount,
+						})
+						orderedAccounts[i] = AccountAndBalance{
+							Account: orderedAccounts[i].Account,
+							Value:   new(big.Int).Sub(orderedAccounts[i].Value, amount),
+						}
+					}
+					break
 				}
-				break
 			}
 		}
 	}
