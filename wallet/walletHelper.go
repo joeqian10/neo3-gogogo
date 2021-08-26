@@ -268,10 +268,12 @@ func (w *WalletHelper) GetAccountAndBalance(assetHash *helper.UInt160) ([]Accoun
 		if err != nil {
 			return nil, err
 		}
-		balances = append(balances, AccountAndBalance{
-			Account: account.scriptHash,
-			Value:   balance,
-		})
+		if balance.Sign() > 0 {
+			balances = append(balances, AccountAndBalance{
+				Account: account.scriptHash,
+				Value:   balance,
+			})
+		}
 	}
 	return balances, nil
 }
@@ -540,6 +542,9 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 	}
 	sort.Sort(AccountAndBalanceSlice(balances))
 	balancesUsed := FindPayingAccounts(balances, amount)
+	if balancesUsed == nil {
+		return "", fmt.Errorf("insufficient funds of asset: %s", assetHash.String())
+	}
 	// add cosigner
 	cosigners := make([]tx.Signer, 0)
 	sb := sc.NewScriptBuilder()
@@ -589,28 +594,4 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 		return "", fmt.Errorf(msg)
 	}
 	return response.Result.Hash, nil
-}
-
-func FindRemainingAccountAndBalance(used, all []AccountAndBalance) []AccountAndBalance {
-	usedMap := make(map[string]AccountAndBalance, len(used))
-	for _, u := range used {
-		usedMap[u.Account.String()] = u
-	}
-
-	remaining := make([]AccountAndBalance, 0, len(all))
-	for _, a := range all {
-		if _, ok := usedMap[a.Account.String()]; ok {
-			u := usedMap[a.Account.String()]
-			if u.Value.Cmp(a.Value) < 0 {
-				aab := AccountAndBalance{
-					Account: a.Account,
-					Value:   big.NewInt(0).Sub(a.Value, u.Value),
-				}
-				remaining = append(remaining, aab)
-			}
-		} else {
-			remaining = append(remaining, a)
-		}
-	}
-	return remaining
 }
