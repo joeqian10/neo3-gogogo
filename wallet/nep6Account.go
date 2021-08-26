@@ -198,7 +198,7 @@ func FindPayingAccounts(orderedAccounts []AccountAndBalance, amount *big.Int) []
 	for _, ab := range orderedAccounts {
 		sum = sum.Add(sum, ab.Value)
 	}
-	if sum.Cmp(amount) == 0 {
+	if sum.Cmp(amount) <= 0 {
 		return orderedAccounts
 	} else {
 		for i, _ := range orderedAccounts {

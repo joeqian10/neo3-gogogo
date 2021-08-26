@@ -614,3 +614,104 @@ func FindRemainingAccountAndBalance(used, all []AccountAndBalance) []AccountAndB
 	}
 	return remaining
 }
+
+
+func (w *WalletHelper) ExecuMakeTransaction(script []byte, cosigners []tx.Signer, attributes []tx.ITransactionAttribute, balanceGas []AccountAndBalance) (*tx.Transaction, error) {
+	for _, ab := range balanceGas {
+		rb, err := helper.GenerateRandomBytes(4)
+		if err != nil {
+			return nil, err
+		}
+		nonce := binary.LittleEndian.Uint32(rb)
+		trx := new(tx.Transaction)
+		// version
+		trx.SetVersion(0)
+		// nonce
+		trx.SetNonce(nonce)
+		// script
+		trx.SetScript(script)
+		// validUntilBlock
+		blockHeight, err := w.GetBlockHeight()
+		if err != nil {
+			return nil, err
+		}
+		trx.SetValidUntilBlock(blockHeight + tx.MaxValidUntilBlockIncrement)
+		// signers
+		signers := getSigners(ab.Account, cosigners)
+		trx.SetSigners(signers)
+		// attributes
+		trx.SetAttributes(attributes)
+		// sysfee
+		gasConsumed, err := w.GetGasConsumed(script, models.CreateRpcSigners(signers))
+		if err != nil {
+			return nil, err
+		}
+		gasConsumed = int64(math.Max(float64(gasConsumed), 0))
+		trx.SetSystemFee(gasConsumed)
+		// netfee
+		netFee, err := w.CalculateNetworkFee(trx)
+		if err != nil {
+			return nil, err
+		}
+		trx.SetNetworkFee(int64(netFee))
+
+		return trx, nil
+
+	}
+	return nil, fmt.Errorf("insufficient GAS")
+}
+
+
+func (w *WalletHelper) ExecuTransfer(assetHash *helper.UInt160, toAddress string, amount *big.Int, magic uint32) (*tx.Transaction, error) {
+	to, err := crypto.AddressToScriptHash(toAddress, w.wallet.protocolSettings.AddressVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	balances, err := w.GetAccountAndBalance(assetHash)
+	if err != nil {
+		return nil, err
+	}
+	sort.Sort(AccountAndBalanceSlice(balances))
+	balancesUsed := FindPayingAccounts(balances, amount)
+	// add cosigner
+	cosigners := make([]tx.Signer, 0)
+	sb := sc.NewScriptBuilder()
+	for _, used := range balancesUsed {
+		cosigners = append(cosigners, tx.Signer{
+			Account: used.Account,
+			Scopes:  tx.CalledByEntry,
+		})
+		sb.EmitDynamicCall(assetHash, "transfer", []interface{}{
+			sc.ContractParameter{Type: sc.Hash160, Value: used.Account},
+			sc.ContractParameter{Type: sc.Hash160, Value: to},
+			sc.ContractParameter{Type: sc.Integer, Value: used.Value},
+			sc.ContractParameter{Type: sc.String, Value: ""}, // this field is used as a memo
+		})
+		sb.Emit(sc.ASSERT)
+	}
+	script, err := sb.ToArray()
+	if err != nil {
+		return nil, err
+	}
+	balancesGas := make([]AccountAndBalance, 0)
+	if assetHash.Equals(tx.GasToken) {
+		balancesGas = FindRemainingAccountAndBalance(balancesUsed, balances)
+	} else {
+		balancesGas, err = w.GetAccountAndBalance(tx.GasToken)
+		if err != nil {
+			return nil, err
+		}
+	}
+	trx, err := w.ExecuMakeTransaction(script, cosigners, []tx.ITransactionAttribute{}, balancesGas)
+	if err != nil {
+		return nil, err
+	}
+	// sign the tx
+	trx, err = w.SignTransaction(trx, magic)
+	if err != nil {
+		return nil, err
+	}
+
+	return trx,nil
+}
