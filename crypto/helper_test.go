@@ -25,3 +25,11 @@ func TestScriptHashToAddress(t *testing.T) {
 	a := ScriptHashToAddress(u, helper.DefaultAddressVersion)
 	assert.Equal(t, "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf", a)
 }
+
+func TestConvert(t *testing.T)  {
+	bs, err := Base64Decode("4rZTInKT6ZxPKQbVNVOrtKZy34Y=")
+	assert.Nil(t, err)
+	u := helper.UInt160FromBytes(bs)
+	a := ScriptHashToAddress(u, helper.DefaultAddressVersion)
+	assert.Equal(t, "NgaiKFjurmNmiRzDRQGs44yzByXuSkdGPF", a)
+}
