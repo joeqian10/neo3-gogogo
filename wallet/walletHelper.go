@@ -540,6 +540,9 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 	}
 	sort.Sort(AccountAndBalanceSlice(balances))
 	balancesUsed := FindPayingAccounts(balances, amount)
+	if balancesUsed == nil {
+		return "", fmt.Errorf("insufficient funds of asset: %s", assetHash.String())
+	}
 	// add cosigner
 	cosigners := make([]tx.Signer, 0)
 	sb := sc.NewScriptBuilder()
@@ -562,7 +565,7 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 	}
 	balancesGas := make([]AccountAndBalance, 0)
 	if assetHash.Equals(tx.GasToken) {
-		balancesGas = FindRemainingAccountAndBalance(balancesUsed, balances)
+		balancesGas = balances // those gas used are already deducted from balances
 	} else {
 		balancesGas, err = w.GetAccountAndBalance(tx.GasToken)
 		if err != nil {
@@ -590,31 +593,6 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 	}
 	return response.Result.Hash, nil
 }
-
-func FindRemainingAccountAndBalance(used, all []AccountAndBalance) []AccountAndBalance {
-	usedMap := make(map[string]AccountAndBalance, len(used))
-	for _, u := range used {
-		usedMap[u.Account.String()] = u
-	}
-
-	remaining := make([]AccountAndBalance, 0, len(all))
-	for _, a := range all {
-		if _, ok := usedMap[a.Account.String()]; ok {
-			u := usedMap[a.Account.String()]
-			if u.Value.Cmp(a.Value) < 0 {
-				aab := AccountAndBalance{
-					Account: a.Account,
-					Value:   big.NewInt(0).Sub(a.Value, u.Value),
-				}
-				remaining = append(remaining, aab)
-			}
-		} else {
-			remaining = append(remaining, a)
-		}
-	}
-	return remaining
-}
-
 
 func (w *WalletHelper) ExecuMakeTransaction(script []byte, cosigners []tx.Signer, attributes []tx.ITransactionAttribute, balanceGas []AccountAndBalance) (*tx.Transaction, error) {
 	for _, ab := range balanceGas {
@@ -674,6 +652,9 @@ func (w *WalletHelper) ExecuTransfer(assetHash *helper.UInt160, toAddress string
 	}
 	sort.Sort(AccountAndBalanceSlice(balances))
 	balancesUsed := FindPayingAccounts(balances, amount)
+	if balancesUsed == nil {
+		return nil, fmt.Errorf("insufficient funds of asset: %s", assetHash.String())
+	}
 	// add cosigner
 	cosigners := make([]tx.Signer, 0)
 	sb := sc.NewScriptBuilder()
@@ -696,7 +677,7 @@ func (w *WalletHelper) ExecuTransfer(assetHash *helper.UInt160, toAddress string
 	}
 	balancesGas := make([]AccountAndBalance, 0)
 	if assetHash.Equals(tx.GasToken) {
-		balancesGas = FindRemainingAccountAndBalance(balancesUsed, balances)
+		balancesGas = balances
 	} else {
 		balancesGas, err = w.GetAccountAndBalance(tx.GasToken)
 		if err != nil {

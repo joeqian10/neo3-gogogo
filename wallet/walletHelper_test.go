@@ -1,12 +1,10 @@
 package wallet
 
 import (
-	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"github.com/stretchr/testify/mock"
-	"log"
 	"math/big"
 	"testing"
 
@@ -822,17 +820,17 @@ func TestFindRemainingAccountAndBalance(t *testing.T) {
 	assert.Equal(t, 2, len(remaining))
 }
 
-func TestWalletHelper_GetBalanceFromAccount2(t *testing.T) {
-	client := rpc.NewClient("http://seed2t4.neo.org:20332")
-	wh, _ := NewWalletHelperFromWIF(client,"L31qiJ1kDcGBkp5yUqoc2voQbWRWEeyUg9yMFsf8Jg563BcCSRc6")
-	token, _ := helper.UInt160FromString("0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5")
-	a, _ := crypto.AddressToScriptHash("NjDpiyrYQLixDQK1cZBKvTqMov4mjZEXcx", helper.DefaultAddressVersion)
-	n, err := wh.GetBalanceFromAccount(token, a)
-	assert.Nil(t, err)
-	log.Println(n.String())
-
-	trx, err := wh.ExecuTransfer(tx.NeoToken, "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", big.NewInt(1), helper.Neo3Magic_TestNet)
-	assert.Nil(t, err)
-	fee := trx.GetSystemFee() + trx.GetNetworkFee()
-	log.Println(fee)
-}
+//func TestWalletHelper_GetBalanceFromAccount2(t *testing.T) {
+//	client := rpc.NewClient("http://seed2t4.neo.org:20332")
+//	wh, _ := NewWalletHelperFromWIF(client,"L31qiJ1kDcGBkp5yUqoc2voQbWRWEeyUg9yMFsf8Jg563BcCSRc6")
+//	token, _ := helper.UInt160FromString("0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5")
+//	a, _ := crypto.AddressToScriptHash("NjDpiyrYQLixDQK1cZBKvTqMov4mjZEXcx", helper.DefaultAddressVersion)
+//	n, err := wh.GetBalanceFromAccount(token, a)
+//	assert.Nil(t, err)
+//	log.Println(n.String())
+//
+//	trx, err := wh.ExecuTransfer(tx.NeoToken, "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", big.NewInt(1), helper.Neo3Magic_TestNet)
+//	assert.Nil(t, err)
+//	fee := trx.GetSystemFee() + trx.GetNetworkFee()
+//	log.Println(fee)
+//}

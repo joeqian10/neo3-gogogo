@@ -253,3 +253,27 @@ func FindPayingAccounts(orderedAccounts []AccountAndBalance, amount *big.Int) []
 	}
 	return result
 }
+
+func FindRemainingAccountAndBalance(used, all []AccountAndBalance) []AccountAndBalance {
+	usedMap := make(map[string]AccountAndBalance, len(used))
+	for _, u := range used {
+		usedMap[u.Account.String()] = u
+	}
+
+	remaining := make([]AccountAndBalance, 0, len(all))
+	for _, a := range all {
+		if _, ok := usedMap[a.Account.String()]; ok {
+			u := usedMap[a.Account.String()]
+			if u.Value.Cmp(a.Value) < 0 {
+				aab := AccountAndBalance{
+					Account: a.Account,
+					Value:   big.NewInt(0).Sub(a.Value, u.Value),
+				}
+				remaining = append(remaining, aab)
+			}
+		} else {
+			remaining = append(remaining, a)
+		}
+	}
+	return remaining
+}
