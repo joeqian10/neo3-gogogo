@@ -207,6 +207,28 @@ func main() {
 }
 ```
 
+#### 2.2.3 Convert base64 encoded script hash to standard address
+
+```golang
+package demo
+
+import (
+	"github.com/joeqian10/neo3-gogogo/crypto"
+	"github.com/joeqian10/neo3-gogogo/helper"
+)
+
+func main()  {
+	bs, err := crypto.Base64Decode("4rZTInKT6ZxPKQbVNVOrtKZy34Y=")
+	if err != nil {
+		// do something...
+    }
+	u := helper.UInt160FromBytes(bs)
+	a := crypto.ScriptHashToAddress(u, helper.DefaultAddressVersion)
+	// "a" is NgaiKFjurmNmiRzDRQGs44yzByXuSkdGPF
+}
+
+```
+
 ## 3. Modules Introduction
 
 ### 3.1 "block" module

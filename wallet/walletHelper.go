@@ -567,7 +567,7 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 	}
 	balancesGas := make([]AccountAndBalance, 0)
 	if assetHash.Equals(tx.GasToken) {
-		balancesGas = FindRemainingAccountAndBalance(balancesUsed, balances)
+		balancesGas = balances
 	} else {
 		balancesGas, err = w.GetAccountAndBalance(tx.GasToken)
 		if err != nil {
