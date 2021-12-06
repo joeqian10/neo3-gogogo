@@ -1,9 +1,12 @@
 package nep17
 
 import (
+	"fmt"
+	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
+	"github.com/joeqian10/neo3-gogogo/tx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"math/big"
@@ -85,7 +88,6 @@ func TestNep17Helper_Decimals(t *testing.T) {
 	assert.Equal(t, 8, d)
 }
 
-
 func TestNep17Helper_TotalSupply(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
 	var nh = Nep17Helper{
@@ -154,4 +156,16 @@ func TestNep17Helper_BalanceOf(t *testing.T) {
 	b, err := nh.BalanceOf(helper.NewUInt160())
 	assert.Nil(t, err)
 	assert.Equal(t, big.NewInt(8913620128), b)
+}
+
+func TestMine(t *testing.T) {
+	var client = rpc.NewClient("https://n3seed1.ngd.network:20332")
+	//tokenHash, _ := helper.UInt160FromString("0x48c40d4666f93408be1bef038b6722404d9a4c2a")
+	//tokenHash, _ := helper.UInt160FromString("0x48c40d4666f93408be1bef038b6722404d9a4c2a")
+
+	h := NewNep17Helper(tx.GasToken, client)
+	a, _ := crypto.AddressToScriptHash("NeWfKfigfYXmEbi7SwbiSS8DtaVexCnsdN", helper.DefaultAddressVersion)
+	res, err := h.BalanceOf(a)
+	assert.Nil(t, err)
+	fmt.Println(res.String())
 }

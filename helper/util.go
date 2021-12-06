@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"math/big"
+	"strings"
 )
 
 // bytes to hex string
@@ -226,4 +227,42 @@ func XOR(a, b []byte) []byte {
 		dst[i] = a[i] ^ b[i]
 	}
 	return dst
+}
+
+func ConvertFloat64StringToBigInt(s string, decimals int) *big.Int {
+	intPart, decPart := "", ""
+	if strings.Contains(s, ".") {
+		index := strings.Index(s, ".")
+		intPart = s[:index]
+		decPart = s[index+1:]
+	} else {
+		intPart = s
+	}
+	if len(decPart) > decimals {
+		decPart = decPart[:decimals]
+	} else {
+		for i := decimals - len(decPart); i > 0; i-- {
+			decPart += "0"
+		}
+	}
+	r := intPart + decPart
+	result, suc := big.NewInt(0).SetString(r, 10)
+	if !suc {
+		return nil
+	}
+	return result
+}
+
+func ConvertUint64ToBigInt(u uint64, decimals int) *big.Int {
+	v := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
+	return big.NewInt(0).Mul(big.NewInt(int64(u)), v)
+}
+
+func ConvertBigIntToUint64(t *big.Int, decimals int) uint64 {
+	v := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
+	r := big.NewInt(0).Div(t, v)
+	for !r.IsInt64() {
+		r.Div(r, big.NewInt(10))
+	}
+	return r.Uint64()
 }

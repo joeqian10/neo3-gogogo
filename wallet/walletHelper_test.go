@@ -1,9 +1,12 @@
 package wallet
 
 import (
+	"fmt"
+	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
+	"github.com/joeqian10/neo3-gogogo/sc"
 	"github.com/stretchr/testify/mock"
 	"math/big"
 	"testing"
@@ -818,4 +821,16 @@ func TestFindRemainingAccountAndBalance(t *testing.T) {
 
 	remaining := FindRemainingAccountAndBalance(pay, orderedBalances)
 	assert.Equal(t, 2, len(remaining))
+}
+
+func TestMakeScript2(t *testing.T) {
+	script := []byte{}
+	b, err := sc.MakeScript(tx.NeoToken, "symbol", nil)
+	assert.Nil(t, err)
+	script = append(script, b...)
+	b, err = sc.MakeScript(tx.NeoToken, "decimals", nil)
+	assert.Nil(t, err)
+	script = append(script, b...)
+	s := crypto.Base64Encode(script)
+	fmt.Println(s)
 }

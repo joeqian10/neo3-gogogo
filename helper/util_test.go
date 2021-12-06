@@ -2,9 +2,11 @@ package helper
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"math/big"
+	"strconv"
 	"testing"
 )
 
@@ -134,4 +136,9 @@ func TestBigIntFromNeoBytes(t *testing.T) {
 	bs := []byte{0x38, 0xff}
 	b := BigIntFromNeoBytes(bs)
 	assert.Equal(t, 0, big.NewInt(-200).Cmp(b))
+}
+
+func TestUp(t *testing.T)  {
+	bi := ConvertFloat64StringToBigInt(strconv.FormatUint(5698643, 10), 36-8-2)
+	fmt.Println(bi.String())
 }
