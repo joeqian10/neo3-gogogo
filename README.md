@@ -229,6 +229,49 @@ func main()  {
 
 ```
 
+#### 2.2.4 Monitor asset balance in wallet
+
+```golang
+package demo
+
+import (
+	"github.com/joeqian10/neo3-gogogo/helper"
+	"github.com/joeqian10/neo3-gogogo/rpc"
+	"github.com/joeqian10/neo3-gogogo/tx"
+	"github.com/joeqian10/neo3-gogogo/wallet"
+	"math/big"
+)
+
+func main() {
+	// first you need to have access to the RPC port of a neo full node
+	yourPort := "http://helloworld:20332"
+	client := rpc.NewClient(yourPort)
+
+	// create a WalletHelper from private key
+	privateKey := []byte{} // add your private key here
+	wh, err := wallet.NewWalletHelperFromPrivateKey(client, privateKey)
+	if err != nil {
+		// do something
+		return
+	}
+	
+	// suppose it's gas
+	accountAndBalances, err := wh.GetAccountAndBalance(tx.GasToken)
+	if err != nil {
+		// do something
+		return
+	}
+
+	// sum all the balances
+	total := big.NewInt(0)
+	for _, b := range accountAndBalances {
+		total = total.Add(total, b.Value)
+    }
+	
+	// return total
+}
+```
+
 ## 3. Modules Introduction
 
 ### 3.1 "block" module
