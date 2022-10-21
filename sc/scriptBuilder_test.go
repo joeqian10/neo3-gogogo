@@ -2,6 +2,8 @@ package sc
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/joeqian10/neo3-gogogo/crypto"
 	"math/big"
 	"testing"
 
@@ -344,4 +346,17 @@ func TestMakeScript(t *testing.T) {
 	expected := "0c14000000000000000000000000000000000000000011c01f0c0962616c616e63654f660c1428b3adab7269f9c2181db3cb741ebf551930e27041627d5b52"
 	actual :=  helper.BytesToHex(b)
 	assert.Equal(t, expected, actual)
+}
+
+func TestMakeScript2(t *testing.T) {
+	scriptHash, _ := helper.UInt160FromString("f8328398c4c8e77b6c5843f5e404be0170d5012e")
+	gas, _ := helper.UInt160FromString("0xd2a4cff31913016155e38e474a2c06d08be276cf")
+	cp1 := ContractParameter{
+		Type:  Hash160,
+		Value: gas,
+	}
+	b, err := MakeScript(scriptHash, "extractFee", []interface{}{cp1})
+	assert.Nil(t, err)
+	bb := crypto.Base64Encode(b)
+	fmt.Println(bb)
 }

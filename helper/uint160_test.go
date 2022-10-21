@@ -46,7 +46,7 @@ func TestUInt160_Equals(t *testing.T) {
 	assert.Equal(t, false, u.Equals(nil))
 }
 
-func TestUInt160_Equals2(t *testing.T)  {
+func TestUInt160_Equals2(t *testing.T) {
 	tmp := make([]byte, UINT160SIZE)
 	u := UInt160FromBytes(tmp)
 	assert.Equal(t, true, u.Equals(UInt160Zero))
@@ -84,12 +84,12 @@ func TestUInt160_String(t *testing.T) {
 }
 
 func TestUInt160_Size(t *testing.T) {
-	s := UInt160Zero.Size()
+	s := UInt160Zero.GetSize()
 	assert.Equal(t, UINT160SIZE, s)
 }
 
 func TestUInt160_ExistsIn(t *testing.T) {
-	a := []UInt160{*UInt160Zero}
+	a := []*UInt160{UInt160Zero}
 	b := UInt160Zero.ExistsIn(a)
 	assert.Equal(t, true, b)
 }

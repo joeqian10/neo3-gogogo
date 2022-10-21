@@ -31,7 +31,7 @@ func CreateTransactionAttribute(attributeType TransactionAttributeType) ITransac
 }
 
 func DeserializeFrom(br *io.BinaryReader) ITransactionAttribute {
-	t := TransactionAttributeType(br.ReadByte())
+	t := TransactionAttributeType(br.ReadOneByte())
 	a := CreateTransactionAttribute(t)
 	if a == nil {
 		br.Err = fmt.Errorf("format error: invalid attribute type")

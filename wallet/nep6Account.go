@@ -12,26 +12,26 @@ import (
 // along with some metadata.
 type NEP6Account struct {
 	protocolSettings *helper.ProtocolSettings
-	scriptHash *helper.UInt160
-	Address    string        `json:"address"`
-	Label      *string       `json:"label"`
-	IsDefault  bool          `json:"isdefault"`
-	Lock       bool          `json:"lock"`
-	Nep2Key    *string       `json:"key"`
-	nep2KeyNew *string
-	Contract   *NEP6Contract `json:"contract"`
-	wallet     *NEP6Wallet
-	key        *keys.KeyPair
-	Extra      interface{} `json:"extra"`
+	scriptHash       *helper.UInt160
+	Address          string  `json:"address"`
+	Label            *string `json:"label"`
+	IsDefault        bool    `json:"isdefault"`
+	Lock             bool    `json:"lock"`
+	Nep2Key          *string `json:"key"`
+	nep2KeyNew       *string
+	Contract         *NEP6Contract `json:"contract"`
+	wallet           *NEP6Wallet
+	key              *keys.KeyPair
+	Extra            interface{} `json:"extra"`
 }
 
 func NewNEP6Account(wallet *NEP6Wallet, scriptHash *helper.UInt160, nep2Key *string) *NEP6Account {
 	return &NEP6Account{
 		protocolSettings: wallet.protocolSettings,
-		scriptHash: scriptHash,
-		wallet:     wallet,
-		Nep2Key:    nep2Key,
-		Address:    crypto.ScriptHashToAddress(scriptHash, wallet.protocolSettings.AddressVersion), //
+		scriptHash:       scriptHash,
+		wallet:           wallet,
+		Nep2Key:          nep2Key,
+		Address:          crypto.ScriptHashToAddress(scriptHash, wallet.protocolSettings.AddressVersion), //
 	}
 }
 
@@ -169,7 +169,7 @@ type AccountAndBalance struct {
 	Value   *big.Int
 }
 
-type AccountAndBalanceSlice []AccountAndBalance
+type AccountAndBalanceSlice []*AccountAndBalance
 
 func (us AccountAndBalanceSlice) Len() int {
 	return len(us)
@@ -183,7 +183,7 @@ func (us AccountAndBalanceSlice) Swap(i, j int) {
 	us[i], us[j] = us[j], us[i]
 }
 
-func (us AccountAndBalanceSlice) RemoveAt(index int) []AccountAndBalance {
+func (us AccountAndBalanceSlice) RemoveAt(index int) []*AccountAndBalance {
 	length := len(us)
 	if index < 0 || index >= length {
 		return us
@@ -192,15 +192,15 @@ func (us AccountAndBalanceSlice) RemoveAt(index int) []AccountAndBalance {
 	return tmp
 }
 
-func FindPayingAccounts(orderedAccounts []AccountAndBalance, amount *big.Int) []AccountAndBalance {
-	result := make([]AccountAndBalance, 0)
+func FindPayingAccounts(orderedAccounts []*AccountAndBalance, amount *big.Int) []*AccountAndBalance {
+	result := make([]*AccountAndBalance, 0)
 	sum := big.NewInt(0)
 	for _, ab := range orderedAccounts {
 		sum = sum.Add(sum, ab.Value)
 	}
 	if sum.Cmp(amount) < 0 {
 		return nil
-	}else if sum.Cmp(amount) == 0 {
+	} else if sum.Cmp(amount) == 0 {
 		return orderedAccounts
 	} else {
 		for i, _ := range orderedAccounts {
@@ -211,11 +211,11 @@ func FindPayingAccounts(orderedAccounts []AccountAndBalance, amount *big.Int) []
 				result = append(result, orderedAccounts[i])
 				orderedAccounts = AccountAndBalanceSlice(orderedAccounts).RemoveAt(i)
 			} else {
-				result = append(result, AccountAndBalance{
+				result = append(result, &AccountAndBalance{
 					Account: orderedAccounts[i].Account,
 					Value:   amount,
 				})
-				orderedAccounts[i] = AccountAndBalance{
+				orderedAccounts[i] = &AccountAndBalance{
 					Account: orderedAccounts[i].Account,
 					Value:   new(big.Int).Sub(orderedAccounts[i].Value, amount),
 				}
@@ -239,11 +239,11 @@ func FindPayingAccounts(orderedAccounts []AccountAndBalance, amount *big.Int) []
 						result = append(result, orderedAccounts[i])
 						orderedAccounts = AccountAndBalanceSlice(orderedAccounts).RemoveAt(i)
 					} else {
-						result = append(result, AccountAndBalance{
+						result = append(result, &AccountAndBalance{
 							Account: orderedAccounts[i].Account,
 							Value:   amount,
 						})
-						orderedAccounts[i] = AccountAndBalance{
+						orderedAccounts[i] = &AccountAndBalance{
 							Account: orderedAccounts[i].Account,
 							Value:   new(big.Int).Sub(orderedAccounts[i].Value, amount),
 						}
@@ -256,18 +256,18 @@ func FindPayingAccounts(orderedAccounts []AccountAndBalance, amount *big.Int) []
 	return result
 }
 
-func FindRemainingAccountAndBalance(used, all []AccountAndBalance) []AccountAndBalance {
-	usedMap := make(map[string]AccountAndBalance, len(used))
+func FindRemainingAccountAndBalance(used, all []*AccountAndBalance) []*AccountAndBalance {
+	usedMap := make(map[string]*AccountAndBalance, len(used))
 	for _, u := range used {
 		usedMap[u.Account.String()] = u
 	}
 
-	remaining := make([]AccountAndBalance, 0, len(all))
+	remaining := make([]*AccountAndBalance, 0, len(all))
 	for _, a := range all {
 		if _, ok := usedMap[a.Account.String()]; ok {
 			u := usedMap[a.Account.String()]
 			if u.Value.Cmp(a.Value) < 0 {
-				aab := AccountAndBalance{
+				aab := &AccountAndBalance{
 					Account: a.Account,
 					Value:   big.NewInt(0).Sub(a.Value, u.Value),
 				}

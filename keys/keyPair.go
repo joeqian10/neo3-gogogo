@@ -15,11 +15,13 @@ import (
 	"github.com/joeqian10/neo3-gogogo/helper"
 )
 
-type KeyPairSlice []KeyPair
+type KeyPairSlice []*KeyPair
 
-func (kps KeyPairSlice) Len() int           { return len(kps) }
-func (kps KeyPairSlice) Less(i, j int) bool { return kps[i].PublicKey.CompareTo(kps[j].PublicKey) == -1 }
-func (kps KeyPairSlice) Swap(i, j int)      { kps[i], kps[j] = kps[j], kps[i] }
+func (kps KeyPairSlice) Len() int { return len(kps) }
+func (kps KeyPairSlice) Less(i, j int) bool {
+	return kps[i].PublicKey.CompareTo(kps[j].PublicKey) == -1
+}
+func (kps KeyPairSlice) Swap(i, j int) { kps[i], kps[j] = kps[j], kps[i] }
 
 type KeyPair struct {
 	PrivateKey []byte
@@ -120,12 +122,12 @@ func (p *KeyPair) CompareTo(q *KeyPair) int {
 	return p.PublicKey.CompareTo(q.PublicKey)
 }
 
-// ecdsa converts the key to a usable ecdsa.PrivateKey for signing data.
+// ToECDsa converts the key to a usable ecdsa.PrivateKey for signing data.
 func (p *KeyPair) ToECDsa() *ecdsa.PrivateKey {
 	return ToECDsa(p.PrivateKey)
 }
 
-// ecdsa converts the private key byte[] to a usable ecdsa.PrivateKey for signing data.
+// ToECDsa converts the private key byte[] to a usable ecdsa.PrivateKey for signing data.
 func ToECDsa(key []byte) *ecdsa.PrivateKey {
 	ecdsaKey := new(ecdsa.PrivateKey)
 	ecdsaKey.PublicKey.Curve = elliptic.P256()
@@ -134,7 +136,7 @@ func ToECDsa(key []byte) *ecdsa.PrivateKey {
 	return ecdsaKey
 }
 
-// export wif string
+// Export exports wif string
 func (p *KeyPair) Export() string {
 	data := make([]byte, 34)
 	data[0] = 0x80
@@ -144,7 +146,7 @@ func (p *KeyPair) Export() string {
 	return wif
 }
 
-// export nep2 key string
+// ExportWithPassword exports nep2 key string
 func (p *KeyPair) ExportWithPassword(password string, version byte, N, R, P int) (string, error) {
 	s := ""
 	address := PublicKeyToAddress(p.PublicKey, version)
@@ -176,7 +178,7 @@ func (p *KeyPair) String() string {
 	return helper.BytesToHex(p.PrivateKey)
 }
 
-// sign message with KeyPair
+// Sign signs message with KeyPair
 func (p *KeyPair) Sign(message []byte) ([]byte, error) {
 	privateKey := p.ToECDsa()
 	hash := sha256.Sum256(message)
@@ -206,8 +208,7 @@ func (p *KeyPair) ExistsIn(list []KeyPair) bool {
 	return false
 }
 
-// Verify returns true if the signature is valid and corresponds
-// to the hash and public key
+// VerifySignature returns true if the signature is valid and corresponds to the hash and public key
 func VerifySignature(message []byte, signature []byte, p *crypto.ECPoint) bool {
 	hash := sha256.Sum256(message)
 	publicKey := p.ToECDsa()
@@ -220,15 +221,22 @@ func VerifySignature(message []byte, signature []byte, p *crypto.ECPoint) bool {
 	return ecdsa.Verify(publicKey, hash[:], rBytes, sBytes)
 }
 
+// VerifyMultiSig returns true if the multi-signature is valid and corresponds to the hash and public keys
 func VerifyMultiSig(message []byte, signatures [][]byte, pubKeys []crypto.ECPoint) bool {
 	m := len(signatures)
 	n := len(pubKeys)
-	if m==0 || n==0 || m>n {return false}
+	if m == 0 || n == 0 || m > n {
+		return false
+	}
 	var success bool = true
 	for i, j := 0, 0; success && i < m && j < n; {
-		if VerifySignature(message, signatures[i], &pubKeys[j]) {i++}
+		if VerifySignature(message, signatures[i], &pubKeys[j]) {
+			i++
+		}
 		j++
-		if m-i > n-j {success=false}
+		if m-i > n-j {
+			success = false
+		}
 	}
 	return success
 }

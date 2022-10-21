@@ -93,7 +93,6 @@ func NewBlockHeaderFromRPC(header *models.RpcBlockHeader) (*Header, error) {
 		nextConsensus: nextConsensus,
 		Witness:       witness,
 	}
-	//fmt.Println(bh.GetHash().String()) // for test
 	if !bh.GetHash().Equals(hash) {
 		return nil, fmt.Errorf("wrong block hash, expected: %s, got: %s", hash.String(), bh.GetHashString())
 	}
@@ -173,29 +172,29 @@ func (h *Header) GetHash() *helper.UInt256 {
 
 func (h *Header) GetSize() int {
 	return 4 + // version
-		32 +   // prevHash
-		32 +   // merkleRoot
-		8 +    // timestamp
-		8 +    // nonce
-		4 +    // index
-		1 +    // primaryIndex
-		20 +   // nextConsensus
-		1 + h.Witness.Size()
+		32 + // prevHash
+		32 + // merkleRoot
+		8 + // timestamp
+		8 + // nonce
+		4 + // index
+		1 + // primaryIndex
+		20 + // nextConsensus
+		1 + h.Witness.GetSize()
 }
 
-func (h *Header) GetWitnesses() []tx.Witness {
-	return []tx.Witness{*h.Witness}
+func (h *Header) GetWitnesses() []*tx.Witness {
+	return []*tx.Witness{h.Witness}
 }
-func (h *Header) SetWitnesses(value []tx.Witness) {
+func (h *Header) SetWitnesses(value []*tx.Witness) {
 	if len(value) != 1 {
 		return
 	}
-	h.Witness = &value[0]
+	h.Witness = value[0]
 }
 
-func (h *Header) GetScriptHashesForVerifying() []helper.UInt160 {
+func (h *Header) GetScriptHashesForVerifying() []*helper.UInt160 {
 	if h.prevHash.Equals(helper.UInt256Zero) {
-		return []helper.UInt160{*h.Witness.GetScriptHash()}
+		return []*helper.UInt160{h.Witness.GetScriptHash()}
 	}
 	// todo, get prev block header
 	return nil
@@ -222,7 +221,7 @@ func (h *Header) DeserializeUnsigned(br *io.BinaryReader) {
 	br.ReadLE(&h.timestamp)
 	br.ReadLE(&h.nonce)
 	br.ReadLE(&h.index)
-	h.primaryIndex = br.ReadByte()
+	h.primaryIndex = br.ReadOneByte()
 	br.ReadLE(h.nextConsensus)
 }
 
@@ -232,7 +231,7 @@ func (h *Header) Serialize(bw *io.BinaryWriter) {
 	h.Witness.Serialize(bw)
 }
 
-//SerializeUnsigned serialize blockheader without witness
+//SerializeUnsigned serialize Header without witness
 func (h *Header) SerializeUnsigned(bw *io.BinaryWriter) {
 	bw.WriteLE(h.version)
 	bw.WriteLE(h.prevHash)

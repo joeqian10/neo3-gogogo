@@ -45,13 +45,13 @@ func GetPrivateKeyFromWIF(wif string) ([]byte, error) {
 	return pair.PrivateKey, nil
 }
 
-func getSigners(sender *helper.UInt160, cosigners []tx.Signer) []tx.Signer {
+func getSigners(sender *helper.UInt160, cosigners []*tx.Signer) []*tx.Signer {
 	for i := 0; i < len(cosigners); i++ {
 		if cosigners[i].Account.Equals(sender) {
 			if i == 0 {
 				return cosigners
 			}
-			result := make([]tx.Signer, len(cosigners))
+			result := make([]*tx.Signer, len(cosigners))
 			result[0] = cosigners[i]
 			if i == len(cosigners)-1 {
 				copy(result[1:], cosigners[0:i])
@@ -64,7 +64,7 @@ func getSigners(sender *helper.UInt160, cosigners []tx.Signer) []tx.Signer {
 		}
 	}
 	signer := tx.NewSigner(sender, tx.None)
-	return append([]tx.Signer{*signer}, cosigners...)
+	return append([]*tx.Signer{signer}, cosigners...)
 }
 
 func Sign(verifiable tx.IVerifiable, pair *keys.KeyPair, magic uint32) ([]byte, error) {

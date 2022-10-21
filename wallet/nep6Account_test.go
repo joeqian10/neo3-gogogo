@@ -12,7 +12,7 @@ import (
 
 var password = "Satoshi"
 var privateKey = []byte{0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-						0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01}
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01}
 var pair, _ = keys.NewKeyPair(privateKey)
 var wif = pair.Export()
 var nep2, _ = pair.ExportWithPassword(password, helper.DefaultAddressVersion, 2, 1, 1)
@@ -21,13 +21,13 @@ var testScriptHash = testContract.GetScriptHash()
 
 var testWallet = &NEP6Wallet{
 	protocolSettings: &helper.DefaultProtocolSettings,
-	password: nil,
-	Name:     &dummy,
-	path:     "",
-	Version:  "3.0",
-	accounts: map[helper.UInt160]NEP6Account{},
-	Scrypt:   NewScryptParameters(2, 1, 1),
-	Extra:    nil,
+	password:         nil,
+	Name:             &dummy,
+	path:             "",
+	Version:          "3.0",
+	accounts:         map[helper.UInt160]NEP6Account{},
+	Scrypt:           NewScryptParameters(2, 1, 1),
+	Extra:            nil,
 }
 var testAccount = NewNEP6Account(testWallet, testScriptHash, nil)
 
@@ -69,18 +69,18 @@ func TestAccountAndBalanceSlice_RemoveAt(t *testing.T) {
 	a1, _ := helper.UInt160FromString("0000000000000000000000000000000000000001")
 	a2, _ := helper.UInt160FromString("0000000000000000000000000000000000000002")
 	a3, _ := helper.UInt160FromString("0000000000000000000000000000000000000003")
-	us := []AccountAndBalance{
+	us := []*AccountAndBalance{
 		{
 			Account: a1,
-			Value: big.NewInt(1),
+			Value:   big.NewInt(1),
 		},
 		{
 			Account: a2,
-			Value: big.NewInt(2),
+			Value:   big.NewInt(2),
 		},
 		{
 			Account: a3,
-			Value: big.NewInt(3),
+			Value:   big.NewInt(3),
 		},
 	}
 	bs := AccountAndBalanceSlice(us)

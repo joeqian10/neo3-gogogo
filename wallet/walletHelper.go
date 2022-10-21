@@ -38,7 +38,7 @@ func NewWalletHelperFromPrivateKey(rpc rpc.IRpcClient, priKey []byte) (*WalletHe
 }
 
 func NewWalletHelperFromContract(rpc rpc.IRpcClient, contract *sc.Contract, pair *keys.KeyPair) (*WalletHelper, error) {
-	dummyWallet, _ := NewNEP6Wallet("",&helper.DefaultProtocolSettings, &dummy, DefaultScryptParameters)
+	dummyWallet, _ := NewNEP6Wallet("", &helper.DefaultProtocolSettings, &dummy, DefaultScryptParameters)
 	if pair != nil {
 		_ = dummyWallet.Unlock("")
 	}
@@ -108,7 +108,7 @@ func (w *WalletHelper) CalculateNetworkFee(trx *tx.Transaction) (uint64, error) 
 	for _, hash := range hashes {
 		index++
 		var witness_script []byte
-		account := w.wallet.GetAccountByScriptHash(&hash)
+		account := w.wallet.GetAccountByScriptHash(hash)
 		if account != nil {
 			c := account.GetContract()
 			if c != nil {
@@ -130,11 +130,11 @@ func (w *WalletHelper) CalculateNetworkFee(trx *tx.Transaction) (uint64, error) 
 		}
 
 		if witness_script == nil {
-			contractState, err := w.GetContractState(&hash)
+			contractState, err := w.GetContractState(hash)
 			if err != nil {
 				return 0, err
 			}
-			if contractState == nil {
+			if contractState.Hash == "" {
 				return 0, fmt.Errorf("the smart contract or address %s is not found", hash.String())
 			}
 			md := -1
@@ -161,20 +161,18 @@ func (w *WalletHelper) CalculateNetworkFee(trx *tx.Transaction) (uint64, error) 
 			}
 
 			rpcSigner := models.RpcSigner{
-				Account:          hash.String(),
-				Scopes:           tx.CalledByEntry.String(), // CalledByEntry not sure
+				Account: hash.String(),
+				Scopes:  tx.CalledByEntry.String(), // CalledByEntry not sure
 			}
-			res := w.Client.InvokeFunction(hash.String(), "verify", []models.RpcContractParameter{}, []models.RpcSigner{rpcSigner})
-			if res.HasError() {
-				return 0, fmt.Errorf(res.GetErrorInfo())
+			res := w.Client.InvokeFunction(hash.String(), "verify", nil, []models.RpcSigner{rpcSigner}, false)
+			stacks, err := rpc.PopInvokeStacks(res)
+			if err != nil {
+				return 0, err
 			}
-			if res.Result.State == "FAULT" {
-				return 0, fmt.Errorf("the smart contract %s verification failed", hash.String())
-			}
-			stack := res.Result.Stack[0]
-			stack.Convert()
-			if stack.Type != "Boolean" || stack.Value.(string) != "true" {
-				return 0, fmt.Errorf("the smart contract %s returns false", hash.String())
+			stack := stacks[0]
+			b, ok := stack.Value.(bool)
+			if stack.Type != "Boolean" || !ok || !b {
+				return 0, fmt.Errorf("failed to verify the smart contract %s", hash.String())
 			}
 			gasConsumed, err := strconv.ParseInt(res.Result.GasConsumed, 10, 64)
 			if err != nil {
@@ -214,7 +212,7 @@ func (w *WalletHelper) ClaimGas(magic uint32) (string, error) {
 	if w.wallet == nil {
 		return "", fmt.Errorf("wallet is nil")
 	}
-	cosigners := make([]tx.Signer, 0)
+	cosigners := make([]*tx.Signer, 0)
 	sb := sc.NewScriptBuilder()
 	for _, account := range w.wallet.accounts {
 		neoBalance, err := w.GetBalanceFromAccount(tx.NeoToken, account.scriptHash)
@@ -228,7 +226,7 @@ func (w *WalletHelper) ClaimGas(magic uint32) (string, error) {
 			sc.ContractParameter{Type: sc.String, Value: ""},
 		})
 		sb.Emit(sc.ASSERT)
-		cosigners = append(cosigners, tx.Signer{
+		cosigners = append(cosigners, &tx.Signer{
 			Account: account.scriptHash,
 			Scopes:  tx.CalledByEntry,
 		})
@@ -261,15 +259,15 @@ func (w *WalletHelper) ClaimGas(magic uint32) (string, error) {
 }
 
 // GetAccountAndBalance gets account and balance pair
-func (w *WalletHelper) GetAccountAndBalance(assetHash *helper.UInt160) ([]AccountAndBalance, error) {
-	balances := make([]AccountAndBalance, 0)
+func (w *WalletHelper) GetAccountAndBalance(assetHash *helper.UInt160) ([]*AccountAndBalance, error) {
+	balances := make([]*AccountAndBalance, 0)
 	for _, account := range w.wallet.accounts {
 		balance, err := w.GetBalanceFromAccount(assetHash, account.scriptHash)
 		if err != nil {
 			return nil, err
 		}
 		if balance.Sign() > 0 {
-			balances = append(balances, AccountAndBalance{
+			balances = append(balances, &AccountAndBalance{
 				Account: account.scriptHash,
 				Value:   balance,
 			})
@@ -280,27 +278,23 @@ func (w *WalletHelper) GetAccountAndBalance(assetHash *helper.UInt160) ([]Accoun
 
 // GetBalanceFromAccount is used to get balance of an asset of an account
 func (w *WalletHelper) GetBalanceFromAccount(assetHash *helper.UInt160, account *helper.UInt160) (*big.Int, error) {
-	sb := sc.NewScriptBuilder()
-	sb.EmitDynamicCall(assetHash, "balanceOf", []interface{}{
-		sc.ContractParameter{
-			Type:  sc.Hash160,
+	args := []models.RpcContractParameter{
+		{
+			Type:  "Hash160",
 			Value: account,
 		},
-	})
-	script, err := sb.ToArray()
+	}
+	response := w.Client.InvokeFunction(assetHash.String(), "balanceOf", args, nil, false)
+	stacks, err := rpc.PopInvokeStacks(response)
 	if err != nil {
 		return nil, err
 	}
-	response := w.Client.InvokeScript(crypto.Base64Encode(script), nil)
-	stack, err := rpc.PopInvokeStack(response)
-	if err != nil {
-		return nil, err
+	r := stacks[0]
+	b, c := new(big.Int).SetString(r.Value.(string), 10)
+	if !c {
+		return nil, fmt.Errorf("converting value failed")
 	}
-	r, err := stack.ToParameter()
-	if err != nil {
-		return nil, err
-	}
-	return r.Value.(*big.Int), nil
+	return b, nil
 }
 
 // GetBalanceFromWallet is used to get balance from all accounts inside the wallet
@@ -332,17 +326,17 @@ func (w *WalletHelper) GetBlockHeight() (uint32, error) {
 	return count - 1, nil // height = index = count - 1, genesis block is index 0
 }
 
-func (w *WalletHelper) GetContractState(hash *helper.UInt160) (*models.RpcContractState, error) {
+func (w *WalletHelper) GetContractState(hash *helper.UInt160) (models.RpcContractState, error) {
 	response := w.Client.GetContractState(hash.String())
 	if response.HasError() {
-		return nil, fmt.Errorf(response.GetErrorInfo())
+		return models.RpcContractState{}, fmt.Errorf(response.GetErrorInfo())
 	}
-	return &response.Result, nil
+	return response.Result, nil
 }
 
 // GetGasConsumed runs a script in ApplicationEngine in test mode and returns gas consumed
 func (w *WalletHelper) GetGasConsumed(script []byte, signers []models.RpcSigner) (int64, error) {
-	response := w.Client.InvokeScript(crypto.Base64Encode(script), signers)
+	response := w.Client.InvokeScript(crypto.Base64Encode(script), signers, false)
 	if response.HasError() {
 		return 0, fmt.Errorf(response.GetErrorInfo())
 	}
@@ -376,7 +370,7 @@ func (w *WalletHelper) GetUnClaimedGas() (uint64, error) {
 	return t, nil
 }
 
-func (w *WalletHelper) MakeTransaction(script []byte, cosigners []tx.Signer, attributes []tx.ITransactionAttribute, balanceGas []AccountAndBalance) (*tx.Transaction, error) {
+func (w *WalletHelper) MakeTransaction(script []byte, cosigners []*tx.Signer, attributes []tx.ITransactionAttribute, balanceGas []*AccountAndBalance) (*tx.Transaction, error) {
 	for _, ab := range balanceGas {
 		rb, err := helper.GenerateRandomBytes(4)
 		if err != nil {
@@ -425,7 +419,7 @@ func (w *WalletHelper) MakeTransaction(script []byte, cosigners []tx.Signer, att
 func (w *WalletHelper) Sign(ctx *ContractParametersContext, magic uint32) (bool, error) {
 	fSuccess := false
 	for _, scriptHash := range ctx.GetScriptHashes() {
-		account := w.wallet.GetAccountByScriptHash(&scriptHash)
+		account := w.wallet.GetAccountByScriptHash(scriptHash)
 		if account != nil {
 			// try to sign self-contained multisig
 			msc := account.GetContract()
@@ -490,7 +484,7 @@ func (w *WalletHelper) Sign(ctx *ContractParametersContext, magic uint32) (bool,
 		}
 
 		// try smart contract verification
-		cs, err := w.GetContractState(&scriptHash)
+		cs, err := w.GetContractState(scriptHash)
 		if err != nil {
 			return false, err
 		}
@@ -546,10 +540,10 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 		return "", fmt.Errorf("insufficient funds of asset: %s", assetHash.String())
 	}
 	// add cosigner
-	cosigners := make([]tx.Signer, 0)
+	cosigners := make([]*tx.Signer, 0)
 	sb := sc.NewScriptBuilder()
 	for _, used := range balancesUsed {
-		cosigners = append(cosigners, tx.Signer{
+		cosigners = append(cosigners, &tx.Signer{
 			Account: used.Account,
 			Scopes:  tx.CalledByEntry,
 		})
@@ -565,7 +559,7 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 	if err != nil {
 		return "", err
 	}
-	balancesGas := make([]AccountAndBalance, 0)
+	balancesGas := make([]*AccountAndBalance, 0)
 	if assetHash.Equals(tx.GasToken) {
 		balancesGas = balances
 	} else {
@@ -584,14 +578,14 @@ func (w *WalletHelper) Transfer(assetHash *helper.UInt160, toAddress string, amo
 		return "", err
 	}
 
-	fmt.Println(crypto.Base64Encode(trx.ToByteArray()))
-	fmt.Println(helper.BytesToHex(trx.ToByteArray()))
-	fmt.Println(trx.GetHash().String())
+	//fmt.Println(crypto.Base64Encode(trx.ToByteArray()))
+	//fmt.Println(helper.BytesToHex(trx.ToByteArray()))
+	//fmt.Println(trx.GetHash().String())
+
 	// use RPC to send the tx
 	response := w.Client.SendRawTransaction(crypto.Base64Encode(trx.ToByteArray()))
-	msg := response.ErrorResponse.Error.Message
-	if len(msg) != 0 {
-		return "", fmt.Errorf(msg)
+	if response.HasError() {
+		return "", fmt.Errorf(response.GetErrorInfo())
 	}
 	return response.Result.Hash, nil
 }

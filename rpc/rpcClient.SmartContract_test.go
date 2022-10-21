@@ -31,10 +31,10 @@ func TestRpcClient_InvokeFunction(t *testing.T) {
 		}`))),
 	}, nil)
 
-	response := rpc.InvokeFunction("0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", "decimals", nil, nil)
-	r := response.Result
-	assert.Equal(t, "HALT", r.State)
-	assert.Equal(t, "8", r.Stack[0].Value)
+	response := rpc.InvokeFunction("0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", "decimals", nil, nil, false)
+	stacks, err := PopInvokeStacks(response)
+	assert.Nil(t, err)
+	assert.Equal(t, "8", stacks[0].Value.(string))
 }
 
 func TestRpcClient_InvokeScript(t *testing.T) {
@@ -58,10 +58,55 @@ func TestRpcClient_InvokeScript(t *testing.T) {
 		}`))),
 	}, nil)
 
-	response := rpc.InvokeScript("", nil)
+	response := rpc.InvokeScript("", nil, false)
+	stacks, err := PopInvokeStacks(response)
+	assert.Nil(t, err)
+	assert.Equal(t, "8", stacks[0].Value.(string))
+}
+
+func TestRpcClient_TraverseIterator(t *testing.T) {
+	var client = new(HttpClientMock)
+	var rpc = RpcClient{Endpoint: new(url.URL), httpClient: client}
+	client.On("Do", mock.Anything).Return(&http.Response{
+		Body: ioutil.NopCloser(bytes.NewReader([]byte(`{
+			"jsonrpc": "2.0",
+			"id": 1,
+			"result": [
+				{
+					"type": "ByteString",
+					"value": "TWV0YVBhbmFjZWEgIzE3LTAy"
+				},
+				{
+					"type": "ByteString",
+					"value": "TWV0YVBhbmFjZWEgIzctMDI="
+				},
+				{
+					"type": "ByteString",
+					"value": "TWV0YVBhbmFjZWEgIzgtMTA="
+				}
+			]
+		}`))),
+	}, nil)
+
+	response := rpc.TraverseIterator("9f267840-216b-47d0-aeee-665df3657a6e", "6f3a3284-0975-4774-9dfa-aab23dc9b42e", 100)
 	r := response.Result
-	assert.Equal(t, "HALT", r.State)
-	assert.Equal(t, "8", r.Stack[0].Value)
+	assert.Equal(t, 3, len(r))
+}
+
+func TestRpcClient_TerminateSession(t *testing.T) {
+	var client = new(HttpClientMock)
+	var rpc = RpcClient{Endpoint: new(url.URL), httpClient: client}
+	client.On("Do", mock.Anything).Return(&http.Response{
+		Body: ioutil.NopCloser(bytes.NewReader([]byte(`{
+			"jsonrpc": "2.0",
+			"id": 1,
+			"result": false
+		}`))),
+	}, nil)
+
+	response := rpc.TerminateSession("9f267840-216b-47d0-aeee-665df3657a6e")
+	r := response.Result
+	assert.Equal(t, false, r)
 }
 
 func TestRpcClient_GetUnclaimedGas(t *testing.T) {

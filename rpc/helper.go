@@ -5,21 +5,22 @@ import (
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 )
 
-func PopInvokeStack(response InvokeResultResponse) (*models.InvokeStack, error) {
+func PopInvokeStacks(response InvokeResultResponse) ([]models.InvokeStack, error) {
 	if response.HasError() {
 		return nil, fmt.Errorf(response.GetErrorInfo())
 	}
-	if response.Result.State == "FAULT" {
+	result := response.Result
+	if result.State == "FAULT" {
 		msg := "engine faulted"
-		if len(response.Result.Exception) != 0 {
+		if len(result.Exception) != 0 {
 			msg += ", exception: " + response.Result.Exception
 		}
 		return nil, fmt.Errorf(msg)
 	}
-	if len(response.Result.Stack) == 0 {
-		return nil, fmt.Errorf("no stack result returned")
+	// json["stack"] = "error: invalid operation"
+	if result.Stack == nil {
+		return []models.InvokeStack{}, fmt.Errorf("error: invalid operation")
 	}
-	stack := response.Result.Stack[0]
-	stack.Convert()
-	return &stack, nil
+
+	return result.Stack, nil
 }

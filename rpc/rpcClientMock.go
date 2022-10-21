@@ -14,7 +14,8 @@ func (r *RpcClientMock) GetUrl() string {
 	return args.Get(0).(string)
 }
 
-// block chain
+// ---------------- start section: Blockchain ----------------
+
 func (r *RpcClientMock) GetBestBlockHash() GetBestBlockHashResponse {
 	args := r.Called()
 	return args.Get(0).(GetBestBlockHashResponse)
@@ -38,6 +39,11 @@ func (r *RpcClientMock) GetBlockHash(n uint32) GetBlockHashResponse {
 func (r *RpcClientMock) GetBlockHeader(hashOrIndex string) GetBlockHeaderResponse {
 	args := r.Called(hashOrIndex)
 	return args.Get(0).(GetBlockHeaderResponse)
+}
+
+func (r *RpcClientMock) GetBlockHeaderCount() GetBlockCountResponse {
+	args := r.Called()
+	return args.Get(0).(GetBlockCountResponse)
 }
 
 func (r *RpcClientMock) GetBlockSysFee(height int) GetBlockSysFeeResponse {
@@ -75,6 +81,11 @@ func (r *RpcClientMock) GetNextBlockValidators() GetNextBlockValidatorsResponse 
 	return args.Get(0).(GetNextBlockValidatorsResponse)
 }
 
+func (r *RpcClientMock) GetCandidates() GetCandidatesResponse {
+	args := r.Called()
+	return args.Get(0).(GetCandidatesResponse)
+}
+
 func (r *RpcClientMock) GetCommittee() GetCommitteeResponse {
 	args := r.Called()
 	return args.Get(0).(GetCommitteeResponse)
@@ -85,7 +96,8 @@ func (r *RpcClientMock) GetNativeContracts() GetNativeContractsResponse {
 	return args.Get(0).(GetNativeContractsResponse)
 }
 
-// node
+// ---------------- start section: Node ----------------
+
 func (r *RpcClientMock) GetConnectionCount() GetConnectionCountResponse {
 	args := r.Called()
 	return args.Get(0).(GetConnectionCountResponse)
@@ -111,10 +123,26 @@ func (r *RpcClientMock) SubmitBlock(s string) SubmitBlockResponse {
 	return args.Get(0).(SubmitBlockResponse)
 }
 
-// plugins
+// ---------------- start section: Plugins ----------------
+
 func (r *RpcClientMock) GetApplicationLog(s string) GetApplicationLogResponse {
 	args := r.Called(s)
 	return args.Get(0).(GetApplicationLogResponse)
+}
+
+func (r *RpcClientMock) GetNep11Balances(s string) GetNep11BalancesResponse {
+	args := r.Called(s)
+	return args.Get(0).(GetNep11BalancesResponse)
+}
+
+func (r *RpcClientMock) GetNep11Transfers(s string, t1 *int, t2 *int) GetNep11TransfersResponse {
+	args := r.Called(s, t1, t2)
+	return args.Get(0).(GetNep11TransfersResponse)
+}
+
+func (r *RpcClientMock) GetNep11Properties(s1 string, s2 string) GetNep11PropertiesResponse {
+	args := r.Called(s1, s2)
+	return args.Get(0).(GetNep11PropertiesResponse)
 }
 
 func (r *RpcClientMock) GetNep17Balances(s string) GetNep17BalancesResponse {
@@ -127,15 +155,27 @@ func (r *RpcClientMock) GetNep17Transfers(s string, t1 *int, t2 *int) GetNep17Tr
 	return args.Get(0).(GetNep17TransfersResponse)
 }
 
-// smart contract
-func (r *RpcClientMock) InvokeFunction(s1 string, s2 string, a []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse {
-	args := r.Called(s1, s2, a, signers)
+// ---------------- start section: SmartContract ----------------
+
+func (r *RpcClientMock) InvokeFunction(s1 string, s2 string, a []models.RpcContractParameter,
+	signersOrWitnesses interface{}, b bool) InvokeResultResponse {
+	args := r.Called(s1, s2, a, signersOrWitnesses, b)
 	return args.Get(0).(InvokeResultResponse)
 }
 
-func (r *RpcClientMock) InvokeScript(s string, signers []models.RpcSigner) InvokeResultResponse {
-	args := r.Called(s, signers)
+func (r *RpcClientMock) InvokeScript(s string, signersOrWitnesses interface{}, b bool) InvokeResultResponse {
+	args := r.Called(s, signersOrWitnesses, b)
 	return args.Get(0).(InvokeResultResponse)
+}
+
+func (r *RpcClientMock) TraverseIterator(s1 string, s2 string, c int32) TraverseIteratorResponse {
+	args := r.Called(s1, s2, c)
+	return args.Get(0).(TraverseIteratorResponse)
+}
+
+func (r *RpcClientMock) TerminateSession(s string) TerminateSessionResponse {
+	args := r.Called(s)
+	return args.Get(0).(TerminateSessionResponse)
 }
 
 func (r *RpcClientMock) GetUnclaimedGas(s string) GetUnclaimedGasResponse {
@@ -143,7 +183,8 @@ func (r *RpcClientMock) GetUnclaimedGas(s string) GetUnclaimedGasResponse {
 	return args.Get(0).(GetUnclaimedGasResponse)
 }
 
-// state
+// ---------------- start section: State ----------------
+
 func (r *RpcClientMock) GetProof(s1, s2, s3 string) GetProofResponse {
 	args := r.Called(s1, s2, s3)
 	return args.Get(0).(GetProofResponse)
@@ -164,7 +205,8 @@ func (r *RpcClientMock) VerifyProof(s string, p string) VerifyProofResponse {
 	return args.Get(0).(VerifyProofResponse)
 }
 
-// utilities
+// ---------------- start section: Utilities ----------------
+
 func (r *RpcClientMock) ListPlugins() ListPluginsResponse {
 	args := r.Called()
 	return args.Get(0).(ListPluginsResponse)
@@ -175,7 +217,8 @@ func (r *RpcClientMock) ValidateAddress(s string) ValidateAddressResponse {
 	return args.Get(0).(ValidateAddressResponse)
 }
 
-// wallet
+// ---------------- start section: Wallet ----------------
+
 func (r *RpcClientMock) CloseWallet() CloseWalletResponse {
 	args := r.Called()
 	return args.Get(0).(CloseWalletResponse)
@@ -191,7 +234,7 @@ func (r *RpcClientMock) GetNewAddress() GetNewAddressResponse {
 	return args.Get(0).(GetNewAddressResponse)
 }
 
-func (r *RpcClientMock) GetWalletBalance(s string) GetWalletBalanceResponse  {
+func (r *RpcClientMock) GetWalletBalance(s string) GetWalletBalanceResponse {
 	args := r.Called(s)
 	return args.Get(0).(GetWalletBalanceResponse)
 }
@@ -221,13 +264,13 @@ func (r *RpcClientMock) OpenWallet(s1 string, s2 string) OpenWalletResponse {
 	return args.Get(0).(OpenWalletResponse)
 }
 
-func (r *RpcClientMock) SendFrom(s1, s2, s3, s4 string) SendFromResponse {
-	args := r.Called(s1, s2, s3, s4)
+func (r *RpcClientMock) SendFrom(s1, s2, s3, s4 string, ss []string) SendFromResponse {
+	args := r.Called(s1, s2, s3, s4, ss)
 	return args.Get(0).(SendFromResponse)
 }
 
-func (r *RpcClientMock) SendMany(s string, o []models.RpcTransferOut, rs ...models.RpcSigner) SendManyResponse {
-	args := r.Called(s, o, rs)
+func (r *RpcClientMock) SendMany(s string, ss []string, sn []string) SendManyResponse {
+	args := r.Called(s, s, sn)
 	return args.Get(0).(SendManyResponse)
 }
 
@@ -236,7 +279,7 @@ func (r *RpcClientMock) SendToAddress(s1, s2, s3 string) SendToAddressResponse {
 	return args.Get(0).(SendToAddressResponse)
 }
 
-func (r *RpcClientMock) InvokeContractVerify(s string, a []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse {
-	args := r.Called(s, a, signers)
+func (r *RpcClientMock) InvokeContractVerify(s string, a []models.RpcContractParameter, sw interface{}) InvokeResultResponse {
+	args := r.Called(s, a, sw)
 	return args.Get(0).(InvokeResultResponse)
 }

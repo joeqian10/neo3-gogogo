@@ -214,7 +214,7 @@ func TestRpcClient_SendFrom(t *testing.T) {
 		  }`))),
 	}, nil)
 
-	response := rpc.SendFrom("0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW", "100.123")
+	response := rpc.SendFrom("0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW", "100.123", []string{"NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ"})
 	r := response.Result
 	assert.Equal(t, "0x035facc3be1fc57da1690e3d2f8214f449d368437d8557ffabb2d408caf9ad76", r.Hash)
 }
@@ -261,10 +261,7 @@ func TestRpcClient_SendMany(t *testing.T) {
 		  }`))),
 	}, nil)
 
-	response := rpc.SendMany("NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", []models.RpcTransferOut{
-		{Asset: "",
-			Value:   "10",
-			Address: ""}})
+	response := rpc.SendMany("NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", []string{"NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW"}, []string{"NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ"})
 	r := response.Result
 	assert.Equal(t, "0x542e64a9048bbe1ee565b840c41ccf9b5a1ef11f52e5a6858a523938a20c53ec", r.Hash)
 }
@@ -334,7 +331,7 @@ func TestRpcClient_InvokeContractVerify(t *testing.T) {
 	}, nil)
 
 	params := []models.RpcContractParameter{models.NewRpcContractParameter("Boolean", "true")}
-	signers :=  []models.RpcSigner{models.RpcSigner{
+	signers := []models.RpcSigner{models.RpcSigner{
 		Account:          "0xf621168b1fce3a89c33a5f6bcf7e774b4657031c",
 		Scopes:           "CalledByEntry",
 		AllowedContracts: []string{},
@@ -342,7 +339,7 @@ func TestRpcClient_InvokeContractVerify(t *testing.T) {
 	}}
 
 	response := rpc.InvokeContractVerify("0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b", params, signers)
-	r := response.Result
-	assert.Equal(t, "HALT", r.State)
-	assert.Equal(t, "8", r.Stack[0].Value)
+	stacks, err := PopInvokeStacks(response)
+	assert.Nil(t, err)
+	assert.Equal(t, "8", stacks[0].Value.(string))
 }

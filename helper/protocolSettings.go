@@ -2,7 +2,7 @@ package helper
 
 const (
 	Neo3Magic_MainNet     uint32 = 860833102 // NEO3
-	Neo3Magic_TestNet     uint32 = 877933390 // N3T4
+	Neo3Magic_TestNet     uint32 = 894710606 // N3T5
 	DefaultAddressVersion byte   = 0x35      // 53
 )
 

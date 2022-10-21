@@ -79,23 +79,23 @@ func (sr *StateRoot) GetSize() int {
 		inv, _ := crypto.Base64Decode(w0.Invocation)
 		ver, _ := crypto.Base64Decode(w0.Verification)
 		witness, _ := tx.CreateWitness(inv, ver)
-		size += 1 + witness.Size()
+		size += 1 + witness.GetSize()
 	}
 	return size
 }
 
-func (sr *StateRoot) GetWitnesses() []tx.Witness {
-	ws := make([]tx.Witness, len(sr.Witnesses))
+func (sr *StateRoot) GetWitnesses() []*tx.Witness {
+	ws := make([]*tx.Witness, len(sr.Witnesses))
 	for i, v := range sr.Witnesses {
 		inv, _ := crypto.Base64Decode(v.Invocation)
 		ver, _ := crypto.Base64Decode(v.Verification)
 		w, _ := tx.CreateWitness(inv, ver)
-		ws[i] = *w
+		ws[i] = w
 	}
 	return ws
 }
 
-func (sr *StateRoot) SetWitnesses(data []tx.Witness) {
+func (sr *StateRoot) SetWitnesses(data []*tx.Witness) {
 	rws := make([]models.RpcWitness, len(data))
 	for i, v := range data {
 		rws[i] = models.RpcWitness{
@@ -106,14 +106,14 @@ func (sr *StateRoot) SetWitnesses(data []tx.Witness) {
 	sr.Witnesses = rws
 }
 
-func (sr *StateRoot) GetScriptHashesForVerifying() []helper.UInt160 {
+func (sr *StateRoot) GetScriptHashesForVerifying() []*helper.UInt160 {
 	if len(sr.Witnesses) == 0 {
-		return []helper.UInt160{}
+		return []*helper.UInt160{}
 	}
 	verificationScriptBs, _ := crypto.Base64Decode(sr.Witnesses[0].Verification) // base64
 	if len(verificationScriptBs) == 0 {
-		return []helper.UInt160{}
+		return []*helper.UInt160{}
 	}
 	scriptHash := helper.UInt160FromBytes(crypto.Hash160(verificationScriptBs))
-	return []helper.UInt160{*scriptHash}
+	return []*helper.UInt160{scriptHash}
 }

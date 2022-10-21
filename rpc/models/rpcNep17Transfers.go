@@ -1,17 +1,17 @@
 package models
 
 type RpcNep17Transfers struct {
+	Address  string             `json:"address"`
 	Sent     []RpcNep17Transfer `json:"sent"`
 	Received []RpcNep17Transfer `json:"received"`
-	Address  string             `json:"address"`
 }
 
 type RpcNep17Transfer struct {
-	Timestamp           int    `json:"timestamp"`
+	Timestamp           uint64 `json:"timestamp"`
 	AssetHash           string `json:"assethash"`
 	TransferAddress     string `json:"transferaddress"`
 	Amount              string `json:"amount"`
-	BlockIndex          int    `json:"blockindex"`
-	TransferNotifyIndex int    `json:"transfernotifyindex"`
+	BlockIndex          uint32 `json:"blockindex"`
+	TransferNotifyIndex uint32 `json:"transfernotifyindex"`
 	TxHash              string `json:"txhash"`
 }

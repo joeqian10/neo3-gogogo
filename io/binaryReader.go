@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-// BinaryReader is a convenient wrapper around a io.Reader and err object.
+// BinaryReader is a convenient wrapper around an io.Reader and error object.
 // Used to simplify error handling when reading into a struct with many fields.
 type BinaryReader struct {
 	r   io.Reader
@@ -43,8 +43,11 @@ func (br *BinaryReader) ReadBE(v interface{}) {
 	br.Err = binary.Read(br.r, binary.BigEndian, v)
 }
 
-// ReadByte reads exactly one byte from the underlying io.Reader
-func (br *BinaryReader) ReadByte() byte {
+// ReadOneByte reads exactly one byte from the underlying io.Reader
+func (br *BinaryReader) ReadOneByte() byte {
+	if br.Err != nil {
+		return 0x00
+	}
 	var b byte
 	br.ReadLE(&b)
 	if br.Err != nil {
@@ -79,7 +82,7 @@ func (br *BinaryReader) ReadVarUInt() uint64 {
 	return br.ReadVarUIntWithMaxLimit(18446744073709551615)
 }
 
-// ReadVarUInt reads a variable-length-encoded integer from the underlying reader.
+// ReadVarUIntWithMaxLimit reads a variable-length-encoded integer from the underlying reader.
 // The result should not exceed the max value of uint64
 func (br *BinaryReader) ReadVarUIntWithMaxLimit(max uint64) uint64 {
 	if br.Err != nil {
@@ -137,7 +140,7 @@ func (br *BinaryReader) ReadVarString(max int) string {
 	return string(b)
 }
 
-//ReadBytesWithGrouping ...
+// ReadBytesWithGrouping ...
 func (br *BinaryReader) ReadBytesWithGrouping() ([]byte, error) {
 	padding := byte(0)
 	var key []byte

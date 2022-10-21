@@ -12,7 +12,7 @@ import (
 )
 
 type ECPoint struct {
-	X, Y *big.Int
+	X, Y  *big.Int
 	Curve elliptic.Curve
 
 	compressedPoint   []byte
@@ -21,20 +21,21 @@ type ECPoint struct {
 
 var P256 = elliptic.P256()
 
+// CreateECPoint creates an Elliptic Curve Point using the given (x,y) value and the given curve. Only use this method if you know what you are doing.
 func CreateECPoint(x *big.Int, y *big.Int, curve *elliptic.Curve) (*ECPoint, error) {
 	if (x == nil) != (y == nil) || curve == nil {
 		return nil, fmt.Errorf("exactly one of the parameters is nil")
 	}
-	if (x != nil ) && (y != nil ) { // both are nil means infinite point
+	if (x != nil) && (y != nil) { // both are nil means infinite point
 		P := (*curve).Params().P
 		if x.Cmp(P) >= 0 || y.Cmp(P) >= 0 {
 			return nil, fmt.Errorf("invalid parameter: X or Y is bigger than P")
 		}
 	}
 	p := &ECPoint{
-			X:     x,
-			Y:     y,
-			Curve: *curve,
+		X:     x,
+		Y:     y,
+		Curve: *curve,
 	}
 	return p, nil
 }
@@ -43,13 +44,13 @@ func NewECPoint() (*ECPoint, error) {
 	return CreateECPoint(nil, nil, &P256)
 }
 
-//NewPublicKey return a public key created from the given []byte.
+// NewECPointFromBytes return a public key created from the given []byte.
 func NewECPointFromBytes(data []byte) (*ECPoint, error) {
-	p256 :=  elliptic.P256() // Secp256r1
+	p256 := elliptic.P256() // Secp256r1
 	return FromBytes(data, &p256)
 }
 
-// NewPublicKeyFromString return a public key created from the given hex string.
+// NewECPointFromString return a public key created from the given hex string.
 func NewECPointFromString(s string) (*ECPoint, error) {
 	b, err := hex.DecodeString(s)
 	if err != nil {
@@ -57,7 +58,6 @@ func NewECPointFromString(s string) (*ECPoint, error) {
 	}
 	return NewECPointFromBytes(b)
 }
-
 
 // IsInfinity checks if point P is infinity on EllipticCurve ec.
 func (p *ECPoint) IsInfinity() bool {
@@ -69,14 +69,15 @@ func (p *ECPoint) IsOnCurve() bool {
 	return p.Curve.IsOnCurve(p.X, p.Y)
 }
 
-func (p *ECPoint) Size() int {
+// GetSize return the byte size of this point
+func (p *ECPoint) GetSize() int {
 	if p.IsInfinity() {
 		return 1
 	}
 	return 33
 }
 
-// Compare two points
+// CompareTo Compares two points
 func (p *ECPoint) CompareTo(other *ECPoint) int {
 	if p.Curve != other.Curve {
 		panic("invalid comparison for points with different curves")
@@ -173,7 +174,7 @@ func decodeCompressedY(x *big.Int, ylsb uint) (*big.Int, error) {
 	return y, nil
 }
 
-// Deserialize a PublicKey from the given io.Reader.
+// Deserialize an ECPoint from the given io.Reader.
 func (p *ECPoint) Deserialize(br *io.BinaryReader) {
 	q, err := DeserializeFrom(br, &p.Curve)
 	if err != nil {
@@ -182,17 +183,25 @@ func (p *ECPoint) Deserialize(br *io.BinaryReader) {
 	}
 	p.X = q.X
 	p.Y = q.Y
+	p.compressedPoint = q.compressedPoint
+	p.uncompressedPoint = q.uncompressedPoint
 }
 
+// DeserializeFrom deserializes an ECPoint from the given io.Reader and curve.
 func DeserializeFrom(br *io.BinaryReader, curve *elliptic.Curve) (*ECPoint, error) {
-	buffer := make([]byte, 1+ExpectedECPointLength(curve)*2)
-	buffer[0] = br.ReadByte()
+	expectedLength := ExpectedECPointLength(curve)
+	buffer := make([]byte, 1+expectedLength*2)
+	b := br.ReadOneByte()
+	if br.Err != nil {
+		return nil, br.Err
+	}
+	buffer[0] = b
 	switch buffer[0] {
 	case 0x02, 0x03:
-		br.ReadLE(buffer[1 : 1+ExpectedECPointLength(curve)])
-		return DecodePoint(buffer[:1+ExpectedECPointLength(curve)], curve)
+		br.ReadLE(buffer[1 : 1+expectedLength])
+		return DecodePoint(buffer[:1+expectedLength], curve)
 	case 0x04:
-		br.ReadLE(buffer[1 : 1+ExpectedECPointLength(curve)*2])
+		br.ReadLE(buffer[1 : 1+expectedLength*2])
 		return DecodePoint(buffer, curve)
 	default:
 		return nil, fmt.Errorf("invalid point encoding")
@@ -226,19 +235,27 @@ func (p *ECPoint) EncodePoint(compressed bool) []byte {
 		if p.Y.Bit(0) == 0 {
 			data[0] = 0x02
 		} else {
-			data[0]	= 0x03
+			data[0] = 0x03
 		}
 	} else {
-		data[0]	= 0x04
+		data[0] = 0x04
 	}
 	return data
 }
 
 func (p *ECPoint) Equals(other *ECPoint) bool {
-	if p == other {return true}
-	if other == nil {return false}
-	if p.IsInfinity() && other.IsInfinity() {return true}
-	if p.IsInfinity() || other.IsInfinity() {return false}
+	if p == other {
+		return true
+	}
+	if other == nil {
+		return false
+	}
+	if p.IsInfinity() && other.IsInfinity() {
+		return true
+	}
+	if p.IsInfinity() || other.IsInfinity() {
+		return false
+	}
 	return p.X.Cmp(other.X) == 0 && p.Y.Cmp(other.Y) == 0
 }
 
@@ -251,7 +268,7 @@ func (p *ECPoint) ExistsIn(points []ECPoint) bool {
 	return false
 }
 
-// expected byte array length
+// ExpectedECPointLength return the expected byte array length
 func ExpectedECPointLength(curve *elliptic.Curve) int {
 	return ((*curve).Params().BitSize + 7) / 8
 }
@@ -271,7 +288,8 @@ func FromBytes(data []byte, curve *elliptic.Curve) (*ECPoint, error) {
 	}
 }
 
-func Parse(value string, curve *elliptic.Curve) (*ECPoint,error) {
+// Parse checks if the string is an ECPoint on the give curve.
+func Parse(value string, curve *elliptic.Curve) (*ECPoint, error) {
 	return DecodePoint(helper.HexToBytes(value), curve)
 }
 
@@ -294,20 +312,17 @@ func (p *ECPoint) ToECDsa() *ecdsa.PublicKey {
 	}
 }
 
-
-
-
-// PublicKeys is a list of public keys.
-type PublicKeySlice []ECPoint
+// PublicKeySlice is an array of public keys.
+type PublicKeySlice []*ECPoint
 
 func (keys PublicKeySlice) Len() int           { return len(keys) }
 func (keys PublicKeySlice) Swap(i, j int)      { keys[i], keys[j] = keys[j], keys[i] }
-func (keys PublicKeySlice) Less(i, j int) bool { return (&keys[i]).CompareTo(&keys[j]) == -1 }
+func (keys PublicKeySlice) Less(i, j int) bool { return (keys[i]).CompareTo(keys[j]) == -1 }
 
 func (keys PublicKeySlice) GetVarSize() int {
 	var size int = 0
 	for _, k := range keys {
-		size += k.Size()
+		size += k.GetSize()
 	}
 	return helper.GetVarSize(len(keys)) + size
 }

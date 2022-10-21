@@ -15,9 +15,9 @@ type IVerifiable interface {
 	DeserializeUnsigned(br *io.BinaryReader)
 	SerializeUnsigned(bw *io.BinaryWriter)
 
-	GetWitnesses() []Witness
-	SetWitnesses(data []Witness)
-	GetScriptHashesForVerifying() []helper.UInt160
+	GetWitnesses() []*Witness
+	SetWitnesses(data []*Witness)
+	GetScriptHashesForVerifying() []*helper.UInt160
 }
 
 func GetSignData(verifiable IVerifiable, magic uint32) []byte {

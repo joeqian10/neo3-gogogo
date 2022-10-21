@@ -21,8 +21,8 @@ func CreateContract(parameterList []ContractParameterType, redeemScript []byte) 
 	}
 }
 
-/// Construct special Contract with empty Script, will get the Script with scriptHash from blockchain when doing the Verify
-/// verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
+// CreateContractWithScriptHash Constructs special Contract with empty Script, will get the Script with scriptHash from blockchain when doing the Verify
+// verification = snapshot.Contracts.TryGet(hashes[i])?.Script;
 func CreateContractWithScriptHash(scriptHash *helper.UInt160, parameterList []ContractParameterType) *Contract {
 	return &Contract{
 		Script:        []byte{},
@@ -39,7 +39,7 @@ func (c *Contract) GetScriptHash() *helper.UInt160 {
 	return c.scriptHash
 }
 
-// create signature check script
+// CreateSignatureRedeemScript creates single signature script
 func CreateSignatureRedeemScript(p *crypto.ECPoint) ([]byte, error) {
 	sb := NewScriptBuilder()
 	sb.EmitPushBytes(p.EncodePoint(true))
@@ -51,7 +51,7 @@ func CreateSignatureRedeemScript(p *crypto.ECPoint) ([]byte, error) {
 	return b, nil
 }
 
-// CreateSignatureContract
+// CreateSignatureContract creates single signature contract
 func CreateSignatureContract(publicKey *crypto.ECPoint) (*Contract, error) {
 	script, err := CreateSignatureRedeemScript(publicKey)
 	if err != nil {
@@ -63,8 +63,8 @@ func CreateSignatureContract(publicKey *crypto.ECPoint) (*Contract, error) {
 	}, nil
 }
 
-// create multi-signature check script
-func CreateMultiSigRedeemScript(m int, ps []crypto.ECPoint) ([]byte, error) {
+// CreateMultiSigRedeemScript creates multi signatures script
+func CreateMultiSigRedeemScript(m int, ps []*crypto.ECPoint) ([]byte, error) {
 	if !(m >= 1 && m <= len(ps) && len(ps) <= 1024) {
 		return nil, fmt.Errorf("argument exception: %v, %v", m, len(ps))
 	}
@@ -87,7 +87,7 @@ func CreateMultiSigRedeemScript(m int, ps []crypto.ECPoint) ([]byte, error) {
 }
 
 // Create Multi-Signature Contract
-func CreateMultiSigContract(m int, publicKeys []crypto.ECPoint) (*Contract, error) {
+func CreateMultiSigContract(m int, publicKeys []*crypto.ECPoint) (*Contract, error) {
 	script, err := CreateMultiSigRedeemScript(m, publicKeys)
 	if err != nil {
 		return nil, err

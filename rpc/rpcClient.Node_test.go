@@ -54,17 +54,28 @@ func TestRpcClient_GetVersion(t *testing.T) {
 			"jsonrpc": "2.0",
 			"id": 1,
 			"result": {
-				"tcpPort": 20333,
-				"wsPort": 20334,
-				"nonce": 1254705570,
-				"useragent": "/Neo:3.0.0-preview5/"
+				"tcpport": 10333,
+				"wsport": 10334,
+				"nonce": 1027307233,
+				"useragent": "/Neo:3.4.0/",
+				"protocol": {
+					"addressversion": 53,
+					"network": 860833102,
+					"validatorscount": 7,
+					"msperblock": 15000,
+					"maxtraceableblocks": 2102400,
+					"maxvaliduntilblockincrement": 5760,
+					"maxtransactionsperblock": 512,
+					"memorypoolmaxtransactions": 50000,
+					"initialgasdistribution": 5200000000000000
+				}
 			}
 		}`))),
 	}, nil)
 
 	response := rpc.GetVersion()
 	r := response.Result
-	assert.Equal(t, 20333, r.TcpPort)
+	assert.Equal(t, 10333, r.TcpPort)
 }
 
 func TestRpcClient_SendRawTransaction(t *testing.T) {

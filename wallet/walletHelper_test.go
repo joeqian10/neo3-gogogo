@@ -163,7 +163,8 @@ func TestWalletHelper_CalculateNetworkFee2(t *testing.T) {
 			},
 		},
 	})
-	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -184,7 +185,9 @@ func TestWalletHelper_CalculateNetworkFee2(t *testing.T) {
 			}},
 		},
 	})
-	clientMock.On("InvokeFunction", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+
+	var rcp []models.RpcContractParameter
+	clientMock.On("InvokeFunction", mock.Anything, mock.Anything, rcp, mock.Anything, false).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -212,7 +215,7 @@ func TestWalletHelper_CalculateNetworkFee2(t *testing.T) {
 	wh := NewWalletHelperFromWallet(clientMock, testWallet)
 
 	script := []byte{}
-	ab := []AccountAndBalance{
+	ab := []*AccountAndBalance{
 		{
 			Account: helper.NewUInt160(),
 			Value:   big.NewInt(1000000000000), // 10000 gas
@@ -240,7 +243,29 @@ func TestWalletHelper_ClaimGas(t *testing.T) {
 		},
 		Result: 1234,
 	})
-	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeFunction", mock.Anything, mock.Anything, mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: models.InvokeResult{
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
+			State:       "HALT",
+			GasConsumed: "2007570",
+			Stack: []models.InvokeStack{{
+				Type:  "Integer",
+				Value: "100000000",
+			}},
+		},
+	})
+
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -302,7 +327,7 @@ func TestWalletHelper_ClaimGas(t *testing.T) {
 
 func TestWalletHelper_GetAccountAndBalance(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
-	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeFunction", mock.Anything, mock.Anything, mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -340,7 +365,7 @@ func TestWalletHelper_GetAccountAndBalance(t *testing.T) {
 
 func TestWalletHelper_GetBalanceFromAccount(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
-	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeFunction", mock.Anything, mock.Anything, mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -375,7 +400,7 @@ func TestWalletHelper_GetBalanceFromAccount(t *testing.T) {
 
 func TestWalletHelper_GetBalanceFromWallet(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
-	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeFunction", mock.Anything, mock.Anything, mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -523,7 +548,7 @@ func TestWalletHelper_GetContractState(t *testing.T) {
 
 func TestWalletHelper_GetGasConsumed(t *testing.T) {
 	var clientMock = new(rpc.RpcClientMock)
-	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -601,7 +626,7 @@ func TestWalletHelper_MakeTransaction(t *testing.T) {
 		},
 		Result: 6666666,
 	})
-	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -623,7 +648,7 @@ func TestWalletHelper_MakeTransaction(t *testing.T) {
 		},
 	})
 	script := []byte{}
-	ab := []AccountAndBalance{
+	ab := []*AccountAndBalance{
 		{
 			Account: testScriptHash,
 			Value:   big.NewInt(1000000000000), // 10000 gas
@@ -660,7 +685,7 @@ func TestWalletHelper_SignTransaction(t *testing.T) {
 		},
 		Result: 6666666,
 	})
-	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -695,7 +720,7 @@ func TestWalletHelper_SignTransaction(t *testing.T) {
 		Result: models.RpcNetworkFee{NetworkFee: "2384840"},
 	})
 	script := []byte{}
-	ab := []AccountAndBalance{
+	ab := []*AccountAndBalance{
 		{
 			Account: testScriptHash,
 			Value:   big.NewInt(1000000000000), // 10000 gas
@@ -730,7 +755,28 @@ func TestWalletHelper_Transfer(t *testing.T) {
 		},
 		Result: 1234,
 	})
-	clientMock.On("InvokeScript", mock.Anything, mock.Anything).Return(rpc.InvokeResultResponse{
+	clientMock.On("InvokeScript", mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
+		RpcResponse: rpc.RpcResponse{
+			JsonRpc: "2.0",
+			ID:      1,
+		},
+		ErrorResponse: rpc.ErrorResponse{
+			Error: rpc.RpcError{
+				Code:    0,
+				Message: "",
+			},
+		},
+		Result: models.InvokeResult{
+			Script:      "DAABECcMFPqJ+ywU3w9Z3d8E9uVlF/KzSq7rDBTitlMicpPpnE8pBtU1U6u0pnLfhhTAHwwIdHJhbnNmZXIMFIOrBnmtVcBQoTrUP1k26nP16x72QWJ9W1I=",
+			State:       "HALT",
+			GasConsumed: "2007570",
+			Stack: []models.InvokeStack{{
+				Type:  "Integer",
+				Value: "8913620128",
+			}},
+		},
+	})
+	clientMock.On("InvokeFunction", mock.Anything, mock.Anything, mock.Anything, mock.Anything, false).Return(rpc.InvokeResultResponse{
 		RpcResponse: rpc.RpcResponse{
 			JsonRpc: "2.0",
 			ID:      1,
@@ -793,7 +839,7 @@ func TestWalletHelper_Transfer(t *testing.T) {
 }
 
 func TestFindPayingAccounts(t *testing.T) {
-	orderedBalances := []AccountAndBalance{
+	orderedBalances := []*AccountAndBalance{
 		{helper.UInt160FromBytes([]byte{0x01}), big.NewInt(1)},
 		{helper.UInt160FromBytes([]byte{0x02}), big.NewInt(2)},
 		{helper.UInt160FromBytes([]byte{0x03}), big.NewInt(3)},
@@ -807,7 +853,7 @@ func TestFindPayingAccounts(t *testing.T) {
 }
 
 func TestFindRemainingAccountAndBalance(t *testing.T) {
-	orderedBalances := []AccountAndBalance{
+	orderedBalances := []*AccountAndBalance{
 		{helper.UInt160FromBytes([]byte{0x01}), big.NewInt(1)},
 		{helper.UInt160FromBytes([]byte{0x02}), big.NewInt(2)},
 		{helper.UInt160FromBytes([]byte{0x03}), big.NewInt(3)},

@@ -1,10 +1,10 @@
 package models
 
 type RpcContractParameter struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
+	Type  string      `json:"type"`
+	Value interface{} `json:"value"`
 }
 
-func NewRpcContractParameter(t string, v string) RpcContractParameter {
+func NewRpcContractParameter(t string, v interface{}) RpcContractParameter {
 	return RpcContractParameter{Type: t, Value: v}
 }

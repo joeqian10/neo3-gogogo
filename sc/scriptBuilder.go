@@ -243,7 +243,7 @@ func (sb *ScriptBuilder) EmitPushSerializable(data io.ISerializable) {
 	sb.EmitPushBytes(b)
 }
 
-func (sb *ScriptBuilder) EmitPushParameter(param ContractParameter) {
+func (sb *ScriptBuilder) EmitPushParameter(param *ContractParameter) {
 	if param.Value == nil {
 		sb.Emit(PUSHNULL)
 		return
@@ -271,13 +271,23 @@ func (sb *ScriptBuilder) EmitPushParameter(param ContractParameter) {
 		sb.EmitPushString(param.Value.(string))
 		break
 	case Array:
-		a := param.Value.([]ContractParameter)
-		for i := len(a) - 1; i >= 0; i-- {
-			sb.EmitPushParameter(a[i])
+		a, ok := param.Value.([]*ContractParameter)
+		if ok {
+			for i := len(a) - 1; i >= 0; i-- {
+				sb.EmitPushParameter(a[i])
+			}
+			sb.EmitPushInteger(len(a))
+			sb.Emit(PACK)
+			break
+		} else {
+			b := param.Value.([]ContractParameter)
+			for i := len(b) - 1; i >= 0; i-- {
+				sb.EmitPushParameter(&b[i])
+			}
+			sb.EmitPushInteger(len(b))
+			sb.Emit(PACK)
+			break
 		}
-		sb.EmitPushInteger(len(a))
-		sb.Emit(PACK)
-		break
 	case Map:
 		pairs := param.Value.(map[interface{}]interface{})
 		sb.CreateMap(pairs)
@@ -318,7 +328,11 @@ func (sb *ScriptBuilder) EmitPushObject(obj interface{}) {
 		sb.EmitPushInteger(obj)
 		break
 	case ContractParameter:
-		sb.EmitPushParameter(obj.(ContractParameter))
+		cp := obj.(ContractParameter)
+		sb.EmitPushParameter(&cp)
+		break
+	case *ContractParameter:
+		sb.EmitPushParameter(obj.(*ContractParameter))
 		break
 	case types.Nil:
 		sb.Emit(PUSHNULL)
@@ -338,7 +352,7 @@ func (sb *ScriptBuilder) EmitSysCallObj(method uint, args ...interface{}) {
 	sb.EmitSysCall(method)
 }
 
-// Generate scripts to call a specific method from a specific contract.
+// MakeScript generates scripts to call a specific method from a specific contract.
 func MakeScript(scriptHash *helper.UInt160, operation string, args []interface{}) ([]byte, error) {
 	sb := NewScriptBuilder()
 	sb.EmitDynamicCall(scriptHash, operation, args)

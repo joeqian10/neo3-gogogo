@@ -160,7 +160,7 @@ func TestDeserializeFrom(t *testing.T) {
 	assert.NotNil(t, err)
 
 	input2 := []byte{4, 107, 23, 209, 242, 225, 44, 66, 71, 248, 188, 230, 229, 99, 164, 64, 242, 119, 3, 125, 129, 45, 235, 51, 160, 244, 161, 57, 69, 216, 152, 194, 150,
-						79, 227, 66, 226, 254, 26, 127, 155, 142, 231, 235, 74, 124, 15, 158, 22, 43, 206, 51, 87, 107, 49, 94, 206, 203, 182, 64, 104, 55, 191, 81, 245}
+		79, 227, 66, 226, 254, 26, 127, 155, 142, 231, 235, 74, 124, 15, 158, 22, 43, 206, 51, 87, 107, 49, 94, 206, 203, 182, 64, 104, 55, 191, 81, 245}
 	br2 := io.NewBinaryReaderFromBuf(input2)
 	p2, err := DeserializeFrom(br2, &p256)
 	assert.Nil(t, err)
@@ -298,9 +298,9 @@ func TestECPoint_Serialize(t *testing.T) {
 func TestECPoint_Size(t *testing.T) {
 	p, err := NewECPoint()
 	assert.Nil(t, err)
-	assert.Equal(t, 1, p.Size())
+	assert.Equal(t, 1, p.GetSize())
 
-	assert.Equal(t, 33, G.Size())
+	assert.Equal(t, 33, G.GetSize())
 }
 
 func TestECPoint_String(t *testing.T) {

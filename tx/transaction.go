@@ -32,10 +32,10 @@ type Transaction struct {
 	sysfee          int64
 	netfee          int64
 	validUntilBlock uint32
-	signers         []Signer
+	signers         []*Signer
 	attributes      []ITransactionAttribute
 	script          []byte
-	witnesses       []Witness
+	witnesses       []*Witness
 
 	_hash *helper.UInt256
 	_size int
@@ -48,10 +48,10 @@ func NewTransaction() *Transaction {
 		sysfee:          0,
 		netfee:          0,
 		validUntilBlock: 0,
-		signers:         []Signer{},
+		signers:         []*Signer{},
 		attributes:      []ITransactionAttribute{},
 		script:          []byte{},
-		witnesses:       []Witness{},
+		witnesses:       []*Witness{},
 	}
 }
 
@@ -77,8 +77,10 @@ func (tx *Transaction) SetAttributes(value []ITransactionAttribute) {
 	tx._size = 0
 }
 
-/// The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.
-/// <para>Note that this property must be used with care. Getting the value of this property multiple times will return the same result. The value of this property can only be obtained after the transaction has been completely built (no longer modified).</para>
+// FeePerByte is The NetworkFee for the transaction divided by its GetSize.
+// Note that this property must be used with care.
+// Getting the value of this property multiple times will return the same result.
+// The value of this property can only be obtained after the transaction has been completely built (no longer modified).
 func (tx *Transaction) FeePerByte() int64 {
 	return tx.netfee / int64(tx._size)
 }
@@ -131,12 +133,12 @@ func (tx *Transaction) GetSender() *helper.UInt160 {
 }
 
 // GetSigners is the getter of tx.signers
-func (tx *Transaction) GetSigners() []Signer {
+func (tx *Transaction) GetSigners() []*Signer {
 	return tx.signers
 }
 
 // SetSigners is the setter of tx.signers
-func (tx *Transaction) SetSigners(value []Signer) {
+func (tx *Transaction) SetSigners(value []*Signer) {
 	tx.signers = value
 	tx._hash = nil
 	tx._size = 0
@@ -184,12 +186,12 @@ func (tx *Transaction) SetVersion(value uint8) {
 }
 
 // GetWitnesses is the getter of tx.witnesses
-func (tx *Transaction) GetWitnesses() []Witness {
+func (tx *Transaction) GetWitnesses() []*Witness {
 	return tx.witnesses
 }
 
 // SetWitnesses is the setter of tx.witnesses
-func (tx *Transaction) SetWitnesses(value []Witness) {
+func (tx *Transaction) SetWitnesses(value []*Witness) {
 	tx.witnesses = value
 	tx._hash = nil
 }
@@ -266,31 +268,31 @@ func deserializeAttributes(br *io.BinaryReader, maxCount int) []ITransactionAttr
 	return result
 }
 
-func deserializeSigners(br *io.BinaryReader, maxCount int) []Signer {
+func deserializeSigners(br *io.BinaryReader, maxCount int) []*Signer {
 	count := int(br.ReadVarUIntWithMaxLimit(uint64(maxCount)))
 	if count == 0 {
 		br.Err = fmt.Errorf("format error: signer count is zero")
 		return nil
 	}
-	result := make([]Signer, count)
-	m := make(map[helper.UInt160]Signer)
+	result := make([]*Signer, count)
+	m := make(map[*helper.UInt160]*Signer)
 	for i := 0; i < count; i++ {
 		signer := NewDefaultSigner()
 		signer.Deserialize(br)
-		if t, ok := m[*signer.Account]; ok && (&t).CompareTo(signer) == 0 {
+		if t, ok := m[signer.Account]; ok && (t).CompareTo(signer) == 0 {
 			br.Err = fmt.Errorf("format error: duplicate signer")
 			return nil
 		}
-		result[i] = *signer
+		result[i] = signer
 	}
 	return result
 }
 
 func (tx *Transaction) DeserializeWitnesses(br *io.BinaryReader) {
 	lenWitnesses := br.ReadVarUInt()
-	tx.witnesses = make([]Witness, lenWitnesses)
+	tx.witnesses = make([]*Witness, lenWitnesses)
 	for i := 0; i < int(lenWitnesses); i++ {
-		tx.witnesses[i] = Witness{}
+		tx.witnesses[i] = &Witness{}
 		tx.witnesses[i].Deserialize(br)
 	}
 }
@@ -333,10 +335,10 @@ func (tx *Transaction) SerializeWitnesses(bw *io.BinaryWriter) {
 	}
 }
 
-func (tx *Transaction) GetScriptHashesForVerifying() []helper.UInt160 {
-	result := make([]helper.UInt160, len(tx.signers))
+func (tx *Transaction) GetScriptHashesForVerifying() []*helper.UInt160 {
+	result := make([]*helper.UInt160, len(tx.signers))
 	for i, s := range tx.signers {
-		result[i] = *s.Account
+		result[i] = s.Account
 	}
 	return result
 }

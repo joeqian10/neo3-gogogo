@@ -137,36 +137,56 @@ func (n *RpcClient) OpenWallet(path string, password string) OpenWalletResponse 
 	return response
 }
 
-func (n *RpcClient) SendFrom(assetId string, from string, to string, amount string) SendFromResponse {
+func (n *RpcClient) SendFrom(assetId string, fromAddress string, toAddress string, amount string, signerAddresses []string) SendFromResponse {
 	response := SendFromResponse{}
-	params := []interface{}{assetId, from, to, amount}
+	params := []interface{}{assetId, fromAddress, toAddress, amount}
+	if len(signerAddresses) > 0 {
+		params = append(params, signerAddresses)
+	}
 	_ = n.makeRequest("sendfrom", params, &response)
 	return response
 }
 
-func (n *RpcClient) SendMany(fromAddress string, outputs []models.RpcTransferOut, signers ...models.RpcSigner) SendManyResponse {
+func (n *RpcClient) SendMany(fromAddress string, toAddresses []string, signerAddresses []string) SendManyResponse {
 	response := SendManyResponse{}
 	var params []interface{}
-	if fromAddress == "" {
-		params = []interface{}{outputs, signers}
-	} else {
-		params = []interface{}{fromAddress, outputs, signers}
+	if fromAddress != "" {
+		params = append(params, fromAddress)
 	}
-
-	_ = n.makeRequest("sendfrom", params, &response)
+	params = append(params, toAddresses)
+	if len(signerAddresses) > 0 {
+		params = append(params, signerAddresses)
+	}
+	_ = n.makeRequest("sendmany", params, &response)
 	return response
 }
 
-func (n *RpcClient) SendToAddress(assetId string, to string, amount string) SendToAddressResponse {
+func (n *RpcClient) SendToAddress(assetId string, toAddress string, amount string) SendToAddressResponse {
 	response := SendToAddressResponse{}
-	params := []interface{}{assetId, to, amount}
+	params := []interface{}{assetId, toAddress, amount}
 	_ = n.makeRequest("sendtoaddress", params, &response)
 	return response
 }
 
-func (n *RpcClient) InvokeContractVerify(scriptHash string, args []models.RpcContractParameter, signers []models.RpcSigner) InvokeResultResponse {
+func (n *RpcClient) InvokeContractVerify(scriptHash string, args []models.RpcContractParameter,
+	signersOrWitnesses interface{}) InvokeResultResponse {
+
 	response := InvokeResultResponse{}
-	params := []interface{}{scriptHash, args, signers}
+	params := []interface{}{scriptHash}
+	if args != nil {
+		params = append(params, args)
+	}
+	if signers, ok := signersOrWitnesses.([]models.RpcSigner); ok {
+		if len(params) == 1 {
+			params = append(params, []models.RpcContractParameter{})
+		}
+		params = append(params, signers)
+	} else if witnesses, ok := signersOrWitnesses.([]models.RpcWitness); ok {
+		if len(params) == 1 {
+			params = append(params, []models.RpcContractParameter{})
+		}
+		params = append(params, witnesses)
+	}
 	_ = n.makeRequest("invokecontractverify", params, &response)
 	return response
 }

@@ -58,7 +58,7 @@ func UInt32ToBytes(n uint32) []byte {
 	return buff
 }
 
-// UInt64ToBytes converts uint32 to byte array
+// UInt64ToBytes converts uint64 to byte array
 func UInt64ToBytes(n uint64) []byte {
 	var buff = make([]byte, 8)
 	binary.LittleEndian.PutUint64(buff, n)

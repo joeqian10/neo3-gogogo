@@ -73,7 +73,7 @@ func TestUInt256_Size(t *testing.T) {
 }
 
 func TestUInt256_ExistsIn(t *testing.T) {
-	a := []UInt256{*UInt256Zero}
+	a := []*UInt256{UInt256Zero}
 	b := UInt256Zero.ExistsIn(a)
 	assert.Equal(t, true, b)
 }

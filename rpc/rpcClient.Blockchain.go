@@ -77,6 +77,12 @@ type GetNextBlockValidatorsResponse struct {
 	Result []models.RpcValidator `json:"result"`
 }
 
+type GetCandidatesResponse struct {
+	RpcResponse
+	ErrorResponse
+	Result []models.RpcCandidates `json:"result"`
+}
+
 type GetCommitteeResponse struct {
 	RpcResponse
 	ErrorResponse
@@ -132,6 +138,13 @@ func (n *RpcClient) GetBlockHeader(hashOrIndex string) GetBlockHeaderResponse {
 	return response
 }
 
+func (n *RpcClient) GetBlockHeaderCount() GetBlockCountResponse {
+	response := GetBlockCountResponse{}
+	params := []interface{}{}
+	_ = n.makeRequest("getblockheadercount", params, &response)
+	return response
+}
+
 func (n *RpcClient) GetContractState(scriptHash string) GetContractStateResponse {
 	response := GetContractStateResponse{}
 	params := []interface{}{scriptHash}
@@ -171,6 +184,13 @@ func (n *RpcClient) GetNextBlockValidators() GetNextBlockValidatorsResponse {
 	response := GetNextBlockValidatorsResponse{}
 	params := []interface{}{}
 	_ = n.makeRequest("getnextblockvalidators", params, &response)
+	return response
+}
+
+func (n *RpcClient) GetCandidates() GetCandidatesResponse {
+	response := GetCandidatesResponse{}
+	params := []interface{}{}
+	_ = n.makeRequest("getcandidates", params, &response)
 	return response
 }
 

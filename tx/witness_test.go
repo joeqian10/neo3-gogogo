@@ -47,7 +47,7 @@ func TestWitness_Size(t *testing.T) {
 		InvocationScript:   helper.HexToBytes("40915467ecd359684b2dc358024ca750609591aa731a0b309c7fb3cab5cd0836ad3992aa0a24da431f43b68883ea5651d548feb6bd3c8e16376e6e426f91f84c58"), //65
 		VerificationScript: helper.HexToBytes("2103322f35c7819267e721335948d385fae5be66e7ba8c748ac15467dcca0693692dac"),                                                             //35
 	}
-	size := w.Size()
+	size := w.GetSize()
 	assert.Equal(t, 1+65+1+35, size)
 }
 
@@ -62,12 +62,12 @@ func TestCreateSignatureWitness(t *testing.T) {
 
 func TestCreateMultiSignatureWitness(t *testing.T) {
 	msg := []byte("sample")
-	pairs := make([]keys.KeyPair, caseLen)
-	pubKeys := make([]crypto.ECPoint, caseLen)
+	pairs := make([]*keys.KeyPair, caseLen)
+	pubKeys := make([]*crypto.ECPoint, caseLen)
 	for i := 0; i < caseLen; i++ {
 		pair, _ := keys.NewKeyPairFromWIF(keys.KeyCases[i].Wif)
-		pairs[i] = *pair
-		pubKeys[i] = *pair.PublicKey
+		pairs[i] = pair
+		pubKeys[i] = pair.PublicKey
 	}
 
 	witness, err := CreateMultiSignatureWitness(msg, pairs[:caseLen-1], caseLen-1, pubKeys)
@@ -88,12 +88,12 @@ func TestVerifySignatureWitness(t *testing.T) {
 func TestVerifyMultiSignatureWitness(t *testing.T) {
 	msg := []byte("sample")
 
-	pairs := make([]keys.KeyPair, caseLen)
-	pubKeys := make([]crypto.ECPoint, caseLen)
+	pairs := make([]*keys.KeyPair, caseLen)
+	pubKeys := make([]*crypto.ECPoint, caseLen)
 	for i := 0; i < caseLen; i++ {
 		pair, _ := keys.NewKeyPairFromWIF(keys.KeyCases[i].Wif)
-		pairs[i] = *pair
-		pubKeys[i] = *pair.PublicKey
+		pairs[i] = pair
+		pubKeys[i] = pair.PublicKey
 	}
 	witness, err := CreateMultiSignatureWitness(msg, pairs[:caseLen-1], caseLen-1, pubKeys)
 	assert.Nil(t, err)

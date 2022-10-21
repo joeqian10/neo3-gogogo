@@ -11,8 +11,7 @@ const UINT256SIZE = 32
 
 var UInt256Zero = NewUInt256()
 
-/// This class stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array
-/// Composed by ulong(64) + ulong(64) + ulong(64) + ulong(64) = UInt256(256)
+// UInt256 stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array. Composed by ulong(64) + ulong(64) + ulong(64) + ulong(64) = UInt256(256)
 type UInt256 struct {
 	Value1 uint64
 	Value2 uint64
@@ -37,8 +36,8 @@ func UInt256FromBytes(b []byte) *UInt256 {
 
 	return &UInt256{
 		Value1: BytesToUInt64(r[:UINT64SIZE]),
-		Value2: BytesToUInt64(r[UINT64SIZE:UINT64SIZE*2]),
-		Value3: BytesToUInt64(r[UINT64SIZE*2:UINT64SIZE*3]),
+		Value2: BytesToUInt64(r[UINT64SIZE : UINT64SIZE*2]),
+		Value3: BytesToUInt64(r[UINT64SIZE*2 : UINT64SIZE*3]),
 		Value4: BytesToUInt64(r[UINT64SIZE*3:]),
 	}
 }
@@ -53,11 +52,13 @@ func UInt256FromString(s string) (u *UInt256, err error) {
 	return UInt256FromBytes(ReverseBytes(b)), nil
 }
 
-/// Method CompareTo returns 1 if this UInt256 is bigger than other UInt256; -1 if it's smaller; 0 if it's equals
+// CompareTo returns 1 if this UInt256 is bigger than other UInt256; -1 if it's smaller; 0 if it's equals
 /// Example: assume this is 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4, this.CompareTo(02ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a3) returns 1
 func (u *UInt256) CompareTo(other *UInt256) int {
 	r := CompareTo(u.Value4, other.Value4)
-	if r != 0 {return r}
+	if r != 0 {
+		return r
+	}
 	r = CompareTo(u.Value3, other.Value3)
 	if r != 0 {
 		return r
@@ -97,7 +98,7 @@ func (u *UInt256) Serialize(bw *io.BinaryWriter) {
 }
 
 // String implements the stringer interface. Return big endian hex string.
-func (u UInt256) String() string {
+func (u *UInt256) String() string {
 	return hex.EncodeToString(ReverseBytes(u.ToByteArray()))
 }
 
@@ -115,7 +116,7 @@ func (u *UInt256) Size() int {
 	return UINT256SIZE
 }
 
-// UnmarshalJSON implements the json unmarshaller interface.
+// UnmarshalJSON implements the json unmarshall interface.
 func (u *UInt256) UnmarshalJSON(data []byte) (err error) {
 	var js string
 	if err = json.Unmarshal(data, &js); err != nil {
@@ -128,28 +129,28 @@ func (u *UInt256) UnmarshalJSON(data []byte) (err error) {
 }
 
 // MarshalJSON implements the json marshaller interface.
-func (u UInt256) MarshalJSON() ([]byte, error) {
+func (u *UInt256) MarshalJSON() ([]byte, error) {
 	return []byte(`"0x` + u.String() + `"`), nil
 }
 
 // ExistsIn checks if u exists in list
-func (u UInt256) ExistsIn(list []UInt256) bool {
+func (u *UInt256) ExistsIn(list []*UInt256) bool {
 	for _, a := range list {
-		if (&u).Equals(&a) {
+		if (u).Equals(a) {
 			return true
 		}
 	}
 	return false
 }
 
-type UInt256Slice []UInt256
+type UInt256Slice []*UInt256
 
 func (us UInt256Slice) Len() int {
 	return len(us)
 }
 
 func (us UInt256Slice) Less(i int, j int) bool {
-	return (&us[i]).Less(&us[j])
+	return (us[i]).Less(us[j])
 }
 
 func (us UInt256Slice) Swap(i, j int) {

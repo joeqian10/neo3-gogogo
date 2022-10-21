@@ -38,9 +38,9 @@ func TestTransaction_GetSize(t *testing.T) {
 	val := make([]byte, 32)
 	val[0] = 0x42
 	x.SetScript(val)
-	x.SetSigners([]Signer{})
+	x.SetSigners([]*Signer{})
 	x.SetAttributes([]ITransactionAttribute{})
-	x.SetWitnesses([]Witness{{
+	x.SetWitnesses([]*Witness{{
 		InvocationScript:   []byte{},
 		VerificationScript: []byte{},
 	}})
@@ -53,7 +53,7 @@ func TestTransaction_GetSize(t *testing.T) {
 
 func TestTransaction_GetScriptHashesForVerifying(t *testing.T) {
 	x := Transaction{}
-	x.SetSigners([]Signer{{Account: helper.UInt160Zero, Scopes: Global}})
+	x.SetSigners([]*Signer{{Account: helper.UInt160Zero, Scopes: Global}})
 	hashes := x.GetScriptHashesForVerifying()
 	assert.Equal(t, 1, len(hashes))
 }
@@ -128,10 +128,10 @@ func TestTransaction_ToByteArray(t *testing.T) {
 		sysfee:          GasFactor,
 		netfee:          0x0000000000000001,
 		validUntilBlock: 0x01020304,
-		signers:         []Signer{},
+		signers:         []*Signer{},
 		attributes:      []ITransactionAttribute{},
 		script:          []byte{byte(sc.PUSH1)},
-		witnesses:       []Witness{},
+		witnesses:       []*Witness{},
 	}
 	r := tx.ToByteArray()
 	expected := "00" + // version
@@ -154,10 +154,10 @@ func TestTransaction_Serialize(t *testing.T) {
 		sysfee:          GasFactor,
 		netfee:          0x0000000000000001,
 		validUntilBlock: 0x01020304,
-		signers:         []Signer{},
+		signers:         []*Signer{},
 		attributes:      []ITransactionAttribute{},
 		script:          []byte{byte(sc.PUSH1)},
-		witnesses:       []Witness{},
+		witnesses:       []*Witness{},
 	}
 	bbw := io.NewBufBinaryWriter()
 	tx.Serialize(bbw.BinaryWriter)
@@ -181,10 +181,10 @@ func TestTransaction_SerializeUnsigned(t *testing.T) {
 		sysfee:          GasFactor,
 		netfee:          0x0000000000000001,
 		validUntilBlock: 0x01020304,
-		signers:         []Signer{},
+		signers:         []*Signer{},
 		attributes:      []ITransactionAttribute{},
 		script:          []byte{byte(sc.PUSH1)},
-		witnesses:       []Witness{},
+		witnesses:       []*Witness{},
 	}
 	bbw := io.NewBufBinaryWriter()
 	tx.SerializeUnsigned(bbw.BinaryWriter)
@@ -208,10 +208,10 @@ func TestTransaction_SerializeWitnesses(t *testing.T) {
 		sysfee:          GasFactor,
 		netfee:          0x0000000000000001,
 		validUntilBlock: 0x01020304,
-		signers:         []Signer{},
+		signers:         []*Signer{},
 		attributes:      []ITransactionAttribute{},
 		script:          []byte{byte(sc.PUSH1)},
-		witnesses:       []Witness{},
+		witnesses:       []*Witness{},
 	}
 	bbw := io.NewBufBinaryWriter()
 	tx.SerializeWitnesses(bbw.BinaryWriter)

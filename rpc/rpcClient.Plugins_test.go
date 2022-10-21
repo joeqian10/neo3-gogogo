@@ -80,6 +80,108 @@ func TestRpcClient_GetApplicationLog(t *testing.T) {
 	assert.Equal(t, "Array", r.Executions[0].Notifications[0].State.Type)
 }
 
+func TestRpcClient_GetNep11Balances(t *testing.T) {
+	var client = new(HttpClientMock)
+	var rpc = RpcClient{Endpoint: new(url.URL), httpClient: client}
+	client.On("Do", mock.Anything).Return(&http.Response{
+		Body: ioutil.NopCloser(bytes.NewReader([]byte(`{
+			"jsonrpc": "2.0",
+			"id": 1,
+			"result": {
+				"address": "NNBjvfrvPTZRw3Tx2Qwm6bLKqbng4qQ41N",
+				"balance": [
+					{
+						"assethash": "0x1234567890abcdef1234567890abcdef12345678",
+						"name": "SampleNFT",
+						"symbol": "sNFT",
+						"decimals": "1",
+						"amount": "9809309981",
+						"tokens": [
+							{
+							"tokenid": "1234567890abcdef",
+							"amount": "1",
+							"lastupdatedblock": 12345
+							}
+						]
+					}
+				]
+			}
+		}`))),
+	}, nil)
+
+	response := rpc.GetNep11Balances("NNBjvfrvPTZRw3Tx2Qwm6bLKqbng4qQ41N")
+	r := response.Result
+	assert.Equal(t, "NNBjvfrvPTZRw3Tx2Qwm6bLKqbng4qQ41N", r.Address)
+	assert.Equal(t, "0x1234567890abcdef1234567890abcdef12345678", r.Balances[0].AssetHash)
+	assert.Equal(t, "1234567890abcdef", r.Balances[0].Tokens[0].TokenId)
+}
+
+func TestRpcClient_GetNep11Transfers(t *testing.T) {
+	var client = new(HttpClientMock)
+	var rpc = RpcClient{Endpoint: new(url.URL), httpClient: client}
+	client.On("Do", mock.Anything).Return(&http.Response{
+		Body: ioutil.NopCloser(bytes.NewReader([]byte(`{
+			"jsonrpc": "2.0",
+			"id": 1,
+			"result": {
+				"address": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ",
+				"sent": [
+					{
+						"timestamp": 1578471997998,
+						"assethash": "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
+						"transferaddress": "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW",
+						"amount": "1",
+						"blockindex": 72,
+						"transfernotifyindex": 0,
+						"txhash": "0xc28763714d06e80f28b431d0a24495f41961b7d2746fc4cdaec0607adf0d6749",
+						"tokenid": "1234567890abcdef"
+					}
+				],
+				"received": [
+					{
+						"timestamp": 1578471121898,
+						"assethash": "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
+						"transferaddress": "NZs2zXSPuuv9ZF6TDGSWT1RBmE8rfGj7UW",
+						"amount": "1",
+						"blockindex": 14,
+						"transfernotifyindex": 0,
+						"txhash": "0xfc4b8454601e3df8c9ed03765f7860fce4ae2aa3d52e0f4790fd89f208ed051b",
+						"tokenid": "1234567890abcdef"
+					}
+				]
+			}
+		}`))),
+	}, nil)
+
+	response := rpc.GetNep11Transfers("", nil, nil)
+	r := response.Result
+	assert.Equal(t, "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", r.Address)
+	assert.Equal(t, "1234567890abcdef", r.Received[0].TokenId)
+}
+
+func TestRpcClient_GetNep11Properties(t *testing.T) {
+	var client = new(HttpClientMock)
+	var rpc = RpcClient{Endpoint: new(url.URL), httpClient: client}
+	client.On("Do", mock.Anything).Return(&http.Response{
+		Body: ioutil.NopCloser(bytes.NewReader([]byte(`{
+			"jsonrpc": "2.0",
+			"id": 1,
+			"result": {
+				"assethash": "0x1234567890abcdef1234567890abcdef12345678",
+				"name": "SampleNFT",
+				"symbol": "sNFT",
+				"decimals": "1",
+				"tokenid": "1234567890abcdef"
+			}
+		}`))),
+	}, nil)
+
+	response := rpc.GetNep11Properties("", "")
+	r := response.Result
+	assert.Equal(t, "0x1234567890abcdef1234567890abcdef12345678", r["assethash"])
+	assert.Equal(t, "1234567890abcdef", r["tokenid"])
+}
+
 func TestRpcClient_GetNep17Balances(t *testing.T) {
 	var client = new(HttpClientMock)
 	var rpc = RpcClient{Endpoint: new(url.URL), httpClient: client}
@@ -88,27 +190,49 @@ func TestRpcClient_GetNep17Balances(t *testing.T) {
 			"jsonrpc": "2.0",
 			"id": 1,
 			"result": {
+				"address": "NNBjvfrvPTZRw3Tx2Qwm6bLKqbng4qQ41N",
 				"balance": [
 					{
-						"assethash": "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789",
-						"amount": "10000000",
-						"lastupdatedblock": 14
+						"assethash": "0xcd48b160c1bbc9d74997b803b9a7ad50a4bef020",
+						"name": "Nep17Contract",
+						"symbol": "fUSDT",
+						"decimals": "6",
+						"amount": "9809309981",
+						"lastupdatedblock": 2362166
 					},
 					{
-						"assethash": "0x9c33bbf2f5afbbc8fe271dd37508acd93573cffc",
-						"amount": "9995000000000000",
-						"lastupdatedblock": 17145
+						"assethash": "0x78e1330db47634afdb5ea455302ba2d12b8d549f",
+						"name": "SWTHToken",
+						"symbol": "SWTH",
+						"decimals": "8",
+						"amount": "245054977090092",
+						"lastupdatedblock": 2362166
+					},
+					{
+						"assethash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+						"name": "GasToken",
+						"symbol": "GAS",
+						"decimals": "8",
+						"amount": "679451069",
+						"lastupdatedblock": 2362959
+					},
+					{
+						"assethash": "0x340720c7107ef5721e44ed2ea8e314cce5c130fa",
+						"name": "Nudes",
+						"symbol": "NUDES",
+						"decimals": "8",
+						"amount": "37975094447324564869",
+						"lastupdatedblock": 2351094
 					}
-				],
-				"address": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ"
+				]
 			}
 		}`))),
 	}, nil)
 
-	response := rpc.GetNep17Balances("NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ")
+	response := rpc.GetNep17Balances("NNBjvfrvPTZRw3Tx2Qwm6bLKqbng4qQ41N")
 	r := response.Result
-	assert.Equal(t, "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", r.Address)
-	assert.Equal(t, "0x9bde8f209c88dd0e7ca3bf0af0f476cdd8207789", r.Balances[0].AssetHash)
+	assert.Equal(t, "NNBjvfrvPTZRw3Tx2Qwm6bLKqbng4qQ41N", r.Address)
+	assert.Equal(t, "0xcd48b160c1bbc9d74997b803b9a7ad50a4bef020", r.Balances[0].AssetHash)
 }
 
 func TestRpcClient_GetNep17Transfers(t *testing.T) {
@@ -119,6 +243,7 @@ func TestRpcClient_GetNep17Transfers(t *testing.T) {
 			"jsonrpc": "2.0",
 			"id": 1,
 			"result": {
+				"address": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ",
 				"sent": [
 					{
 						"timestamp": 1578471997998,
@@ -149,8 +274,7 @@ func TestRpcClient_GetNep17Transfers(t *testing.T) {
 						"transfernotifyindex": 0,
 						"txhash": "0xadc751e8fc4e7514cf2fcd623ad78a565985b5701b04961445b3d4794015e19a"
 					}
-				],
-				"address": "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ"
+				]
 			}
 		}`))),
 	}, nil)
@@ -158,6 +282,6 @@ func TestRpcClient_GetNep17Transfers(t *testing.T) {
 	response := rpc.GetNep17Transfers("", nil, nil)
 	r := response.Result
 	assert.Equal(t, "NVVwFw6XyhtRCFQ8SpUTMdPyYt4Vd9A1XQ", r.Address)
-	assert.Equal(t, 1578471997998, r.Sent[0].Timestamp)
+	assert.Equal(t, uint64(1578471997998), r.Sent[0].Timestamp)
 	assert.Equal(t, "0xadc751e8fc4e7514cf2fcd623ad78a565985b5701b04961445b3d4794015e19a", r.Received[1].TxHash)
 }

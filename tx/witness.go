@@ -19,7 +19,6 @@ func (ws WitnessSlice) Len() int           { return len(ws) }
 func (ws WitnessSlice) Less(i, j int) bool { return ws[i]._scriptHash.Less(ws[j]._scriptHash) }
 func (ws WitnessSlice) Swap(i, j int)      { ws[i], ws[j] = ws[j], ws[i] }
 
-
 // MaxInvocationScript This is designed to allow a MultiSig 21/11 (committee)
 // Invocation = 11 * (64 + 2) = 726
 const MaxInvocationScript = 1024
@@ -28,8 +27,8 @@ const MaxInvocationScript = 1024
 const MaxVerificationScript = 1024
 
 type Witness struct {
-	InvocationScript   []byte         // signature
-	VerificationScript []byte         // pub key
+	InvocationScript   []byte          // signature
+	VerificationScript []byte          // pub key
 	_scriptHash        *helper.UInt160 // script hash
 }
 
@@ -38,7 +37,7 @@ func (w *Witness) GetScriptHash() *helper.UInt160 {
 	return w._scriptHash
 }
 
-func (w *Witness) Size() int {
+func (w *Witness) GetSize() int {
 	return sc.ByteSlice(w.InvocationScript).GetVarSize() + sc.ByteSlice(w.VerificationScript).GetVarSize()
 }
 
@@ -74,14 +73,14 @@ func CreateWitness(invocationScript []byte, verificationScript []byte) (*Witness
 	return witness, nil
 }
 
-// this is only used for empty VerificationScript, neo block chain will search the contract script with scriptHash
+// CreateWitnessWithScriptHash is only used for empty VerificationScript, neo blockchain will search the contract script with scriptHash
 func CreateWitnessWithScriptHash(scriptHash *helper.UInt160, invocationScript []byte) (witness *Witness) {
 	witness = &Witness{InvocationScript: invocationScript, VerificationScript: []byte{}, _scriptHash: scriptHash}
 	return
 }
 
-// create single signature witness
-func CreateContractWitness(msg []byte, pairs []keys.KeyPair, contract *sc.Contract) (*Witness, error) {
+// CreateContractWitness creates single signature witness
+func CreateContractWitness(msg []byte, pairs []*keys.KeyPair, contract *sc.Contract) (*Witness, error) {
 	invocationScript, err := CreateInvocationScript(msg, pairs)
 	if err != nil {
 		return nil, err
@@ -91,7 +90,7 @@ func CreateContractWitness(msg []byte, pairs []keys.KeyPair, contract *sc.Contra
 }
 
 // CreateInvocationScript pushes signature
-func CreateInvocationScript(msg []byte, pairs []keys.KeyPair) ([]byte, error) {
+func CreateInvocationScript(msg []byte, pairs []*keys.KeyPair) ([]byte, error) {
 	// invocationScript: push signature
 	sort.Sort(keys.KeyPairSlice(pairs)) // sort in ascending order
 
@@ -106,6 +105,7 @@ func CreateInvocationScript(msg []byte, pairs []keys.KeyPair) ([]byte, error) {
 	return builder.ToArray()
 }
 
+// CreateSignatureWitness creates single signature witness
 func CreateSignatureWitness(msg []byte, pair *keys.KeyPair) (*Witness, error) {
 	// 	invocationScript: push signature
 	signature, err := pair.Sign(msg)
@@ -128,8 +128,8 @@ func CreateSignatureWitness(msg []byte, pair *keys.KeyPair) (*Witness, error) {
 	return CreateWitness(invocationScript, verificationScript)
 }
 
-// create multi-signature witness
-func CreateMultiSignatureWitness(msg []byte, pairs []keys.KeyPair, least int, publicKeys []crypto.ECPoint) (*Witness, error) {
+// CreateMultiSignatureWitness creates multi signatures witness
+func CreateMultiSignatureWitness(msg []byte, pairs []*keys.KeyPair, least int, publicKeys []*crypto.ECPoint) (*Witness, error) {
 	if len(pairs) < least {
 		return nil, fmt.Errorf("the multi-signature contract needs least %v signatures", least)
 	}
@@ -169,7 +169,7 @@ func VerifySignatureWitness(msg []byte, witness *Witness) bool {
 	if len(verificationScript) != 40 {
 		return false
 	}
-	data := verificationScript[:35] // length 35
+	data := verificationScript[:35]                      // length 35
 	publicKey, _ := crypto.NewECPointFromBytes(data[2:]) // length 33
 	return keys.VerifySignature(msg, signature, publicKey)
 }
@@ -202,7 +202,7 @@ func VerifyMultiSignatureWitness(msg []byte, witness *Witness) bool {
 
 	var pubKeys = make([]crypto.ECPoint, n)
 	for i := 0; i < int(n); i++ {
-		data := verificationScript[i*35+1 : i*35+36] // length 35
+		data := verificationScript[i*35+1 : i*35+36]         // length 35
 		publicKey, _ := crypto.NewECPointFromBytes(data[2:]) // length 33
 		pubKeys[i] = *publicKey
 	}

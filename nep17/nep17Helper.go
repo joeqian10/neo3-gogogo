@@ -1,12 +1,14 @@
 package nep17
 
 import (
+	"fmt"
 	"github.com/joeqian10/neo3-gogogo/crypto"
+	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"math/big"
+	"strconv"
 
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc"
-	"github.com/joeqian10/neo3-gogogo/sc"
 )
 
 // Nep17Helper is nep17 wrapper class, api reference: https://github.com/neo-project/proposals/tree/nep-17
@@ -26,81 +28,64 @@ func NewNep17Helper(scriptHash *helper.UInt160, client rpc.IRpcClient) *Nep17Hel
 }
 
 func (n *Nep17Helper) Symbol() (string, error) {
-	sb := sc.NewScriptBuilder()
-	sb.EmitDynamicCall(n.ScriptHash, "symbol", nil)
-	script, err := sb.ToArray()
+	response := n.Client.InvokeFunction(n.ScriptHash.String(), "symbol", nil, nil, false)
+	stacks, err := rpc.PopInvokeStacks(response)
 	if err != nil {
 		return "", err
 	}
-	response := n.Client.InvokeScript(crypto.Base64Encode(script), nil)
-	stack, err := rpc.PopInvokeStack(response)
+	r := stacks[0]
+	b, err := crypto.Base64Decode(r.Value.(string))
 	if err != nil {
 		return "", err
 	}
-	p, err := stack.ToParameter()
-	if err != nil {
-		return "", err
-	}
-	return  string(p.Value.([]byte)), nil
+	return string(b), nil
 }
 
 func (n *Nep17Helper) Decimals() (int, error) {
-	sb := sc.NewScriptBuilder()
-	sb.EmitDynamicCall(n.ScriptHash, "decimals", nil)
-	script, err := sb.ToArray()
+	response := n.Client.InvokeFunction(n.ScriptHash.String(), "decimals", nil, nil, false)
+	stacks, err := rpc.PopInvokeStacks(response)
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
-	response := n.Client.InvokeScript(crypto.Base64Encode(script), nil)
-	stack, err := rpc.PopInvokeStack(response)
+	r := stacks[0]
+	i, err := strconv.Atoi(r.Value.(string))
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
-	p, err := stack.ToParameter()
-	if err != nil {
-		return 0, err
-	}
-	return int(p.Value.(*big.Int).Int64()), nil
+	return i, nil
 }
 
 func (n *Nep17Helper) TotalSupply() (*big.Int, error) {
-	sb := sc.NewScriptBuilder()
-	sb.EmitDynamicCall(n.ScriptHash, "totalSupply", nil)
-	script, err := sb.ToArray()
+	response := n.Client.InvokeFunction(n.ScriptHash.String(), "totalSupply", nil, nil, false)
+	stacks, err := rpc.PopInvokeStacks(response)
 	if err != nil {
 		return nil, err
 	}
-	response := n.Client.InvokeScript(crypto.Base64Encode(script), nil)
-	stack, err := rpc.PopInvokeStack(response)
-	if err != nil {
-		return nil, err
+	r := stacks[0]
+	b, c := new(big.Int).SetString(r.Value.(string), 10)
+	if !c {
+		return nil, fmt.Errorf("converting value failed")
 	}
-	p, err := stack.ToParameter()
-	if err != nil {
-		return nil, err
-	}
-	return p.Value.(*big.Int), nil
+	return b, nil
 }
 
 func (n *Nep17Helper) BalanceOf(account *helper.UInt160) (*big.Int, error) {
-	sb := sc.NewScriptBuilder()
-	param := sc.ContractParameter{
-		Type:  sc.Hash160,
-		Value: account,
+	args := []models.RpcContractParameter{
+		{
+			Type:  "Hash160",
+			Value: account,
+		},
 	}
-	sb.EmitDynamicCall(n.ScriptHash, "balanceOf", []interface{}{param})
-	script, err := sb.ToArray()
+
+	response := n.Client.InvokeFunction(n.ScriptHash.String(), "balanceOf", args, nil, false)
+	stacks, err := rpc.PopInvokeStacks(response)
 	if err != nil {
 		return nil, err
 	}
-	response := n.Client.InvokeScript(crypto.Base64Encode(script), nil)
-	stack, err := rpc.PopInvokeStack(response)
-	if err != nil {
-		return nil, err
+	r := stacks[0]
+	b, c := new(big.Int).SetString(r.Value.(string), 10)
+	if !c {
+		return nil, fmt.Errorf("converting value failed")
 	}
-	p, err := stack.ToParameter()
-	if err != nil {
-		return nil, err
-	}
-	return p.Value.(*big.Int), nil
+	return b, nil
 }

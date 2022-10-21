@@ -59,9 +59,9 @@ func TestByteSlice_IsSignatureContract(t *testing.T) {
 }
 
 func TestByteSlice_IsMultiSigContract(t *testing.T) {
-	pubKeys1 := make([]crypto.ECPoint, 20)
+	pubKeys1 := make([]*crypto.ECPoint, 20)
 	for i := 0; i < 20; i++ {
-		pubKeys1[i] = *G
+		pubKeys1[i] = G
 	}
 	script1, err := CreateMultiSigRedeemScript(20, pubKeys1)
 	assert.Nil(t, err)
@@ -70,9 +70,9 @@ func TestByteSlice_IsMultiSigContract(t *testing.T) {
 	assert.Equal(t, 20, m1)
 	assert.Equal(t, 20, n1)
 
-	pubKeys2 := make([]crypto.ECPoint, 256)
+	pubKeys2 := make([]*crypto.ECPoint, 256)
 	for i := 0; i < 256; i++ {
-		pubKeys2[i] = *G
+		pubKeys2[i] = G
 	}
 	script2, err := CreateMultiSigRedeemScript(4, pubKeys2)
 	assert.Nil(t, err)
@@ -81,9 +81,9 @@ func TestByteSlice_IsMultiSigContract(t *testing.T) {
 	assert.Equal(t, 4, m2)
 	assert.Equal(t, 256, n2)
 
-	pubKeys3 := make([]crypto.ECPoint, 256)
+	pubKeys3 := make([]*crypto.ECPoint, 256)
 	for i := 0; i < 256; i++ {
-		pubKeys3[i] = *G
+		pubKeys3[i] = G
 	}
 	script3, err := CreateMultiSigRedeemScript(4, pubKeys3)
 	assert.Nil(t, err)
@@ -101,11 +101,11 @@ func TestCreateMultiSigRedeemScript(t *testing.T) {
 		"02c9b2ae96f937dcea7d010286db14d8b052043e1b09614a4d4eadca74f57160d6",
 		"032017f4b14afeb47e49f3bd32a9b84366cb3212b4d8de46934858c896ca6e299e",
 	}
-	pubKeys := make([]crypto.ECPoint, 4)
+	pubKeys := make([]*crypto.ECPoint, 4)
 	for i, v := range pubKeyStrs {
 		pk, err := crypto.NewECPointFromString(v)
 		assert.Nil(t, err)
-		pubKeys[i] = *pk
+		pubKeys[i] = pk
 	}
 	script, err := CreateMultiSigRedeemScript(3, pubKeys)
 	assert.Nil(t, err)

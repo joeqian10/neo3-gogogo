@@ -38,7 +38,7 @@ func UInt160FromBytes(b []byte) *UInt160 {
 
 	return &UInt160{
 		Value1: BytesToUInt64(r[:UINT64SIZE]),
-		Value2: BytesToUInt64(r[UINT64SIZE:UINT64SIZE*2]),
+		Value2: BytesToUInt64(r[UINT64SIZE : UINT64SIZE*2]),
 		Value3: BytesToUInt32(r[UINT64SIZE*2:]),
 	}
 }
@@ -95,7 +95,7 @@ func (u *UInt160) Serialize(bw *io.BinaryWriter) {
 }
 
 // String implements the stringer interface. Return big endian hex string.
-func (u UInt160) String() string {
+func (u *UInt160) String() string {
 	return hex.EncodeToString(ReverseBytes(u.ToByteArray()))
 }
 
@@ -108,12 +108,12 @@ func (u *UInt160) ToByteArray() []byte {
 	return b
 }
 
-// Size returns the size of a UInt160 object in byte
-func (u *UInt160) Size() int {
+// GetSize returns the size of a UInt160 object in byte
+func (u *UInt160) GetSize() int {
 	return UINT160SIZE
 }
 
-// UnmarshalJSON implements the json unmarshaller interface.
+// UnmarshalJSON implements the json unmarshall interface.
 func (u *UInt160) UnmarshalJSON(data []byte) (err error) {
 	var js string
 	if err = json.Unmarshal(data, &js); err != nil {
@@ -131,23 +131,23 @@ func (u *UInt160) MarshalJSON() ([]byte, error) {
 }
 
 // ExistsIn checks if u exists in list
-func (u *UInt160) ExistsIn(list []UInt160) bool {
+func (u *UInt160) ExistsIn(list []*UInt160) bool {
 	for _, a := range list {
-		if (u).Equals(&a) {
+		if (u).Equals(a) {
 			return true
 		}
 	}
 	return false
 }
 
-type UInt160Slice []UInt160
+type UInt160Slice []*UInt160
 
 func (us UInt160Slice) Len() int {
 	return len(us)
 }
 
 func (us UInt160Slice) Less(i int, j int) bool {
-	return us[i].Less(&us[j])
+	return us[i].Less(us[j])
 }
 
 func (us UInt160Slice) Swap(i, j int) {

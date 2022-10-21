@@ -6,12 +6,12 @@ type OpCode byte
 
 const (
 	// Constants
-	PUSHINT8   OpCode = 0x00 // Operand Size = 1. Pushes a 1-byte signed integer onto the stack.
-	PUSHINT16  OpCode = 0x01 // Operand Size = 2. Pushes a 2-bytes signed integer onto the stack.
-	PUSHINT32  OpCode = 0x02 // Operand Size = 4. Pushes a 4-bytes signed integer onto the stack.
-	PUSHINT64  OpCode = 0x03 // Operand Size = 8. Pushes a 8-bytes signed integer onto the stack.
-	PUSHINT128 OpCode = 0x04 // Operand Size = 16. Pushes a 16-bytes signed integer onto the stack.
-	PUSHINT256 OpCode = 0x05 // Operand Size = 32. Pushes a 32-bytes signed integer onto the stack.
+	PUSHINT8   OpCode = 0x00 // Operand GetSize = 1. Pushes a 1-byte signed integer onto the stack.
+	PUSHINT16  OpCode = 0x01 // Operand GetSize = 2. Pushes a 2-bytes signed integer onto the stack.
+	PUSHINT32  OpCode = 0x02 // Operand GetSize = 4. Pushes a 4-bytes signed integer onto the stack.
+	PUSHINT64  OpCode = 0x03 // Operand GetSize = 8. Pushes a 8-bytes signed integer onto the stack.
+	PUSHINT128 OpCode = 0x04 // Operand GetSize = 16. Pushes a 16-bytes signed integer onto the stack.
+	PUSHINT256 OpCode = 0x05 // Operand GetSize = 32. Pushes a 32-bytes signed integer onto the stack.
 	PUSHA      OpCode = 0x0A // Converts the 4-bytes offset to a "Pointer", and pushes it onto the stack.
 	PUSHNULL   OpCode = 0x0B // "null" is pushed onto the stack.
 	PUSHDATA1  OpCode = 0x0C // Operand SizePrefix = 1. The next byte contains the number of bytes to be pushed onto the stack.
@@ -38,38 +38,38 @@ const (
 
 	// Flow control
 	NOP        OpCode = 0x21 // The "NOP" operation does nothing. It is intended to fill in space if opcodes are patched.
-	JMP        OpCode = 0x22 // Operand Size = 1. Unconditionally transfers control to a target instruction. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
-	JMP_L      OpCode = 0x23 // Operand Size = 4. Unconditionally transfers control to a target instruction. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
-	JMPIF      OpCode = 0x24 // Operand Size = 1. Transfers control to a target instruction if the value is "true", not "null", or non-zero. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
-	JMPIF_L    OpCode = 0x25 // Operand Size = 4. Transfers control to a target instruction if the value is "true", not "null", or non-zero. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
-	JMPIFNOT   OpCode = 0x26 // Operand Size = 1. Transfers control to a target instruction if the value is "false", a "null" reference, or zero. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
-	JMPIFNOT_L OpCode = 0x27 // Operand Size = 4. Transfers control to a target instruction if the value is "false", a "null" reference, or zero. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
-	JMPEQ      OpCode = 0x28 // Operand Size = 1. Transfers control to a target instruction if two values are equal. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
-	JMPEQ_L    OpCode = 0x29 // Operand Size = 4. Transfers control to a target instruction if two values are equal. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
-	JMPNE      OpCode = 0x2A // Operand Size = 1. Transfers control to a target instruction when two values are not equal. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
-	JMPNE_L    OpCode = 0x2B // Operand Size = 4. Transfers control to a target instruction when two values are not equal. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
-	JMPGT      OpCode = 0x2C // Operand Size = 1. Transfers control to a target instruction if the first value is greater than the second value. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
-	JMPGT_L    OpCode = 0x2D // Operand Size = 4. Transfers control to a target instruction if the first value is greater than the second value. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
-	JMPGE      OpCode = 0x2E // Operand Size = 1. Transfers control to a target instruction if the first value is greater than or equal to the second value. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
-	JMPGE_L    OpCode = 0x2F // Operand Size = 4. Transfers control to a target instruction if the first value is greater than or equal to the second value. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
-	JMPLT      OpCode = 0x30 // Operand Size = 1. Transfers control to a target instruction if the first value is less than the second value. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
-	JMPLT_L    OpCode = 0x31 // Operand Size = 4. Transfers control to a target instruction if the first value is less than the second value. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
-	JMPLE      OpCode = 0x32 // Operand Size = 1. Transfers control to a target instruction if the first value is less than or equal to the second value. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
-	JMPLE_L    OpCode = 0x33 // Operand Size = 4. Transfers control to a target instruction if the first value is less than or equal to the second value. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
-	CALL       OpCode = 0x34 // Operand Size = 1. Calls the function at the target address which is represented as a 1-byte signed offset from the beginning of the current instruction.
-	CALL_L     OpCode = 0x35 // Operand Size = 4. Calls the function at the target address which is represented as a 4-bytes signed offset from the beginning of the current instruction.
+	JMP        OpCode = 0x22 // Operand GetSize = 1. Unconditionally transfers control to a target instruction. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
+	JMP_L      OpCode = 0x23 // Operand GetSize = 4. Unconditionally transfers control to a target instruction. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
+	JMPIF      OpCode = 0x24 // Operand GetSize = 1. Transfers control to a target instruction if the value is "true", not "null", or non-zero. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
+	JMPIF_L    OpCode = 0x25 // Operand GetSize = 4. Transfers control to a target instruction if the value is "true", not "null", or non-zero. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
+	JMPIFNOT   OpCode = 0x26 // Operand GetSize = 1. Transfers control to a target instruction if the value is "false", a "null" reference, or zero. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
+	JMPIFNOT_L OpCode = 0x27 // Operand GetSize = 4. Transfers control to a target instruction if the value is "false", a "null" reference, or zero. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
+	JMPEQ      OpCode = 0x28 // Operand GetSize = 1. Transfers control to a target instruction if two values are equal. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
+	JMPEQ_L    OpCode = 0x29 // Operand GetSize = 4. Transfers control to a target instruction if two values are equal. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
+	JMPNE      OpCode = 0x2A // Operand GetSize = 1. Transfers control to a target instruction when two values are not equal. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
+	JMPNE_L    OpCode = 0x2B // Operand GetSize = 4. Transfers control to a target instruction when two values are not equal. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
+	JMPGT      OpCode = 0x2C // Operand GetSize = 1. Transfers control to a target instruction if the first value is greater than the second value. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
+	JMPGT_L    OpCode = 0x2D // Operand GetSize = 4. Transfers control to a target instruction if the first value is greater than the second value. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
+	JMPGE      OpCode = 0x2E // Operand GetSize = 1. Transfers control to a target instruction if the first value is greater than or equal to the second value. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
+	JMPGE_L    OpCode = 0x2F // Operand GetSize = 4. Transfers control to a target instruction if the first value is greater than or equal to the second value. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
+	JMPLT      OpCode = 0x30 // Operand GetSize = 1. Transfers control to a target instruction if the first value is less than the second value. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
+	JMPLT_L    OpCode = 0x31 // Operand GetSize = 4. Transfers control to a target instruction if the first value is less than the second value. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
+	JMPLE      OpCode = 0x32 // Operand GetSize = 1. Transfers control to a target instruction if the first value is less than or equal to the second value. The target instruction is represented as a 1-byte signed offset from the beginning of the current instruction.
+	JMPLE_L    OpCode = 0x33 // Operand GetSize = 4. Transfers control to a target instruction if the first value is less than or equal to the second value. The target instruction is represented as a 4-bytes signed offset from the beginning of the current instruction.
+	CALL       OpCode = 0x34 // Operand GetSize = 1. Calls the function at the target address which is represented as a 1-byte signed offset from the beginning of the current instruction.
+	CALL_L     OpCode = 0x35 // Operand GetSize = 4. Calls the function at the target address which is represented as a 4-bytes signed offset from the beginning of the current instruction.
 	CALLA      OpCode = 0x36 // Pop the address of a function from the stack, and call the function.
-	CALLT      OpCode = 0x37 // Operand Size = 2. Calls the function which is described by the token.
+	CALLT      OpCode = 0x37 // Operand GetSize = 2. Calls the function which is described by the token.
 	ABORT      OpCode = 0x38 // It turns the vm state to FAULT immediately, and cannot be caught.
 	ASSERT     OpCode = 0x39 // Pop the top value of the stack, if it false, then exit vm execution and set vm state to FAULT.
 	THROW      OpCode = 0x3A // Pop the top value of the stack, and throw it.
-	TRY        OpCode = 0x3B // Operand Size = 2. TRY CatchOffset(sbyte) FinallyOffset(sbyte). If there's no catch body, set CatchOffset 0. If there's no finally body, set FinallyOffset 0.
-	TRY_L      OpCode = 0x3C // Operand Size = 8. TRY_L CatchOffset(int) FinallyOffset(int). If there's no catch body, set CatchOffset 0. If there's no finally body, set FinallyOffset 0.
-	ENDTRY     OpCode = 0x3D // Operand Size = 1. Ensures that the appropriate surrounding finally blocks are executed. And then unconditionally transfers control to the specific target instruction, represented as a 1-byte signed offset from the beginning of the current instruction.
-	ENDTRY_L   OpCode = 0x3E // Operand Size = 4. Ensures that the appropriate surrounding finally blocks are executed. And then unconditionally transfers control to the specific target instruction, represented as a 4-byte signed offset from the beginning of the current instruction.
+	TRY        OpCode = 0x3B // Operand GetSize = 2. TRY CatchOffset(sbyte) FinallyOffset(sbyte). If there's no catch body, set CatchOffset 0. If there's no finally body, set FinallyOffset 0.
+	TRY_L      OpCode = 0x3C // Operand GetSize = 8. TRY_L CatchOffset(int) FinallyOffset(int). If there's no catch body, set CatchOffset 0. If there's no finally body, set FinallyOffset 0.
+	ENDTRY     OpCode = 0x3D // Operand GetSize = 1. Ensures that the appropriate surrounding finally blocks are executed. And then unconditionally transfers control to the specific target instruction, represented as a 1-byte signed offset from the beginning of the current instruction.
+	ENDTRY_L   OpCode = 0x3E // Operand GetSize = 4. Ensures that the appropriate surrounding finally blocks are executed. And then unconditionally transfers control to the specific target instruction, represented as a 4-byte signed offset from the beginning of the current instruction.
 	ENDFINALLY OpCode = 0x3F // End finally, If no exception happen or be catched, vm will jump to the target instruction of ENDTRY/ENDTRY_L. Otherwise vm will rethrow the exception to upper layer.
 	RET        OpCode = 0x40 // Returns from the current method.
-	SYSCALL    OpCode = 0x41 // Operand Size = 4. Calls to an interop service.
+	SYSCALL    OpCode = 0x41 // Operand GetSize = 4. Calls to an interop service.
 
 	// Stack
 	DEPTH    OpCode = 0x43 // Puts the number of stack items onto the stack.
@@ -89,8 +89,8 @@ const (
 	REVERSEN OpCode = 0x55 // Pop the number N on the stack, and reverse the order of the top N items on the stack.
 
 	// Slot
-	INITSSLOT OpCode = 0x56 // Operand Size = 1. Initialize the static field list for the current execution context.
-	INITSLOT  OpCode = 0x57 // Operand Size = 2. Initialize the argument slot and the local variable list for the current execution context.
+	INITSSLOT OpCode = 0x56 // Operand GetSize = 1. Initialize the static field list for the current execution context.
+	INITSLOT  OpCode = 0x57 // Operand GetSize = 2. Initialize the argument slot and the local variable list for the current execution context.
 	LDSFLD0   OpCode = 0x58 // Loads the static field at index 0 onto the evaluation stack.
 	LDSFLD1   OpCode = 0x59 // Loads the static field at index 1 onto the evaluation stack.
 	LDSFLD2   OpCode = 0x5A // Loads the static field at index 2 onto the evaluation stack.
@@ -98,7 +98,7 @@ const (
 	LDSFLD4   OpCode = 0x5C // Loads the static field at index 4 onto the evaluation stack.
 	LDSFLD5   OpCode = 0x5D // Loads the static field at index 5 onto the evaluation stack.
 	LDSFLD6   OpCode = 0x5E // Loads the static field at index 6 onto the evaluation stack.
-	LDSFLD    OpCode = 0x5F // Operand Size = 1. Loads the static field at a specified index onto the evaluation stack. The index is represented as a 1-byte unsigned integer.
+	LDSFLD    OpCode = 0x5F // Operand GetSize = 1. Loads the static field at a specified index onto the evaluation stack. The index is represented as a 1-byte unsigned integer.
 	STSFLD0   OpCode = 0x60 // Stores the value on top of the evaluation stack in the static field list at index 0.
 	STSFLD1   OpCode = 0x61 // Stores the value on top of the evaluation stack in the static field list at index 1.
 	STSFLD2   OpCode = 0x62 // Stores the value on top of the evaluation stack in the static field list at index 2.
@@ -106,7 +106,7 @@ const (
 	STSFLD4   OpCode = 0x64 // Stores the value on top of the evaluation stack in the static field list at index 4.
 	STSFLD5   OpCode = 0x65 // Stores the value on top of the evaluation stack in the static field list at index 5.
 	STSFLD6   OpCode = 0x66 // Stores the value on top of the evaluation stack in the static field list at index 6.
-	STSFLD    OpCode = 0x67 // Operand Size = 1. Stores the value on top of the evaluation stack in the static field list at a specified index. The index is represented as a 1-byte unsigned integer.
+	STSFLD    OpCode = 0x67 // Operand GetSize = 1. Stores the value on top of the evaluation stack in the static field list at a specified index. The index is represented as a 1-byte unsigned integer.
 	LDLOC0    OpCode = 0x68 // Loads the local variable at index 0 onto the evaluation stack.
 	LDLOC1    OpCode = 0x69 // Loads the local variable at index 1 onto the evaluation stack.
 	LDLOC2    OpCode = 0x6A // Loads the local variable at index 2 onto the evaluation stack.
@@ -114,7 +114,7 @@ const (
 	LDLOC4    OpCode = 0x6C // Loads the local variable at index 4 onto the evaluation stack.
 	LDLOC5    OpCode = 0x6D // Loads the local variable at index 5 onto the evaluation stack.
 	LDLOC6    OpCode = 0x6E // Loads the local variable at index 6 onto the evaluation stack.
-	LDLOC     OpCode = 0x6F // Operand Size = 1. Loads the local variable at a specified index onto the evaluation stack. The index is represented as a 1-byte unsigned integer.
+	LDLOC     OpCode = 0x6F // Operand GetSize = 1. Loads the local variable at a specified index onto the evaluation stack. The index is represented as a 1-byte unsigned integer.
 	STLOC0    OpCode = 0x70 // Stores the value on top of the evaluation stack in the local variable list at index 0.
 	STLOC1    OpCode = 0x71 // Stores the value on top of the evaluation stack in the local variable list at index 1.
 	STLOC2    OpCode = 0x72 // Stores the value on top of the evaluation stack in the local variable list at index 2.
@@ -122,7 +122,7 @@ const (
 	STLOC4    OpCode = 0x74 // Stores the value on top of the evaluation stack in the local variable list at index 4.
 	STLOC5    OpCode = 0x75 // Stores the value on top of the evaluation stack in the local variable list at index 5.
 	STLOC6    OpCode = 0x76 // Stores the value on top of the evaluation stack in the local variable list at index 6.
-	STLOC     OpCode = 0x77 // Operand Size = 1. Stores the value on top of the evaluation stack in the local variable list at a specified index. The index is represented as a 1-byte unsigned integer.
+	STLOC     OpCode = 0x77 // Operand GetSize = 1. Stores the value on top of the evaluation stack in the local variable list at a specified index. The index is represented as a 1-byte unsigned integer.
 	LDARG0    OpCode = 0x78 // Loads the argument at index 0 onto the evaluation stack.
 	LDARG1    OpCode = 0x79 // Loads the argument at index 1 onto the evaluation stack.
 	LDARG2    OpCode = 0x7A // Loads the argument at index 2 onto the evaluation stack.
@@ -130,7 +130,7 @@ const (
 	LDARG4    OpCode = 0x7C // Loads the argument at index 4 onto the evaluation stack.
 	LDARG5    OpCode = 0x7D // Loads the argument at index 5 onto the evaluation stack.
 	LDARG6    OpCode = 0x7E // Loads the argument at index 6 onto the evaluation stack.
-	LDARG     OpCode = 0x7F // Operand Size = 1. Loads the argument at a specified index onto the evaluation stack. The index is represented as a 1-byte unsigned integer.
+	LDARG     OpCode = 0x7F // Operand GetSize = 1. Loads the argument at a specified index onto the evaluation stack. The index is represented as a 1-byte unsigned integer.
 	STARG0    OpCode = 0x80 // Stores the value on top of the evaluation stack in the argument slot at index 0.
 	STARG1    OpCode = 0x81 // Stores the value on top of the evaluation stack in the argument slot at index 1.
 	STARG2    OpCode = 0x82 // Stores the value on top of the evaluation stack in the argument slot at index 2.
@@ -138,7 +138,7 @@ const (
 	STARG4    OpCode = 0x84 // Stores the value on top of the evaluation stack in the argument slot at index 4.
 	STARG5    OpCode = 0x85 // Stores the value on top of the evaluation stack in the argument slot at index 5.
 	STARG6    OpCode = 0x86 // Stores the value on top of the evaluation stack in the argument slot at index 6.
-	STARG     OpCode = 0x87 // Operand Size = 1. Stores the value on top of the evaluation stack in the argument slot at a specified index. The index is represented as a 1-byte unsigned integer.
+	STARG     OpCode = 0x87 // Operand GetSize = 1. Stores the value on top of the evaluation stack in the argument slot at a specified index. The index is represented as a 1-byte unsigned integer.
 
 	// Splice
 	NEWBUFFER OpCode = 0x88 // Creates a new "Buffer" and pushes it onto the stack.
@@ -190,7 +190,7 @@ const (
 	UNPACK       OpCode = 0xC1 // An array is removed from top of the main stack. Its elements are put on top of the main stack (in reverse order) and the array size is also put on main stack.
 	NEWARRAY0    OpCode = 0xC2 // An empty array (with size 0) is put on top of the main stack.
 	NEWARRAY     OpCode = 0xC3 // A value n is taken from top of main stack. A null-filled array with size n is put on top of the main stack.
-	NEWARRAY_T   OpCode = 0xC4 // Operand Size = 1. A value n is taken from top of main stack. An array of type T with size n is put on top of the main stack.
+	NEWARRAY_T   OpCode = 0xC4 // Operand GetSize = 1. A value n is taken from top of main stack. An array of type T with size n is put on top of the main stack.
 	NEWSTRUCT0   OpCode = 0xC5 // An empty struct (with size 0) is put on top of the main stack.
 	NEWSTRUCT    OpCode = 0xC6 // A value n is taken from top of main stack. A zero-filled struct type with size n is put on top of the main stack.
 	NEWMAP       OpCode = 0xC8 // A Map is created and put on top of the main stack.
@@ -208,8 +208,8 @@ const (
 
 	// Types
 	ISNULL  OpCode = 0xD8 // Returns "true" if the input is "null"; "false" otherwise.
-	ISTYPE  OpCode = 0xD9 // Operand Size = 1. Returns "true" if the top item of the stack is of the specified type; "false" otherwise.
-	CONVERT OpCode = 0xDB // Operand Size = 1. Converts the top item of the stack to the specified type.
+	ISTYPE  OpCode = 0xD9 // Operand GetSize = 1. Returns "true" if the top item of the stack is of the specified type; "false" otherwise.
+	CONVERT OpCode = 0xDB // Operand GetSize = 1. Converts the top item of the stack to the specified type.
 )
 
 var OpCodePrices = map[OpCode]int64{

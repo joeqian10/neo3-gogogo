@@ -48,7 +48,7 @@ func (o *OracleResponseAttribute) GetAttributeSize() int {
 }
 
 func (o *OracleResponseAttribute) Deserialize(br *io.BinaryReader) {
-	if br.ReadByte() != byte(OracleResponse) {
+	if br.ReadOneByte() != byte(OracleResponse) {
 		br.Err = fmt.Errorf("format error: not HighPriority")
 	}
 	o.DeserializeWithoutType(br)
@@ -61,7 +61,7 @@ func (o *OracleResponseAttribute) Serialize(bw *io.BinaryWriter) {
 
 func (o *OracleResponseAttribute) DeserializeWithoutType(br *io.BinaryReader) {
 	br.ReadLE(&o.Id)
-	code := br.ReadByte()
+	code := br.ReadOneByte()
 	if OracleResponseCode(code).IsDefined() {
 		o.Code = OracleResponseCode(code)
 	} else {

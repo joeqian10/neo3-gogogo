@@ -98,13 +98,13 @@ func TestRpcClient_GetBlockCount(t *testing.T) {
 		Body: ioutil.NopCloser(bytes.NewReader([]byte(`{
 			"jsonrpc": "2.0",
 			"id": 1,
-			"result": 2023
+			"result": 2077
 		}`))),
 	}, nil)
 
 	response := rpc.GetBlockCount()
 	r := response.Result
-	assert.Equal(t, 2023, r)
+	assert.Equal(t, 2077, r)
 }
 
 func TestRpcClient_GetBlockHash(t *testing.T) {
@@ -155,6 +155,22 @@ func TestRpcClient_GetBlockHeader(t *testing.T) {
 	r := response.Result
 	assert.Equal(t, "0x991cb1c359cdcf8129b5bc54b4c4fc8345ac17927d4825bcda4d6a8c46dcfb78", r.PreviousBlockHash)
 	assert.Equal(t, "EQwhA6oFL7y45bM6Tu/WYlNvhoRkHwQQnx1eac3abwhIkChqEQtBMHOzuw==", r.Witnesses[0].Verification)
+}
+
+func TestRpcClient_GetBlockHeaderCount(t *testing.T) {
+	var client = new(HttpClientMock)
+	var rpc = RpcClient{Endpoint: new(url.URL), httpClient: client}
+	client.On("Do", mock.Anything).Return(&http.Response{
+		Body: ioutil.NopCloser(bytes.NewReader([]byte(`{
+			"jsonrpc": "2.0",
+			"id": 1,
+			"result": 2077
+		}`))),
+	}, nil)
+
+	response := rpc.GetBlockHeaderCount()
+	r := response.Result
+	assert.Equal(t, 2077, r)
 }
 
 func TestRpcClient_GetContractState(t *testing.T) {
@@ -342,6 +358,168 @@ func TestRpcClient_GetNextBlockValidators(t *testing.T) {
 	response := rpc.GetNextBlockValidators()
 	r := response.Result
 	assert.Equal(t, "03aa052fbcb8e5b33a4eefd662536f8684641f04109f1d5e69cdda6f084890286a", r[0].PublicKey)
+}
+
+func TestRpcClient_GetCandidates(t *testing.T) {
+	var client = new(HttpClientMock)
+	var rpc = RpcClient{Endpoint: new(url.URL), httpClient: client}
+	client.On("Do", mock.Anything).Return(&http.Response{
+		Body: ioutil.NopCloser(bytes.NewReader([]byte(`{
+			"jsonrpc": "2.0",
+			"id": 1,
+			"result": [
+				{
+					"publickey": "02237309a0633ff930d51856db01d17c829a5b2e5cc2638e9c03b4cfa8e9c9f971",
+					"votes": "634270",
+					"active": false
+				},
+				{
+					"publickey": "022f1beae94cf0d266d7d26691b431958c8d13768103ab20aed817b57568da293f",
+					"votes": "1803",
+					"active": false
+				},
+				{
+					"publickey": "0239a37436652f41b3b802ca44cbcb7d65d3aa0b88c9a0380243bdbe1aaa5cb35b",
+					"votes": "2026211",
+					"active": true
+				},
+				{
+					"publickey": "02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70",
+					"votes": "2079259",
+					"active": true
+				},
+				{
+					"publickey": "0248a37e04c7a5fb9fdc9f0323b2955a94cbb2296d2ad1feacea24ec774a87c4a4",
+					"votes": "714040",
+					"active": false
+				},
+				{
+					"publickey": "024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d",
+					"votes": "150",
+					"active": false
+				},
+				{
+					"publickey": "024c8b6b34990a164fc7860dc497babd71911d049bdf8e186f5f51258b98509434",
+					"votes": "462",
+					"active": false
+				},
+				{
+					"publickey": "02784c0e81f6e3eadbd1516f9311d1fe0662f9c360ea331d9d6a4934800c96ed47",
+					"votes": "1006166",
+					"active": false
+				},
+				{
+					"publickey": "02946248f71bdf14933e6735da9867e81cc9eea0b5895329aa7f71e7745cf40659",
+					"votes": "620884",
+					"active": false
+				},
+				{
+					"publickey": "029b46bf20b19fb3da1a4591bac09acd86c460ae29cb74c7634d658702205ec2f7",
+					"votes": "1",
+					"active": false
+				},
+				{
+					"publickey": "02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e",
+					"votes": "2031956",
+					"active": true
+				},
+				{
+					"publickey": "02ada21c39ccc5ff4a0547270bee2eb940c394c3afe0d8f5470e2fe5b56759cee2",
+					"votes": "0",
+					"active": false
+				},
+				{
+					"publickey": "02beaf473e48740f8ac1b70ff2b6cdb850a7c247b9d036508d6f0bdaa1e750eb3f",
+					"votes": "380",
+					"active": false
+				},
+				{
+					"publickey": "02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554",
+					"votes": "2035673",
+					"active": true
+				},
+				{
+					"publickey": "02cc10d0e929ca752cfd3408bedda06463e2d93fd435e4c2b86a895b3792dee4c8",
+					"votes": "660112",
+					"active": false
+				},
+				{
+					"publickey": "02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093",
+					"votes": "1541",
+					"active": false
+				},
+				{
+					"publickey": "02e4e0db9314a42bebcb7e348a7e1ab8d4a87f518371485b0d66dbc0368f8cf58d",
+					"votes": "643413",
+					"active": false
+				},
+				{
+					"publickey": "02ec143f00b88524caf36a0121c2de09eef0519ddbe1c710a00f0e2663201ee4c0",
+					"votes": "3802422",
+					"active": true
+				},
+				{
+					"publickey": "034f7ea4ca4506ef288c5d5ed61686b9f39a0bc5f7670858305e32ea504ab543f3",
+					"votes": "1838887",
+					"active": false
+				},
+				{
+					"publickey": "0353f7aff015d3d204eecd508f4aa67f447df4d15ec4ba649f4fa91bdb7a78a354",
+					"votes": "1501",
+					"active": false
+				},
+				{
+					"publickey": "035d574cc6a904e82dfd82d7f6fc9c2ca042d4410a4910ecc8c07a07db49dc6513",
+					"votes": "665975",
+					"active": false
+				},
+				{
+					"publickey": "03734d4b637dbac04d0eb45198bfe9c5a42aca907e8fd1e741eb52def583347257",
+					"votes": "622773",
+					"active": false
+				},
+				{
+					"publickey": "0389ba00856f58bdc2b7c3fd6c2e73ed4829252f38083c1e295574ca599e93fe82",
+					"votes": "1001849",
+					"active": false
+				},
+				{
+					"publickey": "0392fbd1d809a3c62f7dcde8f25454a1570830a21e4b014b3f362a79baf413e115",
+					"votes": "622057",
+					"active": false
+				},
+				{
+					"publickey": "03a3aba8edacd820f0b6c55f0bad25b733af00694c8194c04b71ce628c197fbe98",
+					"votes": "625891",
+					"active": false
+				},
+				{
+					"publickey": "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c",
+					"votes": "3021704",
+					"active": true
+				},
+				{
+					"publickey": "03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a",
+					"votes": "2017769",
+					"active": false
+				},
+				{
+					"publickey": "03d9e8b16bd9b22d3345d6d4cde31be1c3e1d161532e3d0ccecb95ece2eb58336e",
+					"votes": "12052968",
+					"active": true
+				},
+				{
+					"publickey": "03fd04de983f4e04c9629ab3cfc83f41be7431b96bf852a91873c38ca8f737ee2c",
+					"votes": "624224",
+					"active": false
+				}
+			]
+		}`))),
+	}, nil)
+
+	response := rpc.GetCandidates()
+	r := response.Result
+	assert.Equal(t, 29, len(r))
 }
 
 func TestRpcClient_GetCommittee(t *testing.T) {

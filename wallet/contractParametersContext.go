@@ -11,14 +11,14 @@ import (
 
 type ContextItem struct {
 	Script     []byte
-	Parameters []sc.ContractParameter
+	Parameters []*sc.ContractParameter
 	Signatures map[string][]byte // Dictionary<ECPoint, byte[]>
 }
 
 func NewContextItem(contract *sc.Contract) *ContextItem {
-	params := make([]sc.ContractParameter, len(contract.ParameterList))
+	params := make([]*sc.ContractParameter, len(contract.ParameterList))
 	for i := 0; i < len(contract.ParameterList); i++ {
-		params[i] = sc.ContractParameter{Type: contract.ParameterList[i]}
+		params[i] = &sc.ContractParameter{Type: contract.ParameterList[i]}
 	}
 	return &ContextItem{
 		Script:     contract.Script,
@@ -50,7 +50,7 @@ type ContractParametersContext struct {
 	Verifiable   tx.IVerifiable // transaction ?
 	ContextItems map[helper.UInt160]*ContextItem
 
-	scriptHashes []helper.UInt160
+	scriptHashes []*helper.UInt160
 }
 
 func NewContractParametersContract(verifiable tx.IVerifiable) *ContractParametersContext {
@@ -77,7 +77,7 @@ func (c *ContractParametersContext) GetCompleted() bool {
 	return true
 }
 
-func (c *ContractParametersContext) GetScriptHashes() []helper.UInt160 {
+func (c *ContractParametersContext) GetScriptHashes() []*helper.UInt160 {
 	if c.scriptHashes == nil {
 		c.scriptHashes = c.Verifiable.GetScriptHashesForVerifying()
 	}
@@ -206,10 +206,10 @@ func (c *ContractParametersContext) GetParameter(scriptHash *helper.UInt160, ind
 	if params == nil {
 		return nil
 	}
-	return &params[index]
+	return params[index]
 }
 
-func (c *ContractParametersContext) GetParameters(scriptHash *helper.UInt160) []sc.ContractParameter {
+func (c *ContractParametersContext) GetParameters(scriptHash *helper.UInt160) []*sc.ContractParameter {
 	if item, ok := c.ContextItems[*scriptHash]; ok {
 		return item.Parameters
 	}
@@ -230,13 +230,13 @@ func (c *ContractParametersContext) GetScript(scriptHash *helper.UInt160) []byte
 	return nil
 }
 
-func (c *ContractParametersContext) GetWitnesses() ([]tx.Witness, error) {
+func (c *ContractParametersContext) GetWitnesses() ([]*tx.Witness, error) {
 	if !c.GetCompleted() {
 		return nil, fmt.Errorf("invalid operation when getting witnesses")
 	}
-	witnesses := make([]tx.Witness, len(c.scriptHashes))
+	witnesses := make([]*tx.Witness, len(c.scriptHashes))
 	for i := 0; i < len(c.scriptHashes); i++ {
-		item := c.ContextItems[c.scriptHashes[i]]
+		item := c.ContextItems[*c.scriptHashes[i]]
 		sb := sc.NewScriptBuilder()
 		for j := len(item.Parameters) - 1; j >= 0; j-- {
 			sb.EmitPushParameter(item.Parameters[j])
@@ -249,7 +249,7 @@ func (c *ContractParametersContext) GetWitnesses() ([]tx.Witness, error) {
 		if item.Script != nil {
 			vs = item.Script
 		}
-		witnesses[i] = tx.Witness{
+		witnesses[i] = &tx.Witness{
 			InvocationScript:   is,
 			VerificationScript: vs,
 		}
