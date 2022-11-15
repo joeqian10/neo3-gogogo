@@ -164,8 +164,14 @@ func (n *RpcClient) InvokeFunctionAndIterate(scriptHash string, method string, a
 func (n *RpcClient) InvokeScriptAndIterate(scriptInBase64 string, signersOrWitnesses interface{}, useDiagnostic bool,
 	count int32) ([][]models.InvokeStack, error) {
 
-	response := n.InvokeScript(scriptInBase64, signersOrWitnesses, useDiagnostic)
+	if count > 10000 {
+		return nil, fmt.Errorf("max count exceeded, count should not exceed 10000")
+	}
+	if count < 0 {
+		return nil, fmt.Errorf("count should not be less than zero")
+	}
 
+	response := n.InvokeScript(scriptInBase64, signersOrWitnesses, useDiagnostic)
 	invokeStacks, err := PopInvokeStacks(response)
 	if err != nil {
 		return nil, err
@@ -176,17 +182,24 @@ func (n *RpcClient) InvokeScriptAndIterate(scriptInBase64 string, signersOrWitne
 		return nil, nil
 	}
 
-	var iterateStacks [][]models.InvokeStack
+	var iterateStacks [][]models.InvokeStack // this array is for all the iterators in this session
 	for _, invokeStack := range invokeStacks {
 		if invokeStack.Type == "InteropInterface" &&
 			invokeStack.Interface == "IIterator" &&
 			invokeStack.Id != "" {
-			// call TraverseIterator
-			iterateResponse := n.TraverseIterator(sessionId, invokeStack.Id, count)
-			if iterateResponse.HasError() {
-				return nil, fmt.Errorf(iterateResponse.GetErrorInfo())
+			var iteStacks []models.InvokeStack // this array is for one unique iterator id
+			for ; count > 0; count -= 100 {
+				iterateResponse := n.TraverseIterator(sessionId, invokeStack.Id, 100) // max iterate count is 100 for one request
+				if iterateResponse.HasError() {
+					return nil, fmt.Errorf(iterateResponse.GetErrorInfo())
+				}
+				if len(iterateResponse.Result) == 0 { // the iterator reaches the end
+					break
+				}
+				iteStacks = append(iteStacks, iterateResponse.Result...)
 			}
-			iterateStacks = append(iterateStacks, iterateResponse.Result)
+
+			iterateStacks = append(iterateStacks, iteStacks)
 		}
 	}
 	return iterateStacks, nil

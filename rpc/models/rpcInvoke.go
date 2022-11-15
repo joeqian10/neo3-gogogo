@@ -34,3 +34,21 @@ type InvokeStack struct {
 	Interface string      `json:"interface,omitempty"`
 	Id        string      `json:"id,omitempty"`
 }
+
+// ConvertInvokeStackArray converts an "Array" type InvokeStack to an InvokeStack array
+func ConvertInvokeStackArray(s InvokeStack) []InvokeStack {
+	if s.Type != "Array" {
+		return []InvokeStack{s}
+	}
+	vs := s.Value.([]interface{})
+	result := make([]InvokeStack, len(vs))
+	for i, v := range vs {
+		m := v.(map[string]interface{})
+		s2 := InvokeStack{
+			Type:  m["type"].(string),
+			Value: m["value"],
+		}
+		result[i] = s2
+	}
+	return result
+}
