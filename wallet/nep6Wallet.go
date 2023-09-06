@@ -20,13 +20,13 @@ const (
 // NEP6Wallet represents a NEO (NEP-2, NEP-6) compliant wallet.
 type NEP6Wallet struct {
 	protocolSettings *helper.ProtocolSettings
-	password *string
-	path     string
-	Name     *string           `json:"name"`
-	Version  string            `json:"version"`
-	Scrypt   *ScryptParameters `json:"scrypt"` // readonly
-	Accounts []NEP6Account     `json:"accounts"`
-	Extra    interface{}       `json:"extra"`
+	password         *string
+	path             string
+	Name             *string           `json:"name"`
+	Version          string            `json:"version"`
+	Scrypt           *ScryptParameters `json:"scrypt"` // readonly
+	Accounts         []NEP6Account     `json:"accounts"`
+	Extra            interface{}       `json:"extra"`
 
 	accounts map[helper.UInt160]NEP6Account
 }
@@ -37,19 +37,19 @@ func NewNEP6Wallet(path string, settings *helper.ProtocolSettings, name *string,
 	if err != nil {
 		return &NEP6Wallet{
 			protocolSettings: settings,
-			path: path,
-			Name:     name,
-			Version:  Neo3WalletVersion,
-			accounts: make(map[helper.UInt160]NEP6Account, 0),
-			Scrypt:   scrypt,
-			Extra:    nil,
+			path:             path,
+			Name:             name,
+			Version:          Neo3WalletVersion,
+			accounts:         make(map[helper.UInt160]NEP6Account, 0),
+			Scrypt:           scrypt,
+			Extra:            nil,
 		}, err
 	}
 	w := &NEP6Wallet{
 		protocolSettings: settings,
-		path: path,
-		Scrypt: &ScryptParameters{},
-		accounts: make(map[helper.UInt160]NEP6Account, 0),
+		path:             path,
+		Scrypt:           &ScryptParameters{},
+		accounts:         make(map[helper.UInt160]NEP6Account, 0),
 	}
 	if err := json.NewDecoder(file).Decode(w); err != nil {
 		return nil, err
@@ -208,8 +208,9 @@ func (w *NEP6Wallet) GetAccountByScriptHash(scriptHash *helper.UInt160) IAccount
 }
 
 func (w *NEP6Wallet) GetAccounts() []IAccount {
-	accounts :=  []IAccount{}
-	for _, v := range w.accounts {
+	accounts := []IAccount{}
+	for k, _ := range w.accounts {
+		v := w.accounts[k]
 		accounts = append(accounts, IAccount(&v))
 	}
 	return accounts
