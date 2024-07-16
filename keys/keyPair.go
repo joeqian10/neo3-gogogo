@@ -7,9 +7,10 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	"math/big"
+
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/text/unicode/norm"
-	"math/big"
 
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
@@ -236,6 +237,7 @@ func VerifyMultiSig(message []byte, signatures [][]byte, pubKeys []crypto.ECPoin
 		j++
 		if m-i > n-j {
 			success = false
+			break
 		}
 	}
 	return success

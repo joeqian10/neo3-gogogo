@@ -1,22 +1,23 @@
 package mpt
 
 import (
-	"github.com/joeqian10/neo3-gogogo/rpc/models"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/io"
+	"github.com/joeqian10/neo3-gogogo/rpc/models"
 )
 
 func TestStateRoot_Serialize(t *testing.T) {
 	sr := StateRoot{
-		Version:   0,
-		Index:     1000,
-		RootHash:  "0x53360e02b03f548c6fc2f74f760d82a6749df6a844fd117ad7b62504390c8f8c",
+		Version:  0,
+		Index:    1000,
+		RootHash: "0x53360e02b03f548c6fc2f74f760d82a6749df6a844fd117ad7b62504390c8f8c",
 		Witnesses: []models.RpcWitness{
 			{
-				Invocation: "DEBnIRHFS8tG/6pw4cqZQbOQZri6rboaQPUJTCVS2ZD/HwOZG2m9IG3NJ8E/gTV++o7G1r35l+p5aQcAbqwoP1wTDECeyQcx2M1DP/irLP7sQy/tNRyina2rdK6ATV/QY+Ib4tJ3sYpXaiPx4iGo+AgqUeTRDmD8anfUNtYzjYgos6x9DEDS+medyKx59813WgtCusxLIK0tx50H36tbMGmTUQxR5nHzrpG8nzQ8HKNKRNMgQNBoT4U3pcHMpwJY9bXUge4R",
+				Invocation:   "DEBnIRHFS8tG/6pw4cqZQbOQZri6rboaQPUJTCVS2ZD/HwOZG2m9IG3NJ8E/gTV++o7G1r35l+p5aQcAbqwoP1wTDECeyQcx2M1DP/irLP7sQy/tNRyina2rdK6ATV/QY+Ib4tJ3sYpXaiPx4iGo+AgqUeTRDmD8anfUNtYzjYgos6x9DEDS+medyKx59813WgtCusxLIK0tx50H36tbMGmTUQxR5nHzrpG8nzQ8HKNKRNMgQNBoT4U3pcHMpwJY9bXUge4R",
 				Verification: "EwwhAnIujtkuXxpCUIyfti3TyTtoOhUd/wjLU4lwdHzBhsu6DCECkeyvwoMh29AA30IiQMankxndS3LESLsUGkLoTzfm/doMIQOyS9DtdzAVHs/Ne1yheExdO8NYTw1NkKyi1i4gd5tG1wwhA/sZ1ZOuaNWI9PnKa/3WYbE9xjnVVYWhVYYXFD38xLJWFEF7zmyl",
 			},
 		},
