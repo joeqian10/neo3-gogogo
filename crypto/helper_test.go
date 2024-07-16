@@ -1,10 +1,12 @@
 package crypto
 
 import (
-	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/joeqian10/neo3-gogogo/helper"
 )
 
 func TestAddressToScriptHash(t *testing.T) {
@@ -26,7 +28,7 @@ func TestScriptHashToAddress(t *testing.T) {
 	assert.Equal(t, "NdtB8RXRmJ7Nhw1FPTm7E6HoDZGnDw37nf", a)
 }
 
-func TestConvert(t *testing.T)  {
+func TestConvert(t *testing.T) {
 	bs, err := Base64Decode("4rZTInKT6ZxPKQbVNVOrtKZy34Y=")
 	assert.Nil(t, err)
 	u := helper.UInt160FromBytes(bs)

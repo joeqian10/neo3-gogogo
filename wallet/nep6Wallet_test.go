@@ -2,30 +2,31 @@ package wallet
 
 import (
 	"bytes"
-	"github.com/joeqian10/neo3-gogogo/crypto"
-	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/sc"
 	"io/ioutil"
 	"log"
 	"testing"
 
-	"github.com/joeqian10/neo3-gogogo/keys"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/joeqian10/neo3-gogogo/crypto"
+	"github.com/joeqian10/neo3-gogogo/helper"
+	"github.com/joeqian10/neo3-gogogo/keys"
+	"github.com/joeqian10/neo3-gogogo/sc"
 )
 
 var hash = helper.UInt160FromBytes(crypto.Hash160([]byte{0x01}))
 var testAccount1 = NewNEP6Account(testWallet, hash, nil)
 
-func resetTestWallet()  {
+func resetTestWallet() {
 	testWallet = &NEP6Wallet{
 		protocolSettings: &helper.DefaultProtocolSettings,
-		password: nil,
-		Name:     &dummy,
-		path:     "",
-		Version:  "3.0",
-		accounts: map[helper.UInt160]NEP6Account{},
-		Scrypt:   NewScryptParameters(2, 1, 1),
-		Extra:    nil,
+		password:         nil,
+		Name:             &dummy,
+		path:             "",
+		Version:          "3.0",
+		accounts:         map[helper.UInt160]NEP6Account{},
+		Scrypt:           NewScryptParameters(2, 1, 1),
+		Extra:            nil,
 	}
 }
 
@@ -34,7 +35,7 @@ func TestNewNEP6Wallet1(t *testing.T) {
 	path := "test.json"
 	wallet, err := NewNEP6Wallet(path, &helper.DefaultProtocolSettings, nil, nil)
 	assert.Nil(t, err)
-	assert.Equal(t, 1,  len(wallet.Accounts))
+	assert.Equal(t, 1, len(wallet.Accounts))
 
 	jsonBytes, err := wallet.JSON()
 	assert.Nil(t, err)
@@ -57,9 +58,9 @@ func TestNewNEP6Wallet(t *testing.T) {
 }
 
 func TestGetPrivateKeyFromNEP2(t *testing.T) {
-	pk, err := GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", helper.DefaultAddressVersion,2, 1, 1)
+	pk, err := GetPrivateKeyFromNEP2("3vQB7B6MrGQZaxCuFg4oh", "TestGetPrivateKeyFromNEP2", helper.DefaultAddressVersion, 2, 1, 1)
 	assert.NotNil(t, err)
-	pk, err = GetPrivateKeyFromNEP2(nep2, password,  helper.DefaultAddressVersion, 2, 1, 1)
+	pk, err = GetPrivateKeyFromNEP2(nep2, password, helper.DefaultAddressVersion, 2, 1, 1)
 	assert.Equal(t, true, bytes.Equal(privateKey, pk))
 }
 
@@ -94,7 +95,7 @@ func TestNEP6Wallet_Contains(t *testing.T) {
 	resetTestWallet()
 }
 
-func TestAddAccount(t *testing.T)  {
+func TestAddAccount(t *testing.T) {
 	_, err := testWallet.CreateAccountWithScriptHash(testScriptHash)
 	assert.Nil(t, err)
 	assert.Equal(t, true, testWallet.Contains(testScriptHash))
