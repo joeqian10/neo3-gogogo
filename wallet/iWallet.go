@@ -13,7 +13,6 @@ type IWallet interface {
 	GetPath() string
 	GetVersion() string
 
-	//ChangePassword(oldPassword string, newPassword string) bool
 	Contains(scriptHash *helper.UInt160) bool
 
 	CreateAccount() (IAccount, error)
@@ -63,7 +62,7 @@ func getSigners(sender *helper.UInt160, cosigners []*tx.Signer) []*tx.Signer {
 			}
 		}
 	}
-	signer := tx.NewSigner(sender, tx.None)
+	signer := tx.NewSigner(sender, tx.Global) // warning: Global used here
 	return append([]*tx.Signer{signer}, cosigners...)
 }
 

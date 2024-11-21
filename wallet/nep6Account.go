@@ -1,11 +1,12 @@
 package wallet
 
 import (
+	"math/big"
+
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/keys"
 	"github.com/joeqian10/neo3-gogogo/sc"
-	"math/big"
 )
 
 // NEP6Account represents a NEO account. It holds the private and public key

@@ -2,17 +2,18 @@ package wallet
 
 import (
 	"fmt"
+	"math/big"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/rpc"
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"github.com/joeqian10/neo3-gogogo/sc"
-	"github.com/stretchr/testify/mock"
-	"math/big"
-	"testing"
-
 	"github.com/joeqian10/neo3-gogogo/tx"
-	"github.com/stretchr/testify/assert"
 )
 
 var client = rpc.NewClient("http://test:20332")

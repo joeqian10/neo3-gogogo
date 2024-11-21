@@ -3,13 +3,13 @@ package wallet
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/joeqian10/neo3-gogogo/crypto"
-	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/sc"
 	"os"
 	"strconv"
 
+	"github.com/joeqian10/neo3-gogogo/crypto"
+	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/keys"
+	"github.com/joeqian10/neo3-gogogo/sc"
 )
 
 const (

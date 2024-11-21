@@ -2,11 +2,12 @@ package wallet
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/sc"
 	"github.com/joeqian10/neo3-gogogo/tx"
-	"sort"
 )
 
 type ContextItem struct {
