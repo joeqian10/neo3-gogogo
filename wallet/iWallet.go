@@ -63,7 +63,7 @@ func getSigners(sender *helper.UInt160, cosigners []*tx.Signer) []*tx.Signer {
 			}
 		}
 	}
-	signer := tx.NewSigner(sender, tx.None)
+	signer := tx.NewSigner(sender, tx.Global) // warning: Global used here
 	return append([]*tx.Signer{signer}, cosigners...)
 }
 

@@ -3,6 +3,11 @@ package wallet
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
+	"math/big"
+	"sort"
+	"strconv"
+
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/keys"
@@ -10,10 +15,6 @@ import (
 	"github.com/joeqian10/neo3-gogogo/rpc/models"
 	"github.com/joeqian10/neo3-gogogo/sc"
 	"github.com/joeqian10/neo3-gogogo/tx"
-	"math"
-	"math/big"
-	"sort"
-	"strconv"
 )
 
 type WalletHelper struct {
@@ -341,6 +342,7 @@ func (w *WalletHelper) GetGasConsumed(script []byte, signers []models.RpcSigner)
 		return 0, fmt.Errorf(response.GetErrorInfo())
 	}
 	if response.Result.State == "FAULT" {
+		//return 2000000, nil
 		return 0, fmt.Errorf("engine faulted: %s", response.Result.Exception)
 	}
 	gasConsumed, err := strconv.ParseInt(response.Result.GasConsumed, 10, 64)
@@ -370,6 +372,7 @@ func (w *WalletHelper) GetUnClaimedGas() (uint64, error) {
 	return t, nil
 }
 
+// MakeTransaction will set the scope to Global for the sender as a signer
 func (w *WalletHelper) MakeTransaction(script []byte, cosigners []*tx.Signer, attributes []tx.ITransactionAttribute, balanceGas []*AccountAndBalance) (*tx.Transaction, error) {
 	for _, ab := range balanceGas {
 		rb, err := helper.GenerateRandomBytes(4)
