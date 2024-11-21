@@ -3,12 +3,14 @@ package sc
 import (
 	"bytes"
 	"fmt"
-	"github.com/joeqian10/neo3-gogogo/crypto"
 	"math/big"
 	"testing"
 
-	"github.com/joeqian10/neo3-gogogo/helper"
+	"github.com/joeqian10/neo3-gogogo/crypto"
+
 	"github.com/stretchr/testify/assert"
+
+	"github.com/joeqian10/neo3-gogogo/helper"
 )
 
 func TestScriptBuilder_Emit(t *testing.T) {
@@ -259,7 +261,7 @@ func TestScriptBuilder_EmitDynamicCall(t *testing.T) {
 
 func TestScriptBuilder_EmitDynamicCall2(t *testing.T) {
 	sb := NewScriptBuilder()
-	sb.EmitDynamicCall(helper.UInt160Zero, "AAAAA", []interface{}{ContractParameter{Type:  Integer, Value: 0}})
+	sb.EmitDynamicCall(helper.UInt160Zero, "AAAAA", []interface{}{ContractParameter{Type: Integer, Value: 0}})
 
 	tmp := make([]byte, 38)
 	tmp[0] = byte(PUSH0) // arg
@@ -336,15 +338,16 @@ func TestScriptBuilder_CreateMap(t *testing.T) {
 	b, err := sb.ToArray()
 	assert.Nil(t, err)
 	s1 := "c84a1112d04a1314d0"
-	s2 := helper.BytesToHex(b)
-	assert.Equal(t, s1, s2)
+	s2 := "c84a1314d04a1112d0"
+	r := helper.BytesToHex(b)
+	assert.Contains(t, []string{s1, s2}, r)
 }
 
 func TestMakeScript(t *testing.T) {
 	b, err := MakeScript(helper.UInt160FromBytes(helper.HexToBytes("28b3adab7269f9c2181db3cb741ebf551930e270")), "balanceOf", []interface{}{helper.UInt160Zero})
 	assert.Nil(t, err)
 	expected := "0c14000000000000000000000000000000000000000011c01f0c0962616c616e63654f660c1428b3adab7269f9c2181db3cb741ebf551930e27041627d5b52"
-	actual :=  helper.BytesToHex(b)
+	actual := helper.BytesToHex(b)
 	assert.Equal(t, expected, actual)
 }
 

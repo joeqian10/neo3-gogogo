@@ -3,11 +3,12 @@ package sc
 import (
 	"bytes"
 	"fmt"
-	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/io"
 	"go/types"
 	"math/big"
 	"strings"
+
+	"github.com/joeqian10/neo3-gogogo/helper"
+	"github.com/joeqian10/neo3-gogogo/io"
 )
 
 type ScriptBuilder struct {
@@ -203,6 +204,7 @@ func (sb *ScriptBuilder) CreateArray(list []interface{}) {
 	sb.Emit(PACK)
 }
 
+// CreateMap does not guarantee the order of the key-value pairs
 func (sb *ScriptBuilder) CreateMap(m map[interface{}]interface{}) {
 	sb.Emit(NEWMAP)
 	if m != nil {
@@ -224,7 +226,7 @@ func (sb *ScriptBuilder) EmitOpCodes(ops ...OpCode) {
 	}
 }
 
-// Emits an "Instruction" to call a contract.
+// EmitDynamicCall Emits an "Instruction" to call a contract.
 func (sb *ScriptBuilder) EmitDynamicCall(scriptHash *helper.UInt160, operation string, args []interface{}) {
 	sb.EmitDynamicCallObj(scriptHash, operation, All, args)
 }
