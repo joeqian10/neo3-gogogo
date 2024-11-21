@@ -1,13 +1,14 @@
 package wallet
 
 import (
-	"github.com/joeqian10/neo3-gogogo/helper"
-	"github.com/joeqian10/neo3-gogogo/sc"
 	"math/big"
 	"testing"
 
-	"github.com/joeqian10/neo3-gogogo/keys"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/joeqian10/neo3-gogogo/helper"
+	"github.com/joeqian10/neo3-gogogo/keys"
+	"github.com/joeqian10/neo3-gogogo/sc"
 )
 
 var password = "Satoshi"

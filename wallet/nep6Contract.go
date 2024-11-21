@@ -2,16 +2,11 @@ package wallet
 
 import (
 	"fmt"
+
 	"github.com/joeqian10/neo3-gogogo/crypto"
 	"github.com/joeqian10/neo3-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/sc"
 )
-
-//type NEP6Contract struct {
-//	sc.Contract
-//	ParameterNames []string
-//	Deployed bool
-//}
 
 type NEP6Contract struct {
 	Script         string                    `json:"script"`
@@ -60,7 +55,7 @@ func (c *NEP6Contract) ToContract() (*sc.Contract, error) {
 	if len(c.Parameters) != 0 {
 		var err error
 		paramList = make([]sc.ContractParameterType, len(c.Parameters))
-		for i:=0; i < len(c.Parameters); i++ {
+		for i := 0; i < len(c.Parameters); i++ {
 			paramList[i], err = sc.NewContractParameterTypeFromString(c.Parameters[i].Type)
 			if err != nil {
 				return nil, err

@@ -13,7 +13,6 @@ type IWallet interface {
 	GetPath() string
 	GetVersion() string
 
-	//ChangePassword(oldPassword string, newPassword string) bool
 	Contains(scriptHash *helper.UInt160) bool
 
 	CreateAccount() (IAccount, error)
