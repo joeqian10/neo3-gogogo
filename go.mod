@@ -4,8 +4,8 @@ go 1.21
 
 require (
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/crypto v0.25.0
-	golang.org/x/text v0.16.0
+	golang.org/x/crypto v0.31.0
+	golang.org/x/text v0.21.0
 )
 
 require (
