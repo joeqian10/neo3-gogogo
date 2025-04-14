@@ -1,11 +1,12 @@
 module github.com/joeqian10/neo3-gogogo
 
 go 1.21
+toolchain go1.24.1
 
 require (
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/crypto v0.31.0
-	golang.org/x/text v0.21.0
+	golang.org/x/crypto v0.35.0
+	golang.org/x/text v0.22.0
 )
 
 require (
